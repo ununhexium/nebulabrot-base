@@ -2,6 +2,11 @@
 package net.lab0.nebula.data;
 
 
+import nu.xom.Attribute;
+import nu.xom.Element;
+import nu.xom.Elements;
+
+
 /**
  * 
  * @author 116
@@ -35,7 +40,87 @@ public class QuadTreeNode
         this.status = Status.VOID;
     }
     
-    public int getNodeDepth()
+    public QuadTreeNode(Element nodeElement, QuadTreeNode parent)
+    {
+        this.parent = parent;
+        if (parent == null)
+        {
+            this.positionInParent = PositionInParent.Root;
+        }
+        
+        this.minX = Double.parseDouble(nodeElement.getAttributeValue("minX"));
+        this.maxX = Double.parseDouble(nodeElement.getAttributeValue("maxX"));
+        this.minY = Double.parseDouble(nodeElement.getAttributeValue("minY"));
+        this.maxY = Double.parseDouble(nodeElement.getAttributeValue("maxY"));
+        
+        String positionInParentString = nodeElement.getAttributeValue("positionInParent");
+        
+        switch (positionInParentString)
+        {
+            case "TopLeft":
+                this.positionInParent = PositionInParent.TopLeft;
+                break;
+            
+            case "TopRight":
+                this.positionInParent = PositionInParent.TopRight;
+                break;
+            
+            case "BottomLeft":
+                this.positionInParent = PositionInParent.BottomLeft;
+                break;
+            
+            case "BottomRight":
+                this.positionInParent = PositionInParent.BottomRight;
+                break;
+        }
+        
+        String statusString = nodeElement.getAttributeValue("status");
+        
+        switch (statusString)
+        {
+            case "BROWSED":
+                this.status = Status.BROWSED;
+                break;
+            
+            case "OUTSIDE":
+                this.status = Status.OUTSIDE;
+                break;
+            
+            case "INSIDE":
+                this.status = Status.INSIDE;
+                break;
+            
+            case "VOID":
+                this.status = Status.VOID;
+                break;
+        }
+        
+        if (this.status == Status.BROWSED)
+        {
+            this.min = Integer.parseInt(nodeElement.getAttributeValue("min"));
+        }
+        if (this.status == Status.OUTSIDE)
+        {
+            this.min = Integer.parseInt(nodeElement.getAttributeValue("min"));
+            this.max = Integer.parseInt(nodeElement.getAttributeValue("max"));
+        }
+        
+        Elements childNodes = nodeElement.getChildElements("node");
+        if (childNodes.size() > 0)
+        {
+            this.splitNode();
+            for (int i = 0; i < 4; ++i)
+            {
+                QuadTreeNode childNode = new QuadTreeNode(childNodes.get(i), this);
+                if (isChildNode(childNode.positionInParent))
+                {
+                    this.children[childNode.positionInParent.ordinal()] = childNode;
+                }
+            }
+        }
+    }
+    
+    public int getDepth()
     {
         if (parent == null)
         {
@@ -43,7 +128,7 @@ public class QuadTreeNode
         }
         else
         {
-            return 1 + parent.getNodeDepth();
+            return 1 + parent.getDepth();
         }
     }
     
@@ -58,8 +143,7 @@ public class QuadTreeNode
             
             for (PositionInParent position : PositionInParent.values())
             {
-                if (position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
-                || position.equals(PositionInParent.BottomRight))
+                if (isChildNode(position))
                 {
                     double minX = 0;
                     double maxX = 0;
@@ -115,6 +199,12 @@ public class QuadTreeNode
         }
     }
     
+    private boolean isChildNode(PositionInParent position)
+    {
+        return position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
+        || position.equals(PositionInParent.BottomRight);
+    }
+    
     private double getCenterY()
     {
         return (minY + maxY) / 2.0d;
@@ -157,7 +247,6 @@ public class QuadTreeNode
                 iter += 2;
             }
             
-//            System.out.println("" + real + "+i" + img + " " + iter);
             if (iter < maxIter)
             {
                 return;
@@ -285,11 +374,12 @@ public class QuadTreeNode
                 max = iter;
             }
             
-//            System.out.println("" + real + "+i" + img + " iter=" + iter + " diff=" + (max - min + 1));
+// System.out.println("" + real + "+i" + img + " iter=" + iter + " diff=" + (max - min + 1));
             
             if ((max - min + 1) > diffIterLimit)
             {
                 this.status = Status.BROWSED;
+                this.min = min;
                 return;
             }
         }
@@ -329,11 +419,11 @@ public class QuadTreeNode
     public void computeStatus(int pointsPerSide, int maxIter, int diffIterLimit)
     {
         this.testInsideMandelbrotSet(pointsPerSide, maxIter);
-//        System.out.println("After inside test " + this.status);
+// System.out.println("After inside test " + this.status);
         if (this.status != Status.INSIDE)
         {
             this.testOutsideMandelbrotSet(pointsPerSide, maxIter, diffIterLimit);
-//            System.out.println("After outside test " + this.status);
+// System.out.println("After outside test " + this.status);
         }
     }
     
@@ -346,6 +436,123 @@ public class QuadTreeNode
         else
         {
             return parent.getPath() + this.positionInParent.ordinal();
+        }
+    }
+    
+    public Element asXML(boolean recursive)
+    {
+        Element thisNode = new Element("node");
+        thisNode.addAttribute(new Attribute("minX", "" + minX));
+        thisNode.addAttribute(new Attribute("maxX", "" + maxX));
+        thisNode.addAttribute(new Attribute("minY", "" + minY));
+        thisNode.addAttribute(new Attribute("maxY", "" + maxY));
+        
+        thisNode.addAttribute(new Attribute("positionInParent", positionInParent.toString()));
+        thisNode.addAttribute(new Attribute("status", status.toString()));
+        
+        // TODO : rm debug
+        thisNode.addAttribute(new Attribute("path", getPath()));
+        
+        if (status == Status.BROWSED)
+        {
+            thisNode.addAttribute(new Attribute("min", "" + min));
+        }
+        if (status == Status.OUTSIDE)
+        {
+            thisNode.addAttribute(new Attribute("min", "" + min));
+            thisNode.addAttribute(new Attribute("max", "" + max));
+        }
+        
+        if (recursive && children != null)
+        {
+            for (QuadTreeNode node : children)
+            {
+                thisNode.appendChild(node.asXML(recursive));
+            }
+        }
+        
+        return thisNode;
+    }
+    
+    public double getSurface()
+    {
+        double xDiff = maxX - minX;
+        double yDiff = maxY - minY;
+        return xDiff * yDiff;
+    }
+    
+    public QuadTreeNode getNodeByPath(String path)
+    {
+        if (parent == null)
+        {
+            return getNodeByPathRecusively(path);
+        }
+        else
+        {
+            System.out.println("Seek parent");
+            return getRootNode().getNodeByPath(path);
+        }
+    }
+    
+    private QuadTreeNode getNodeByPathRecusively(String path)
+    {
+//        System.out.println("Path = " + path);
+        // pop 1st char : this node
+        path = path.replaceFirst("[R0-3]", "");
+        
+        // if no more char : we are the node shich was seeked
+        if (path.length() == 0)
+        {
+            return this;
+        }
+        
+        // if we are not the last node in the path but we don't have any child : can't find the node
+        if (children == null)
+        {
+            System.out.println("no children");
+            return null;
+        }
+        
+        // find the node to go to
+        switch (path.charAt(0))
+        {
+            case '0':
+                return children[0].getNodeByPathRecusively(path);
+                
+            case '1':
+                return children[1].getNodeByPathRecusively(path);
+                
+            case '2':
+                return children[2].getNodeByPathRecusively(path);
+                
+            case '3':
+                return children[3].getNodeByPathRecusively(path);
+                
+            default:
+                assert (false);
+                break;
+        }
+        
+        return null;
+    }
+    
+    private QuadTreeNode getRootNode()
+    {
+        if (parent == null)
+        {
+            return this;
+        }
+        else
+        {
+            return this.parent.getRootNode();
+        }
+    }
+
+    public void ensureChildrenArray()
+    {
+        if (children == null)
+        {
+            children = new QuadTreeNode[4];
         }
     }
 }
