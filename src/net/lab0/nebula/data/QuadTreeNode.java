@@ -2,6 +2,9 @@
 package net.lab0.nebula.data;
 
 
+import java.util.Arrays;
+import java.util.List;
+
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
@@ -451,7 +454,7 @@ public class QuadTreeNode
         thisNode.addAttribute(new Attribute("status", status.toString()));
         
         // TODO : rm debug
-        thisNode.addAttribute(new Attribute("path", getPath()));
+//        thisNode.addAttribute(new Attribute("path", getPath()));
         
         if (status == Status.BROWSED)
         {
@@ -489,7 +492,7 @@ public class QuadTreeNode
         }
         else
         {
-            System.out.println("Seek parent");
+//            System.out.println("Seek parent");
             return getRootNode().getNodeByPath(path);
         }
     }
@@ -553,6 +556,22 @@ public class QuadTreeNode
         if (children == null)
         {
             children = new QuadTreeNode[4];
+        }
+    }
+
+    public void getNodesByStatus(List<QuadTreeNode> nodesList, List<Status> status)
+    {
+        if(status.contains(this.status))
+        {
+            nodesList.add(this);
+        }
+        
+        if(this.children!=null)
+        {
+            for(QuadTreeNode child : children)
+            {
+                child.getNodesByStatus(nodesList, status);
+            }
         }
     }
 }

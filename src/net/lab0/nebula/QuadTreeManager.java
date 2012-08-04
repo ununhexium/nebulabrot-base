@@ -97,14 +97,14 @@ public class QuadTreeManager
                 
                 QuadTreeNode parent = this.root.getNodeByPath(file.b);
                 QuadTreeNode node = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), parent);
-                if (parent == null)
-                {
-                    System.out.println("parent null " + file.b);
-                }
+//                if (parent == null)
+//                {
+//                    System.out.println("parent null " + file.b);
+//                }
                 parent.ensureChildrenArray();
                 parent.children[node.positionInParent.ordinal()] = node;
-                System.out.println("attached child node n" + node.positionInParent.ordinal() + " : "
-                + parent.children[node.positionInParent.ordinal()].getPath() + " to " + node.parent.getPath());
+//                System.out.println("attached child node n" + node.positionInParent.ordinal() + " : "
+//                + parent.children[node.positionInParent.ordinal()].getPath() + " to " + node.parent.getPath());
             }
             
         }
@@ -395,7 +395,7 @@ public class QuadTreeManager
     
     private static void recursiveComputeStatistics(QuadTreeNode node, Statistics statistics)
     {
-        System.out.println(node.getPath());
+//        System.out.println(node.getPath());
         StatisticsData data = statistics.getStatisticsDataForDepth(node.getDepth());
         data.addStatusCount(node.status, 1);
         data.addSurface(node.status, node.getSurface());
