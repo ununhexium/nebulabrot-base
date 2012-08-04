@@ -10,16 +10,16 @@ implements Serializable
 {
     private static final long serialVersionUID = 1L;
     
-    private int               pixelWidth;
-    private int               pixelHeight;
-    private long[][]          data;
+    private int pixelWidth;
+    private int pixelHeight;
+    private int[][] data;
     
     public RawMandelbrotData(int pixelWidth, int pixelHeight)
     {
         super();
         this.pixelWidth = pixelWidth;
         this.pixelHeight = pixelHeight;
-        data = new long[pixelHeight][pixelHeight];
+        data = new int[pixelHeight][pixelHeight];
     }
     
     public int getPixelWidth()
@@ -32,7 +32,7 @@ implements Serializable
         return pixelHeight;
     }
     
-    public long[][] getData()
+    public int[][] getData()
     {
         return data;
     }

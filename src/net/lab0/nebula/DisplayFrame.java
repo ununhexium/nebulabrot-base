@@ -18,7 +18,7 @@ extends JFrame
 {
     private RawMandelbrotData rawMandelbrotData;
     
-    public DisplayFrame(RawMandelbrotData rawMandelbrotData)
+    public DisplayFrame(String title, RawMandelbrotData rawMandelbrotData)
     {
         this.rawMandelbrotData = rawMandelbrotData;
         
@@ -27,9 +27,9 @@ extends JFrame
         BufferedImage bufferedImage = createCompatibleImage(this.rawMandelbrotData.getPixelWidth(), this.rawMandelbrotData.getPixelHeight(),
         BufferedImage.TYPE_INT_RGB);
         
-        long[][] data = this.rawMandelbrotData.getData();
-        long min = data[0][0];
-        long max = data[0][0];
+        int[][] data = this.rawMandelbrotData.getData();
+        int min = data[0][0];
+        int max = data[0][0];
         for (int x = 0; x < this.rawMandelbrotData.getPixelWidth(); ++x)
         {
             for (int y = 0; y < this.rawMandelbrotData.getPixelHeight(); ++y)
@@ -62,8 +62,9 @@ extends JFrame
         
         ImageIcon icon = new ImageIcon(bufferedImage);
         this.add(new JLabel(icon));
-     
+        
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setTitle(title);
         this.setVisible(true);
     }
     

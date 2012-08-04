@@ -2,7 +2,6 @@
 package net.lab0.nebula.data;
 
 
-import java.util.Arrays;
 import java.util.List;
 
 import nu.xom.Attribute;
@@ -19,15 +18,15 @@ import nu.xom.Elements;
  */
 public class QuadTreeNode
 {
-    public QuadTreeNode     parent;
-    public QuadTreeNode[]   children;
+    public QuadTreeNode parent;
+    public QuadTreeNode[] children;
     
-    public double           minX, maxX, minY, maxY;
+    public double minX, maxX, minY, maxY;
     
     public PositionInParent positionInParent;
-    public Status           status;
-    public int              min = -1;
-    public int              max = -1;
+    public Status status;
+    public int min = -1;
+    public int max = -1;
     
     public QuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
@@ -377,7 +376,8 @@ public class QuadTreeNode
                 max = iter;
             }
             
-// System.out.println("" + real + "+i" + img + " iter=" + iter + " diff=" + (max - min + 1));
+            // System.out.println("" + real + "+i" + img + " iter=" + iter +
+            // " diff=" + (max - min + 1));
             
             if ((max - min + 1) > diffIterLimit)
             {
@@ -422,11 +422,11 @@ public class QuadTreeNode
     public void computeStatus(int pointsPerSide, int maxIter, int diffIterLimit)
     {
         this.testInsideMandelbrotSet(pointsPerSide, maxIter);
-// System.out.println("After inside test " + this.status);
+        // System.out.println("After inside test " + this.status);
         if (this.status != Status.INSIDE)
         {
             this.testOutsideMandelbrotSet(pointsPerSide, maxIter, diffIterLimit);
-// System.out.println("After outside test " + this.status);
+            // System.out.println("After outside test " + this.status);
         }
     }
     
@@ -454,7 +454,7 @@ public class QuadTreeNode
         thisNode.addAttribute(new Attribute("status", status.toString()));
         
         // TODO : rm debug
-//        thisNode.addAttribute(new Attribute("path", getPath()));
+        // thisNode.addAttribute(new Attribute("path", getPath()));
         
         if (status == Status.BROWSED)
         {
@@ -492,14 +492,14 @@ public class QuadTreeNode
         }
         else
         {
-//            System.out.println("Seek parent");
+            // System.out.println("Seek parent");
             return getRootNode().getNodeByPath(path);
         }
     }
     
     private QuadTreeNode getNodeByPathRecusively(String path)
     {
-//        System.out.println("Path = " + path);
+        // System.out.println("Path = " + path);
         // pop 1st char : this node
         path = path.replaceFirst("[R0-3]", "");
         
@@ -509,7 +509,8 @@ public class QuadTreeNode
             return this;
         }
         
-        // if we are not the last node in the path but we don't have any child : can't find the node
+        // if we are not the last node in the path but we don't have any child :
+        // can't find the node
         if (children == null)
         {
             System.out.println("no children");
@@ -550,7 +551,7 @@ public class QuadTreeNode
             return this.parent.getRootNode();
         }
     }
-
+    
     public void ensureChildrenArray()
     {
         if (children == null)
@@ -558,20 +559,43 @@ public class QuadTreeNode
             children = new QuadTreeNode[4];
         }
     }
-
+    
     public void getNodesByStatus(List<QuadTreeNode> nodesList, List<Status> status)
     {
-        if(status.contains(this.status))
+        if (status.contains(this.status))
         {
             nodesList.add(this);
         }
         
-        if(this.children!=null)
+        if (this.children != null)
         {
-            for(QuadTreeNode child : children)
+            for (QuadTreeNode child : children)
             {
                 child.getNodesByStatus(nodesList, status);
             }
         }
+    }
+    
+    public boolean hasComputedChildren()
+    {
+        if (this.status == Status.VOID)
+        {
+            return false;
+        }
+        
+        if (children == null)
+        {
+            return false;
+        }
+        
+        for (QuadTreeNode child : children)
+        {
+            if (child.status != Status.VOID)
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

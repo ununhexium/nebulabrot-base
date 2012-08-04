@@ -438,5 +438,10 @@ public class QuadTreeManager
     {
         return totalComputingTime;
     }
+
+    public QuadTreeNode getQuadTreeRoot()
+    {
+        return root;
+    }
     
 }
