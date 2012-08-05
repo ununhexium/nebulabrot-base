@@ -1,6 +1,4 @@
-
 package net.lab0.nebula;
-
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -12,8 +10,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import net.lab0.nebula.data.PositionInParent;
 import net.lab0.nebula.data.QuadTreeNode;
@@ -29,7 +25,6 @@ import nu.xom.Elements;
 import nu.xom.ParsingException;
 import nu.xom.Serializer;
 import nu.xom.ValidityException;
-
 
 public class QuadTreeManager
 {
@@ -59,8 +54,7 @@ public class QuadTreeManager
         this.waitingThreads = new Semaphore(threads);
     }
     
-    public QuadTreeManager(Path inputFolder)
-    throws ValidityException, ParsingException, IOException
+    public QuadTreeManager(Path inputFolder) throws ValidityException, ParsingException, IOException
     {
         Builder parser = new Builder();
         Document doc = parser.build(new File(inputFolder.toFile(), "index.xml"));
@@ -83,6 +77,7 @@ public class QuadTreeManager
             Element mandelbrot = dataDoc.getRootElement();
             
             this.root = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), null);
+            this.root.updateDepth();
         }
         else if ("recursive".equals(mode))
         {
@@ -102,8 +97,11 @@ public class QuadTreeManager
             Element mandelbrot = dataDoc.getRootElement();
             this.root = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), null);
             
+            int currentFileIndex = 0;
             for (Pair<File, String> file : filesAndParent)
             {
+                currentFileIndex++;
+                System.out.println("reading file " + currentFileIndex + " out of " + filesAndParent.size());
                 dataDoc = dataParser.build(file.a);
                 mandelbrot = dataDoc.getRootElement();
                 
@@ -119,6 +117,7 @@ public class QuadTreeManager
                 // + parent.children[node.positionInParent.ordinal()].getPath() + " to " + node.parent.getPath());
             }
             
+            this.root.updateDepth();
         }
     }
     
@@ -129,15 +128,15 @@ public class QuadTreeManager
         {
             try
             {
-                System.out.println(Thread.currentThread().getName() + " waiting");
+                System.out.println(Thread.currentThread().getName() + " waiting " + (waitingThreads.availablePermits()) + "/" + threads);
                 waitingThreads.acquire();
                 if (waitingThreads.availablePermits() == 0)
                 {
                     throw new NoMoreNodesToCompute();
                 }
-                wait(1000);
+                wait(250);
                 waitingThreads.release();
-                System.out.println(Thread.currentThread().getName() + " resumed");
+                System.out.println(Thread.currentThread().getName() + " resumed" + (waitingThreads.availablePermits()) + "/" + threads);
                 node = recursiveGetNextNodeToCompute(root, maxComputationDepth);
             }
             catch (InterruptedException e)
@@ -163,7 +162,7 @@ public class QuadTreeManager
             {
                 node.splitNode();
                 QuadTreeNode nextNode = node.children[PositionInParent.TopLeft.ordinal()];
-                if (nextNode.getDepth() > maxComputationDepth)
+                if (nextNode.depth > maxComputationDepth)
                 {
                     return null;
                 }
@@ -223,20 +222,20 @@ public class QuadTreeManager
                 
                 // get the least deep node : breadth first browsing
                 // don't test for n1 because is best!=n1, then n1 is NULL
-                if (n2 != null && n2.getDepth() < best.getDepth())
+                if (n2 != null && n2.depth < best.depth)
                 {
                     best = n2;
                 }
-                if (n3 != null && n3.getDepth() < best.getDepth())
+                if (n3 != null && n3.depth < best.depth)
                 {
                     best = n3;
                 }
-                if (n4 != null && n4.getDepth() < best.getDepth())
+                if (n4 != null && n4.depth < best.depth)
                 {
                     best = n4;
                 }
                 
-                if (best.getDepth() > maxComputationDepth)
+                if (best.depth > maxComputationDepth)
                 {
                     return null;
                 }
@@ -285,18 +284,18 @@ public class QuadTreeManager
                 Element docRoot = new Element("mandelbrotQuadTree");
                 docRoot.addAttribute(new Attribute("path", currentNode.getPath()));
                 
-                recursiveAppendChildren(docRoot, currentNode, currentNode.getDepth() + splitDepth, splittingNodes);
+                recursiveAppendChildren(docRoot, currentNode, currentNode.depth + splitDepth, currentNode.depth + 2 * splitDepth, splittingNodes);
                 
                 List<String> relativeFilePath = new LinkedList<>();
                 int value = dataIndex;
-
-                value>>=8;
-                int folder1 = value & 0xff;
-                int folder2 = (value & 0xff00)>>8;
-                int folder3 = (value & 0xff0000)>>16;
-//                int folder4 = (value & 0xff000000)>>24;
                 
-//                relativeFilePath.add("" + folder4);
+                value >>= 8;
+                int folder1 = value & 0xff;
+                int folder2 = (value & 0xff00) >> 8;
+                int folder3 = (value & 0xff0000) >> 16;
+                // int folder4 = (value & 0xff000000)>>24;
+                
+                // relativeFilePath.add("" + folder4);
                 relativeFilePath.add("" + folder3);
                 relativeFilePath.add("" + folder2);
                 relativeFilePath.add("" + folder1);
@@ -374,10 +373,11 @@ public class QuadTreeManager
         }
     }
     
-    private void recursiveAppendChildren(Element containingXmlNode, QuadTreeNode quadTreeNode, int splitDepth, List<QuadTreeNode> splittingNodes)
+    private void recursiveAppendChildren(Element containingXmlNode, QuadTreeNode quadTreeNode, int splitDepth, int maxSplitDepth,
+            List<QuadTreeNode> splittingNodes)
     {
-        // System.out.println("depth " + quadTreeNode.getDepth());
-        if (quadTreeNode.getDepth() < splitDepth)
+        // System.out.println("depth " + quadTreeNode.depth);
+        if (quadTreeNode.depth < splitDepth || quadTreeNode.getMaxChildrenDepth() < maxSplitDepth)
         {
             Element childNode = quadTreeNode.asXML(false);
             containingXmlNode.appendChild(childNode);
@@ -386,7 +386,7 @@ public class QuadTreeManager
             {
                 for (QuadTreeNode childQuadTreeNode : quadTreeNode.children)
                 {
-                    recursiveAppendChildren(childNode, childQuadTreeNode, splitDepth, splittingNodes);
+                    recursiveAppendChildren(childNode, childQuadTreeNode, splitDepth, maxSplitDepth, splittingNodes);
                 }
             }
         }
@@ -396,14 +396,16 @@ public class QuadTreeManager
         }
     }
     
-    public void compute(SynchronizedCounter maxNodesToCompute) throws InterruptedException
+    public void compute(long quantity) throws InterruptedException
     {
+        SynchronizedCounter maxNodesToCompute = new SynchronizedCounter(quantity);
         long startTime = System.currentTimeMillis();
         
         List<Thread> threadsList = new ArrayList<>(threads);
         for (int i = 0; i < threads; ++i)
         {
             QuadTreeComputeThread thread = new QuadTreeComputeThread(this, maxNodesToCompute, computedNodes);
+            thread.setPriority(Thread.MIN_PRIORITY);
             threadsList.add(thread);
             thread.start();
         }
@@ -433,7 +435,7 @@ public class QuadTreeManager
     private static void recursiveComputeStatistics(QuadTreeNode node, Statistics statistics)
     {
         // System.out.println(node.getPath());
-        StatisticsData data = statistics.getStatisticsDataForDepth(node.getDepth());
+        StatisticsData data = statistics.getStatisticsDataForDepth(node.depth);
         data.addStatusCount(node.status, 1);
         data.addSurface(node.status, node.getSurface());
         

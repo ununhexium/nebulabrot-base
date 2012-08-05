@@ -215,28 +215,6 @@ public class MandelbrotRenderer
         return iter < maxIter;
     }
     
-    private double getImaginaryValue(int y)
-    {
-        double Y = (double) y;
-        double pxlHeight = (double) pixelHeight;
-        
-        double originY = viewPort.getCenter().getY(); // origin
-        double viewportHeight = viewPort.getHeight();
-        
-        return originY - viewportHeight / 2d + Y * viewportHeight / pxlHeight;
-    }
-    
-    private double getRealValue(int x)
-    {
-        double X = (double) x;
-        double pxlWidth = (double) pixelWidth;
-        
-        double originX = viewPort.getCenter().getX(); // origin
-        double viewportWidth = viewPort.getWidth();
-        
-        return originX - viewportWidth / 2d + X * viewportWidth / pxlWidth;
-    }
-    
     private int getYValue(double imaginary)
     {
         double pxlHeight = (double) pixelHeight;

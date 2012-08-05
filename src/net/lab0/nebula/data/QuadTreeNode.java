@@ -1,6 +1,4 @@
-
 package net.lab0.nebula.data;
-
 
 import java.util.Date;
 import java.util.List;
@@ -8,7 +6,6 @@ import java.util.List;
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
-
 
 /**
  * 
@@ -23,6 +20,7 @@ public class QuadTreeNode
     public QuadTreeNode[]   children;
     
     public double           minX, maxX, minY, maxY;
+    public int              depth;
     
     public PositionInParent positionInParent;
     public Status           status;
@@ -34,13 +32,28 @@ public class QuadTreeNode
     
     public QuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
+        this(minX, maxX, minY, maxY, null);
+    }
+    
+    public QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent)
+    {
+        if (parent != null)
+        {
+            this.parent = parent;
+            this.depth = parent.depth + 1;
+        }
+        else
+        {
+            this.depth = 0;
+            this.parent = null;
+        }
+        
         this.maxX = maxX;
         this.maxY = maxY;
         this.minX = minX;
         this.minY = minY;
         
         this.children = null;
-        this.parent = null;
         this.positionInParent = PositionInParent.Root;
         
         this.status = Status.VOID;
@@ -126,7 +139,20 @@ public class QuadTreeNode
         }
     }
     
-    public int getDepth()
+    public void updateDepth()
+    {
+        this.depth = this.computeDepth();
+        
+        if (children != null)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                children[i].updateDepth();
+            }
+        }
+    }
+    
+    private int computeDepth()
     {
         if (parent == null)
         {
@@ -134,7 +160,7 @@ public class QuadTreeNode
         }
         else
         {
-            return 1 + parent.getDepth();
+            return 1 + parent.computeDepth();
         }
     }
     
@@ -192,7 +218,7 @@ public class QuadTreeNode
                             break;
                     }
                     
-                    children[position.ordinal()] = new QuadTreeNode(minX, maxX, minY, maxY);
+                    children[position.ordinal()] = new QuadTreeNode(minX, maxX, minY, maxY, this);
                     children[position.ordinal()].parent = this;
                     children[position.ordinal()].children = null;
                     children[position.ordinal()].status = Status.VOID;
@@ -208,7 +234,7 @@ public class QuadTreeNode
     private boolean isChildNode(PositionInParent position)
     {
         return position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
-        || position.equals(PositionInParent.BottomRight);
+                || position.equals(PositionInParent.BottomRight);
     }
     
     private double getCenterY()
@@ -622,4 +648,16 @@ public class QuadTreeNode
         return flagDate;
     }
     
+    public int getMaxChildrenDepth()
+    {
+        if (children == null)
+        {
+            return depth;
+        }
+        else
+        {
+            return Math.max(Math.max(children[0].getMaxChildrenDepth(), children[1].getMaxChildrenDepth()),
+                    Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
+        }
+    }
 }

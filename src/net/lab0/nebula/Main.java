@@ -1,16 +1,15 @@
-
 package net.lab0.nebula;
-
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.SynchronizedCounter;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
-
 
 public class Main
 {
@@ -28,43 +27,47 @@ public class Main
         
         int maxDepth = 12;
         int pointsPerSide = 256;
-        int maxIter = 65536;
+        int maxIter = 4096;
         int diffIterLimit = 5;
         // bruteForceVSQuadTreeComparison(maxDepth, pointsPerSide, maxIter,
         // diffIterLimit);
         
-        // long startTimer = System.currentTimeMillis();
-        // Date now = new Date();
-        // Date stop = new Date(now.getTime() + 8 * 3600 * 1000);
-        //
-        // QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, 5);
-        //
-        // System.out.println("start " + now);
-        // System.out.println("end after " + stop);
-        //
-        // int version = 0;
-        // while (new Date().before(stop))
-        // {
-        // version++;
-        // manager.compute(new SynchronizedCounter(100000));
-        // manager.saveToXML(
-        // FileSystems.getDefault().getPath(".", "out", "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v" + version), true, 6);
-        //
-        // Statistics statistics = manager.computeStatistics();
-        // System.out.println(statistics);
-        // }
-        //
-        // long endTimer = System.currentTimeMillis();
-        //
-        // Statistics statistics = manager.computeStatistics();
-        // System.out.println(statistics);
-        //
-        // System.out.println("Computing time = " + (endTimer - startTimer));
+        long startTimer = System.currentTimeMillis();
+        GregorianCalendar cal = new GregorianCalendar(2012, Calendar.AUGUST, 5, 21, 35);
+        Date stop = cal.getTime();
         
-        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath(".", "out",
-        "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v3"));
+        QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, 7);
         
-        manager.saveToXML(FileSystems.getDefault().getPath(".", "out", "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v4"), true, 100);
+        System.out.println("start " + new Date());
+        System.out.println("end after " + stop);
+        
+        long computedNodes = 0;
+        long nodesPerCycle = 10000;
+        while (new Date().before(stop))
+        {
+            manager.compute(1000);
+            computedNodes+=nodesPerCycle;
+            System.out.println("Nodes computed so far : "+computedNodes);
+            
+            Statistics statistics = manager.computeStatistics();
+            System.out.println(statistics);
+        }
+        manager.saveToXML(
+                FileSystems.getDefault().getPath("F:\\", "dev", "nebula", "tree",
+                        "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v" + 1), true, 6);
+        
+        long endTimer = System.currentTimeMillis();
+        
+        Statistics statistics = manager.computeStatistics();
+        System.out.println(statistics);
+        
+        System.out.println("Computing time = " + (endTimer - startTimer));
+        
+        // QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("M:\\p256i65536d5D12v5"));
+        
+        // QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, 5, 5, 6);
+        // manager.compute(1000000);
+        // manager.saveToXML(FileSystems.getDefault().getPath("M:\\p256i65536d5D12v6"), true, 3);
         
         System.out.println("End");
     }
