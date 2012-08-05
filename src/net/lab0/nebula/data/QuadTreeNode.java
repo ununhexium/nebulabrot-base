@@ -2,6 +2,7 @@
 package net.lab0.nebula.data;
 
 
+import java.util.Date;
 import java.util.List;
 
 import nu.xom.Attribute;
@@ -18,15 +19,18 @@ import nu.xom.Elements;
  */
 public class QuadTreeNode
 {
-    public QuadTreeNode parent;
-    public QuadTreeNode[] children;
+    public QuadTreeNode     parent;
+    public QuadTreeNode[]   children;
     
-    public double minX, maxX, minY, maxY;
+    public double           minX, maxX, minY, maxY;
     
     public PositionInParent positionInParent;
-    public Status status;
-    public int min = -1;
-    public int max = -1;
+    public Status           status;
+    public int              min = -1;
+    public int              max = -1;
+    
+    private boolean         flagedForComputing;
+    private Date            flagDate;
     
     public QuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
@@ -598,4 +602,24 @@ public class QuadTreeNode
         
         return false;
     }
+    
+    public synchronized void flagForComputing()
+    {
+        if (!flagedForComputing)
+        {
+            flagedForComputing = true;
+            flagDate = new Date();
+        }
+    }
+    
+    public boolean isFlagedForComputing()
+    {
+        return flagedForComputing;
+    }
+    
+    public Date getFlagDate()
+    {
+        return flagDate;
+    }
+    
 }
