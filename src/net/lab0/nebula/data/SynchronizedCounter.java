@@ -21,9 +21,19 @@ public class SynchronizedCounter
         ++count;
     }
     
+    public synchronized void increment(int quantity)
+    {
+        count += quantity;
+    }
+    
     public synchronized void decrement()
     {
         --count;
+    }
+    
+    public synchronized void decrement(int quantity)
+    {
+        count -= quantity;
     }
     
     public boolean isNonZero()
@@ -35,7 +45,7 @@ public class SynchronizedCounter
     {
         return count > 0;
     }
-
+    
     public long getValue()
     {
         return count;
