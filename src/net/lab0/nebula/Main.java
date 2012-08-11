@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 
 import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.Statistics;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
@@ -26,7 +27,7 @@ public class Main
         
         int maxDepth = 12;
         int pointsPerSide = 256;
-        int maxIter = 65536;
+        int maxIter = 4096;
         int diffIterLimit = 5;
         // bruteForceVSQuadTreeComparison(maxDepth, pointsPerSide, maxIter,
         // diffIterLimit);
@@ -37,21 +38,21 @@ public class Main
         
         int threads = Runtime.getRuntime().availableProcessors();
         System.out.println("Using " + threads + " threads");
-        QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, threads);
+        QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, 1);
         
         // System.out.println("start " + new Date());
         // System.out.println("end after " + stop);
         
         long computedNodes = 0;
-        long nodesPerCycle = 65536;
-        while (computedNodes < nodesPerCycle * 256)
+        long nodesPerCycle = 1000;
+        while (computedNodes < nodesPerCycle * 1)
         {
             manager.compute(nodesPerCycle);
             computedNodes += nodesPerCycle;
             System.out.println("Nodes computed so far : " + computedNodes);
             
-             Statistics statistics = manager.computeStatistics();
-             System.out.println(statistics);
+            Statistics statistics = manager.computeStatistics();
+            System.out.println(statistics);
         }
         manager.saveToXML(FileSystems.getDefault().getPath(".", "out", "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v" + 1),
         true, 6);

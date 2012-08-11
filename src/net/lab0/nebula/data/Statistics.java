@@ -1,5 +1,5 @@
 
-package net.lab0.nebula;
+package net.lab0.nebula.data;
 
 
 import java.util.ArrayList;
@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.lab0.nebula.data.StatisticsData;
 
 
 public class Statistics

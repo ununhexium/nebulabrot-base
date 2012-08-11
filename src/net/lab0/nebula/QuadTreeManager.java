@@ -16,6 +16,7 @@ import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
 import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.Statistics;
 import net.lab0.nebula.data.StatisticsData;
 import net.lab0.nebula.data.Status;
 import net.lab0.nebula.data.SynchronizedCounter;
@@ -32,20 +33,23 @@ import nu.xom.ValidityException;
 
 public class QuadTreeManager
 {
-    private QuadTreeNode        root;
-    private int                 pointsPerSide      = 100;
-    private int                 maxIter            = 512;
-    private int                 diffIterLimit      = 5;
-    private int                 maxDepth           = 6;
-    private long                totalComputingTime = 0;
-    private int                 searchCounter      = 0;
-    private long                searchTime         = 0;
-    private SynchronizedCounter computedNodes;
-    Queue<List<QuadTreeNode>>   nodesList          = new LinkedList<>();
+    private QuadTreeNode              root;
+    private int                       pointsPerSide      = 100;
+    private int                       maxIter            = 512;
+    private int                       diffIterLimit      = 5;
+    private int                       maxDepth           = 6;
+    private long                      totalComputingTime = 0;
+    private SaveMode                  saveMode;
+    private int                       filesCount;
     
-    private int                 threads;
-    private boolean             stop               = false;
-    private Semaphore           waitingThreads;
+    private int                       searchCounter      = 0;
+    private long                      searchTime         = 0;
+    private SynchronizedCounter       computedNodes;
+    private Queue<List<QuadTreeNode>> nodesList          = new LinkedList<>();
+    
+    private int                       threads;
+    private boolean                   stop               = false;
+    private Semaphore                 waitingThreads;
     
     public QuadTreeManager(QuadTreeNode root, int pointsPerSide, int maxIter, int diffIterLimit, int maxDepth, int threads)
     {
@@ -76,8 +80,10 @@ public class QuadTreeManager
         this.computedNodes = new SynchronizedCounter(Long.parseLong(index.getAttributeValue("computedNodes")));
         
         String mode = index.getAttributeValue("mode");
-        if ("oneFile".equals(mode))
+        if (SaveMode.ONE_FILE.modeName.equals(mode))
         {
+            saveMode = SaveMode.ONE_FILE;
+            filesCount = 2;
             Builder dataParser = new Builder();
             File dataFile = new File(inputFolder.toFile(), index.getFirstChildElement("file").getAttributeValue("path"));
             System.out.println("Opening " + dataFile.getPath());
@@ -87,8 +93,9 @@ public class QuadTreeManager
             this.root = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), null);
             this.root.updateDepth();
         }
-        else if ("recursive".equals(mode))
+        else if (SaveMode.RECURSIVE.modeName.equals(mode))
         {
+            saveMode = SaveMode.RECURSIVE;
             Elements files = index.getChildElements("file");
             ArrayList<Pair<File, String>> filesAndParent = new ArrayList<>(files.size());
             for (int i = 0; i < files.size(); ++i)
@@ -98,6 +105,7 @@ public class QuadTreeManager
                 String quadTreeParentPath = file.getAttributeValue("parent");
                 filesAndParent.add(new Pair<File, String>(xmlFile, quadTreeParentPath));
             }
+            filesCount = filesAndParent.size() + 1;
             
             Pair<File, String> rootDataFile = filesAndParent.remove(0);
             Builder dataParser = new Builder();
@@ -307,7 +315,7 @@ public class QuadTreeManager
             serializer.setMaxLength(0);
             serializer.write(dataDocument);
             
-            index.addAttribute(new Attribute("mode", "oneFile"));
+            index.addAttribute(new Attribute("mode", SaveMode.ONE_FILE.modeName));
             Element file = new Element("file");
             file.addAttribute(new Attribute("parent", "null"));
             file.addAttribute(new Attribute("path", "data0.xml"));
@@ -446,6 +454,21 @@ public class QuadTreeManager
     public long getSearchTime()
     {
         return searchTime;
+    }
+    
+    public long getComputedNodesCount()
+    {
+        return computedNodes.getValue();
+    }
+    
+    public SaveMode getSaveMode()
+    {
+        return saveMode;
+    }
+    
+    public int getFilesCount()
+    {
+        return filesCount;
     }
     
 }
