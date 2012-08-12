@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 
-
 public class Statistics
 {
     private Map<Integer, StatisticsData> statisticsDepth = new HashMap<>();
@@ -24,6 +23,20 @@ public class Statistics
         }
         
         return data;
+    }
+    
+    public int getMaxDepth()
+    {
+        int max = -1;
+        for (Integer i : statisticsDepth.keySet())
+        {
+//            System.out.println(i);
+            if (i > max)
+            {
+                max = i;
+            }
+        }
+        return max;
     }
     
     @Override

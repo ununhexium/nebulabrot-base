@@ -5,6 +5,7 @@ package net.lab0.nebula.data;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.lab0.nebula.enums.Status;
 import net.lab0.tools.NumberBox;
 
 
@@ -35,6 +36,32 @@ public class StatisticsData
             statusCount.put(status, box);
         }
         box.value += quantity;
+    }
+    
+    public int getCountFor(Status status)
+    {
+        NumberBox<Integer> box = statusCount.get(status);
+        if (box != null)
+        {
+            return box.value;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    
+    public double getSurfaceFor(Status status)
+    {
+        NumberBox<Double> box = surfaces.get(status);
+        if (box != null)
+        {
+            return box.value;
+        }
+        else
+        {
+            return 0d;
+        }
     }
     
     @Override

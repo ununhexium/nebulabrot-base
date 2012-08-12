@@ -1,11 +1,16 @@
+
 package net.lab0.nebula.data;
+
 
 import java.util.Date;
 import java.util.List;
 
+import net.lab0.nebula.enums.PositionInParent;
+import net.lab0.nebula.enums.Status;
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
+
 
 /**
  * 
@@ -72,7 +77,7 @@ public class QuadTreeNode
         this.minY = Double.parseDouble(nodeElement.getAttributeValue("minY"));
         this.maxY = Double.parseDouble(nodeElement.getAttributeValue("maxY"));
         
-        String positionInParentString = nodeElement.getAttributeValue("positionInParent");
+        String positionInParentString = nodeElement.getAttributeValue("pos");
         
         switch (positionInParentString)
         {
@@ -128,7 +133,7 @@ public class QuadTreeNode
         if (childNodes.size() > 0)
         {
             this.splitNode();
-            for (int i = 0; i < 4; ++i)
+            for (int i = 0; i < childNodes.size(); ++i)
             {
                 QuadTreeNode childNode = new QuadTreeNode(childNodes.get(i), this);
                 if (isChildNode(childNode.positionInParent))
@@ -234,7 +239,7 @@ public class QuadTreeNode
     private boolean isChildNode(PositionInParent position)
     {
         return position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
-                || position.equals(PositionInParent.BottomRight);
+        || position.equals(PositionInParent.BottomRight);
     }
     
     private double getCenterY()
@@ -480,7 +485,7 @@ public class QuadTreeNode
         thisNode.addAttribute(new Attribute("minY", "" + minY));
         thisNode.addAttribute(new Attribute("maxY", "" + maxY));
         
-        thisNode.addAttribute(new Attribute("positionInParent", positionInParent.toString()));
+        thisNode.addAttribute(new Attribute("pos", positionInParent.toString()));
         thisNode.addAttribute(new Attribute("status", status.toString()));
         
         // TODO : rm debug
@@ -657,7 +662,40 @@ public class QuadTreeNode
         else
         {
             return Math.max(Math.max(children[0].getMaxChildrenDepth(), children[1].getMaxChildrenDepth()),
-                    Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
+            Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
+        }
+    }
+    
+    public void getLeafNodes(List<QuadTreeNode> leafNodes)
+    {
+        if (this.children == null)
+        {
+            leafNodes.add(this);
+        }
+        else
+        {
+            for (QuadTreeNode child : children)
+            {
+                child.getLeafNodes(leafNodes);
+            }
+        }
+    }
+    
+    public void getLeafNodes(List<QuadTreeNode> leafNodes, List<Status> status)
+    {
+        if (this.children == null)
+        {
+            if (status.contains(this.status))
+            {
+                leafNodes.add(this);
+            }
+        }
+        else
+        {
+            for (QuadTreeNode child : children)
+            {
+                child.getLeafNodes(leafNodes);
+            }
         }
     }
 }
