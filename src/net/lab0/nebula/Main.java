@@ -5,6 +5,7 @@ package net.lab0.nebula;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 
+import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.Statistics;
 import nu.xom.ParsingException;
