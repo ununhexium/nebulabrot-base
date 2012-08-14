@@ -1,6 +1,4 @@
-
 package net.lab0.nebula.data;
-
 
 import java.util.Date;
 import java.util.List;
@@ -10,7 +8,6 @@ import net.lab0.nebula.enums.Status;
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
-
 
 /**
  * 
@@ -37,18 +34,20 @@ public class QuadTreeNode
     
     public QuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
-        this(minX, maxX, minY, maxY, null);
+        this(minX, maxX, minY, maxY, null, PositionInParent.Root);
     }
     
-    public QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent)
+    public QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent, PositionInParent positionInParent)
     {
         if (parent != null)
         {
+            this.positionInParent = positionInParent;
             this.parent = parent;
             this.depth = parent.depth + 1;
         }
         else
         {
+            this.positionInParent = PositionInParent.Root;
             this.depth = 0;
             this.parent = null;
         }
@@ -59,7 +58,6 @@ public class QuadTreeNode
         this.minY = minY;
         
         this.children = null;
-        this.positionInParent = PositionInParent.Root;
         
         this.status = Status.VOID;
     }
@@ -223,14 +221,7 @@ public class QuadTreeNode
                             break;
                     }
                     
-                    children[position.ordinal()] = new QuadTreeNode(minX, maxX, minY, maxY, this);
-                    children[position.ordinal()].parent = this;
-                    children[position.ordinal()].children = null;
-                    children[position.ordinal()].status = Status.VOID;
-                    children[position.ordinal()].min = -1;
-                    children[position.ordinal()].max = -1;
-                    
-                    children[position.ordinal()].positionInParent = position;
+                    children[position.ordinal()] = new QuadTreeNode(minX, maxX, minY, maxY, this, position);
                 }
             }
         }
@@ -239,7 +230,7 @@ public class QuadTreeNode
     private boolean isChildNode(PositionInParent position)
     {
         return position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
-        || position.equals(PositionInParent.BottomRight);
+                || position.equals(PositionInParent.BottomRight);
     }
     
     private double getCenterY()
@@ -254,12 +245,127 @@ public class QuadTreeNode
     
     public void testInsideMandelbrotSet(int pointsPerSide, int maxIter)
     {
-        double[] array = borderPointsAsDouble(pointsPerSide);
+        double minX = this.minX;
+        double maxX = this.maxX;
+        double minY = this.minY;
+        double maxY = this.maxY;
         
-        for (int i = 0; i < array.length / 2; ++i)
+        double step = (maxX - minX) / (double) (pointsPerSide - 1);
+        
+        // bottom side of the rectangle
+        for (int i = 0; i < pointsPerSide; i++)
         {
-            double real = array[2 * i];
-            double img = array[2 * i + 1];
+            double real = (minX + (double) i * step);
+            double img = minY;
+            
+            double realsqr = real * real;
+            double imgsqr = img * img;
+            
+            double real1 = real;
+            double img1 = img;
+            double real2, img2;
+            
+            int iter = 0;
+            while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+            {
+                real2 = real1 * real1 - img1 * img1 + real;
+                img2 = 2 * real1 * img1 + img;
+                
+                real1 = real2 * real2 - img2 * img2 + real;
+                img1 = 2 * real2 * img2 + img;
+                
+                realsqr = real2 * real2;
+                imgsqr = img2 * img2;
+                real1 = realsqr - imgsqr + real;
+                img1 = 2 * real2 * img2 + img;
+                
+                iter += 2;
+            }
+            
+            if (iter < maxIter)
+            {
+                return;
+            }
+        }
+        
+        // top side of the rectangle
+        for (int i = 0; i < pointsPerSide; ++i)
+        {
+            double real = (minX + (double) i * step);
+            double img = maxY;
+            
+            double realsqr = real * real;
+            double imgsqr = img * img;
+            
+            double real1 = real;
+            double img1 = img;
+            double real2, img2;
+            
+            int iter = 0;
+            while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+            {
+                real2 = real1 * real1 - img1 * img1 + real;
+                img2 = 2 * real1 * img1 + img;
+                
+                real1 = real2 * real2 - img2 * img2 + real;
+                img1 = 2 * real2 * img2 + img;
+                
+                realsqr = real2 * real2;
+                imgsqr = img2 * img2;
+                real1 = realsqr - imgsqr + real;
+                img1 = 2 * real2 * img2 + img;
+                
+                iter += 2;
+            }
+            
+            if (iter < maxIter)
+            {
+                return;
+            }
+        }
+        
+        // left side of the rectangle
+        for (int i = 0; i < pointsPerSide; ++i)
+        {
+            double real = (minX);
+            double img = (minY + (double) i * step);
+            
+            double realsqr = real * real;
+            double imgsqr = img * img;
+            
+            double real1 = real;
+            double img1 = img;
+            double real2, img2;
+            
+            int iter = 0;
+            while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+            {
+                real2 = real1 * real1 - img1 * img1 + real;
+                img2 = 2 * real1 * img1 + img;
+                
+                real1 = real2 * real2 - img2 * img2 + real;
+                img1 = 2 * real2 * img2 + img;
+                
+                realsqr = real2 * real2;
+                imgsqr = img2 * img2;
+                real1 = realsqr - imgsqr + real;
+                img1 = 2 * real2 * img2 + img;
+                
+                iter += 2;
+            }
+            
+            if (iter < maxIter)
+            {
+                return;
+            }
+        }
+        
+        // bottom side of the rectangle
+        for (int i = 0; i < pointsPerSide; ++i)
+        {
+            double real = (maxX);
+            double img = (minY + (double) i * step);
+            
             double realsqr = real * real;
             double imgsqr = img * img;
             
@@ -293,60 +399,66 @@ public class QuadTreeNode
         this.status = Status.INSIDE;
     }
     
-    private double[] borderPointsAsDouble(int pointsPerSide)
+    // private double[] borderPointsAsDouble(int pointsPerSide)
+    // {
+    // double minX = this.minX;
+    // double maxX = this.maxX;
+    // double minY = this.minY;
+    // double maxY = this.maxY;
+    //
+    // double[] destArray = new double[pointsPerSide * 8];
+    //
+    // double step = (maxX - minX) / (double) (pointsPerSide - 1);
+    //
+    // // bottom side of the rectangle
+    // int baseIndex = 0;
+    // for (int i = 0; i < pointsPerSide; i++)
+    // {
+    // destArray[baseIndex + 2 * i] = (minX + (double) i * step);
+    // destArray[baseIndex + 2 * i + 1] = (minY);
+    // }
+    // baseIndex += 2 * pointsPerSide;
+    //
+    // // top side of the rectangle
+    // for (int i = 0; i < pointsPerSide; ++i)
+    // {
+    // destArray[baseIndex + 2 * i] = (minX + (double) i * step);
+    // destArray[baseIndex + 2 * i + 1] = (maxY);
+    // }
+    // baseIndex += 2 * pointsPerSide;
+    //
+    // // left side of the rectangle
+    // for (int i = 0; i < pointsPerSide; ++i)
+    // {
+    // destArray[baseIndex + 2 * i] = (minX);
+    // destArray[baseIndex + 2 * i + 1] = (minY + (double) i * step);
+    // }
+    // baseIndex += 2 * pointsPerSide;
+    //
+    // // bottom side of the rectangle
+    // for (int i = 0; i < pointsPerSide; ++i)
+    // {
+    // destArray[baseIndex + 2 * i] = (maxX);
+    // destArray[baseIndex + 2 * i + 1] = (minY + (double) i * step);
+    // }
+    //
+    // return destArray;
+    // }
+    
+    public void testOutsideMandelbrotSet(int pointsPerSide, int maxIter, int diffIterLimit)
     {
+        // double[] array = innerPointsAsDouble(pointsPerSide);
+        
         double minX = this.minX;
         double maxX = this.maxX;
         double minY = this.minY;
         double maxY = this.maxY;
         
-        double[] destArray = new double[pointsPerSide * 8];
-        
-        double step = (maxX - minX) / (double) (pointsPerSide - 1);
-        
-        // bottom side of the rectangle
-        int baseIndex = 0;
-        for (int i = 0; i < pointsPerSide; i++)
-        {
-            destArray[baseIndex + 2 * i] = (minX + (double) i * step);
-            destArray[baseIndex + 2 * i + 1] = (minY);
-        }
-        baseIndex += 2 * pointsPerSide;
-        
-        // top side of the rectangle
-        for (int i = 0; i < pointsPerSide; ++i)
-        {
-            destArray[baseIndex + 2 * i] = (minX + (double) i * step);
-            destArray[baseIndex + 2 * i + 1] = (maxY);
-        }
-        baseIndex += 2 * pointsPerSide;
-        
-        // left side of the rectangle
-        for (int i = 0; i < pointsPerSide; ++i)
-        {
-            destArray[baseIndex + 2 * i] = (minX);
-            destArray[baseIndex + 2 * i + 1] = (minY + (double) i * step);
-        }
-        baseIndex += 2 * pointsPerSide;
-        
-        // bottom side of the rectangle
-        for (int i = 0; i < pointsPerSide; ++i)
-        {
-            destArray[baseIndex + 2 * i] = (maxX);
-            destArray[baseIndex + 2 * i + 1] = (minY + (double) i * step);
-        }
-        
-        return destArray;
-    }
-    
-    public void testOutsideMandelbrotSet(int pointsPerSide, int maxIter, int diffIterLimit)
-    {
-        double[] array = innerPointsAsDouble(pointsPerSide);
         int min, max;
         // init min and max iter
         {
-            double real = array[0];
-            double img = array[1];
+            double real = minX;
+            double img = minY;
             double realsqr = real * real;
             double imgsqr = img * img;
             
@@ -374,51 +486,59 @@ public class QuadTreeNode
             max = iter;
         }
         
-        for (int i = 0; i < array.length / 2; ++i)
+        double stepX = (maxX - minX) / (double) (pointsPerSide - 1);
+        double stepY = (maxY - minY) / (double) (pointsPerSide - 1);
+        
+        // bottom side of the rectangle
+        for (int i = 0; i < pointsPerSide; i++)
         {
-            double real = array[2 * i];
-            double img = array[2 * i + 1];
-            double realsqr = real * real;
-            double imgsqr = img * img;
-            
-            double real1 = real;
-            double img1 = img;
-            double real2, img2;
-            
-            int iter = 0;
-            while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+            double real = minX + (double) i * stepX;
+            for (int j = 0; j < pointsPerSide; ++j)
             {
-                real2 = real1 * real1 - img1 * img1 + real;
-                img2 = 2 * real1 * img1 + img;
+                double img = (minY + (double) j * stepY);
                 
-                real1 = real2 * real2 - img2 * img2 + real;
-                img1 = 2 * real2 * img2 + img;
+                double realsqr = real * real;
+                double imgsqr = img * img;
                 
-                realsqr = real2 * real2;
-                imgsqr = img2 * img2;
-                real1 = realsqr - imgsqr + real;
-                img1 = 2 * real2 * img2 + img;
+                double real1 = real;
+                double img1 = img;
+                double real2, img2;
                 
-                iter += 2;
-            }
-            
-            if (iter < min)
-            {
-                min = iter;
-            }
-            else if (iter > max)
-            {
-                max = iter;
-            }
-            
-            // System.out.println("" + real + "+i" + img + " iter=" + iter +
-            // " diff=" + (max - min + 1));
-            
-            if ((max - min + 1) > diffIterLimit)
-            {
-                this.status = Status.BROWSED;
-                this.min = min;
-                return;
+                int iter = 0;
+                while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+                {
+                    real2 = real1 * real1 - img1 * img1 + real;
+                    img2 = 2 * real1 * img1 + img;
+                    
+                    real1 = real2 * real2 - img2 * img2 + real;
+                    img1 = 2 * real2 * img2 + img;
+                    
+                    realsqr = real2 * real2;
+                    imgsqr = img2 * img2;
+                    real1 = realsqr - imgsqr + real;
+                    img1 = 2 * real2 * img2 + img;
+                    
+                    iter += 2;
+                }
+                
+                if (iter < min)
+                {
+                    min = iter;
+                }
+                else if (iter > max)
+                {
+                    max = iter;
+                }
+                
+                // System.out.println("" + real + "+i" + img + " iter=" + iter +
+                // " diff=" + (max - min + 1));
+                
+                if ((max - min + 1) > diffIterLimit)
+                {
+                    this.status = Status.BROWSED;
+                    this.min = min;
+                    return;
+                }
             }
         }
         
@@ -427,39 +547,41 @@ public class QuadTreeNode
         this.max = max;
     }
     
-    private double[] innerPointsAsDouble(int pointsPerSide)
-    {
-        double minX = this.minX;
-        double maxX = this.maxX;
-        double minY = this.minY;
-        double maxY = this.maxY;
-        
-        double stepX = (maxX - minX) / (double) (pointsPerSide - 1);
-        double stepY = (maxY - minY) / (double) (pointsPerSide - 1);
-        
-        double[] array = new double[pointsPerSide * pointsPerSide * 2];
-        
-        // bottom side of the rectangle
-        for (int i = 0; i < pointsPerSide; i++)
-        {
-            int base = i * pointsPerSide;
-            double xVal = minX + (double) i * stepX;
-            for (int j = 0; j < pointsPerSide; ++j)
-            {
-                array[2 * (base + j)] = xVal;
-                array[2 * (base + j) + 1] = (minY + (double) j * stepY);
-            }
-        }
-        
-        return array;
-    }
+    // private double[] innerPointsAsDouble(int pointsPerSide)
+    // {
+    // double minX = this.minX;
+    // double maxX = this.maxX;
+    // double minY = this.minY;
+    // double maxY = this.maxY;
+    //
+    // double stepX = (maxX - minX) / (double) (pointsPerSide - 1);
+    // double stepY = (maxY - minY) / (double) (pointsPerSide - 1);
+    //
+    // double[] array = new double[pointsPerSide * pointsPerSide * 2];
+    //
+    // // bottom side of the rectangle
+    // for (int i = 0; i < pointsPerSide; i++)
+    // {
+    // int base = i * pointsPerSide;
+    // double xVal = minX + (double) i * stepX;
+    // for (int j = 0; j < pointsPerSide; ++j)
+    // {
+    // array[2 * (base + j)] = xVal;
+    // array[2 * (base + j) + 1] = (minY + (double) j * stepY);
+    // }
+    // }
+    //
+    // return array;
+    // }
     
     public void computeStatus(int pointsPerSide, int maxIter, int diffIterLimit)
     {
+        // System.out.println(Thread.currentThread().getName() + " computing testInsideMandelbrotSet");
         this.testInsideMandelbrotSet(pointsPerSide, maxIter);
         // System.out.println("After inside test " + this.status);
         if (this.status != Status.INSIDE)
         {
+            // System.out.println(Thread.currentThread().getName() + " computing testOutsideMandelbrotSet");
             this.testOutsideMandelbrotSet(pointsPerSide, maxIter, diffIterLimit);
             // System.out.println("After outside test " + this.status);
         }
@@ -662,7 +784,7 @@ public class QuadTreeNode
         else
         {
             return Math.max(Math.max(children[0].getMaxChildrenDepth(), children[1].getMaxChildrenDepth()),
-            Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
+                    Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
         }
     }
     
@@ -694,7 +816,7 @@ public class QuadTreeNode
         {
             for (QuadTreeNode child : children)
             {
-                child.getLeafNodes(leafNodes);
+                child.getLeafNodes(leafNodes, status);
             }
         }
     }

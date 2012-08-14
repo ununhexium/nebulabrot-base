@@ -1,6 +1,4 @@
-
 package net.lab0.nebula.core;
-
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -31,7 +29,6 @@ import nu.xom.ParsingException;
 import nu.xom.Serializer;
 import nu.xom.ValidityException;
 
-
 public class QuadTreeManager
 {
     private QuadTreeNode              root;
@@ -48,7 +45,7 @@ public class QuadTreeManager
     private SynchronizedCounter       computedNodes;
     private Queue<List<QuadTreeNode>> nodesList          = new LinkedList<>();
     
-    private int                       threads;
+    private int                       threads            = 1;
     private boolean                   stop               = false;
     
     public QuadTreeManager(QuadTreeNode root, int pointsPerSide, int maxIter, int diffIterLimit, int maxDepth, int threads)
@@ -64,8 +61,7 @@ public class QuadTreeManager
         this.computedNodes = new SynchronizedCounter(0);
     }
     
-    public QuadTreeManager(Path inputFolder)
-    throws ValidityException, ParsingException, IOException
+    public QuadTreeManager(Path inputFolder) throws ValidityException, ParsingException, IOException
     {
         Builder parser = new Builder();
         Document doc = parser.build(new File(inputFolder.toFile(), "index.xml"));
@@ -142,7 +138,7 @@ public class QuadTreeManager
         {
             long startTime = System.currentTimeMillis();
             searchCounter++;
-            System.out.println(Thread.currentThread().getName() + " searching nodes");
+            // System.out.println(Thread.currentThread().getName() + " searching nodes");
             List<QuadTreeNode> tmpList = new ArrayList<>();
             root.getNodesByStatus(tmpList, Arrays.asList(Status.BROWSED));
             
@@ -158,10 +154,9 @@ public class QuadTreeManager
             boolean nodesAvailable = false;
             root.getNodesByStatus(tmpList, Arrays.asList(Status.VOID));
             
-            int blockSize = 1024;
+            int blockSize = 16;
             int currentSize = 0;
             List<QuadTreeNode> nodes = new ArrayList<>(blockSize);
-            nodesList.add(nodes);
             for (QuadTreeNode n : tmpList)
             {
                 if (n.depth <= maxComputationDepth)
@@ -173,9 +168,9 @@ public class QuadTreeManager
                         currentSize++;
                         if (currentSize >= blockSize)
                         {
+                            nodesList.add(nodes);
                             nodes = new ArrayList<>(blockSize);
                             currentSize = 0;
-                            nodesList.add(nodes);
                         }
                     }
                 }
@@ -184,6 +179,8 @@ public class QuadTreeManager
             {
                 throw new NoMoreNodesToCompute();
             }
+            nodesList.add(nodes);
+            
             long endTime = System.currentTimeMillis();
             
             searchTime += (endTime - startTime);
@@ -331,7 +328,7 @@ public class QuadTreeManager
     }
     
     private void recursiveAppendChildren(Element containingXmlNode, QuadTreeNode quadTreeNode, int splitDepth, int maxSplitDepth,
-    List<QuadTreeNode> splittingNodes)
+            List<QuadTreeNode> splittingNodes)
     {
         // System.out.println("depth " + quadTreeNode.depth);
         if (quadTreeNode.depth < splitDepth || quadTreeNode.getMaxChildrenDepth() < maxSplitDepth)
@@ -353,7 +350,13 @@ public class QuadTreeManager
         }
     }
     
-    public void compute(long quantity) throws InterruptedException
+    /**
+     * 
+     * @param quantity
+     * @return true if there is more nodes to compute
+     * @throws InterruptedException
+     */
+    public boolean compute(long quantity) throws InterruptedException
     {
         SynchronizedCounter maxNodesToCompute = new SynchronizedCounter(quantity);
         long startTime = System.currentTimeMillis();
@@ -375,6 +378,18 @@ public class QuadTreeManager
         long endTime = System.currentTimeMillis();
         
         totalComputingTime += (endTime - startTime);
+        
+        try
+        {
+            List<QuadTreeNode> list = getNextNodeToCompute(getMaxDepth());
+            System.out.println("More nodes : "+list.size());
+            return true;
+        }
+        catch (NoMoreNodesToCompute e)
+        {
+            System.out.println("No node left");
+            return false;
+        }
     }
     
     public Statistics computeStatistics()
@@ -468,6 +483,16 @@ public class QuadTreeManager
     public int getFilesCount()
     {
         return filesCount;
+    }
+    
+    public int getThreads()
+    {
+        return threads;
+    }
+    
+    public void setThreads(int threads)
+    {
+        this.threads = threads;
     }
     
 }

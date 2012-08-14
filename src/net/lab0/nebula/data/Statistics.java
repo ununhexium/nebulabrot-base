@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
+//TODO : min iter, max iter, histo iter
 public class Statistics
 {
     private Map<Integer, StatisticsData> statisticsDepth = new HashMap<>();

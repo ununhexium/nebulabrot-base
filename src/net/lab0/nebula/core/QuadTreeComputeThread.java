@@ -1,17 +1,12 @@
-
 package net.lab0.nebula.core;
 
-
-import java.util.ArrayList;
 import java.util.List;
 
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.SynchronizedCounter;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
 
-
-public class QuadTreeComputeThread
-extends Thread
+public class QuadTreeComputeThread extends Thread
 {
     private static int          idCounter;
     
@@ -39,34 +34,37 @@ extends Thread
                 
                 if (!nodes.isEmpty())
                 {
-                    List<Long> times = new ArrayList<>(nodes.size());
                     int computed = 0;
-                    System.out.println("Retrieved " + nodes.size() + " nodes");
+//                    System.out.println("Retrieved " + nodes.size() + " nodes. Still " +maxNodesToCompute.getValue()+" nodes to compute");
                     
+                    int pointsPerSide = quadTreeManager.getPointsPerSide();
+                    int maxIter = quadTreeManager.getMaxIter();
+                    int diffIterLimit = quadTreeManager.getDiffIterLimit();
+                    
+                    long start = System.currentTimeMillis();
                     for (QuadTreeNode node : nodes)
                     {
                         if (node != null)
                         {
-                            // System.out.println(Thread.currentThread().getName() + " computing");
+//                             System.out.println(Thread.currentThread().getName() + " computing");
                             // System.out.println(getName()+" "+node.getPath());
-                            long start = System.currentTimeMillis();
-                            node.computeStatus(quadTreeManager.getPointsPerSide(), quadTreeManager.getMaxIter(), quadTreeManager.getDiffIterLimit());
+                            node.computeStatus(pointsPerSide, maxIter, diffIterLimit);
                             computed++;
-                            long end = System.currentTimeMillis();
-                            times.add(end - start);
+                            // times.add(end - start);
                             // System.out.println("" + (end - start));
                         }
                     }
+                    long end = System.currentTimeMillis();
                     
                     maxNodesToCompute.decrement(computed);
                     computedNodes.increment(computed);
                     
-                    long total = 0;
-                    for (Long l : times)
-                    {
-                        total += l;
-                    }
-                    System.out.println("Mean time = " + total / 1024);
+                    // long total = 0;
+                    // for (Long l : times)
+                    // {
+                    // total += l;
+                    // }
+                    System.out.println("Total time = " + (end - start) + ". Still " +maxNodesToCompute.getValue()+" nodes to compute");
                 }
                 else
                 {
@@ -84,6 +82,7 @@ extends Thread
             }
             catch (NoMoreNodesToCompute e)
             {
+                System.out.println("Mo more nodes to compute");
                 break;
             }
         }

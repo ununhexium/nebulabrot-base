@@ -1,6 +1,4 @@
-
 package net.lab0.nebula.core;
-
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,17 +10,16 @@ import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.listener.MandelbrotRendererListener;
-import net.lab0.tools.geom.Rectangle;
-
+import net.lab0.tools.geom.RectangleInterface;
 
 public class MandelbrotRenderer
 {
-    private int               pixelWidth;
-    private int               pixelHeight;
-    private Rectangle         viewPort;
-    private EventListenerList eventListenerList = new EventListenerList();
+    private int                pixelWidth;
+    private int                pixelHeight;
+    private RectangleInterface viewPort;
+    private EventListenerList  eventListenerList = new EventListenerList();
     
-    public MandelbrotRenderer(int pixelWidth, int pixelHeight, Rectangle viewPort)
+    public MandelbrotRenderer(int pixelWidth, int pixelHeight, RectangleInterface viewPort)
     {
         super();
         this.pixelWidth = pixelWidth;
@@ -100,7 +97,7 @@ public class MandelbrotRenderer
                     {
                         int X = getXValue(real1);
                         int Y = getYValue(img1);
-                        if (X >= 0 && X < pixelWidth && Y >= 0 && Y < pixelWidth)
+                        if (X >= 0 && X < pixelWidth && Y >= 0 && Y < pixelHeight)
                         {
                             data[X][Y]++;
                         }
@@ -127,8 +124,6 @@ public class MandelbrotRenderer
     
     public RawMandelbrotData quadTreeRender(long pointsCount, int minIter, int maxIter, QuadTreeNode root)
     {
-        assert (minIter < maxIter);
-        
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight);
         int[][] data = raw.getData();
         
@@ -140,7 +135,7 @@ public class MandelbrotRenderer
         List<QuadTreeNode> nodesList = new ArrayList<>();
         root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID));
         
-        System.out.println("Nodes: " + nodesList.size());
+        System.out.println("Nodes count: " + nodesList.size());
         
         long current = 0;
         for (QuadTreeNode node : nodesList)
@@ -148,19 +143,22 @@ public class MandelbrotRenderer
             current++;
             fireProgress(current, nodesList.size());
             
-            if ((node.status == Status.BROWSED && !node.hasComputedChildren() && node.min <= maxIter)
-            || (node.status == Status.OUTSIDE && (node.min <= maxIter || node.max >= minIter)))
+            if (node.min <= maxIter || node.max >= minIter)
             {
-                // System.out.println(stepX+"/"+(node.maxX - node.minX));
-                int xLen = (int) ((node.maxX - node.minX) / stepX);
-                int yLen = (int) ((node.maxY - node.minY) / stepY);
                 
-                for (int x = 0; x < xLen; ++x)
+                double xStart = Math.floor(node.minX / stepX) * stepX + stepX;
+                double yStart = Math.floor(node.minY / stepY) * stepY + stepY;
+                // System.out.println(stepX + "/" + (node.maxX - node.minX) + " xLen=" + xLen + ", yLen=" + yLen);
+                
+                double x = xStart;
+                
+                while (x < node.maxX)
                 {
-                    for (int y = 0; y < yLen; ++y)
+                    double y = yStart;
+                    while (y < node.maxY)
                     {
-                        double real = node.minX + x * stepX;
-                        double img = node.minY + y * stepY;
+                        double real = x;
+                        double img = y;
                         
                         double realsqr = real * real;
                         double imgsqr = img * img;
@@ -169,7 +167,7 @@ public class MandelbrotRenderer
                         double img1 = img;
                         double real2, img2;
                         
-                        if (node.status == Status.OUTSIDE || isOutsideMandelbrotSet(real, img, maxIter))
+                        if (node.status==Status.OUTSIDE || isOutsideMandelbrotSet(real, img, maxIter))
                         {
                             int iter = 0;
                             while ((iter < minIter) && ((realsqr + imgsqr) < 4))
@@ -196,8 +194,7 @@ public class MandelbrotRenderer
                                 {
                                     data[X][Y]++;
                                 }
-                                // System.out.println("real(" + X + ")=" + real1
-                                // +
+                                // System.out.println("real(" + X + ")=" + real1 +
                                 // " img(" + Y + ")=" + img1 + " iter=" + iter);
                                 
                                 real2 = real1 * real1 - img1 * img1 + real;
@@ -211,7 +208,11 @@ public class MandelbrotRenderer
                                 iter++;
                             }
                         }
+                        
+                        y += stepY;
                     }
+                    
+                    x += stepX;
                 }
             }
         }
