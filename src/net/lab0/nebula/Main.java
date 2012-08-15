@@ -1,6 +1,4 @@
-
 package net.lab0.nebula;
-
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -11,12 +9,12 @@ import net.lab0.nebula.data.Statistics;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
-
 public class Main
 {
     private static QuadTreeNode root;
     
-    public static void main(String[] args) throws IOException, ValidityException, ParsingException, InterruptedException
+    public static void main(String[] args)
+    throws IOException, ValidityException, ParsingException, InterruptedException
     {
         System.out.println("Start");
         
@@ -39,24 +37,24 @@ public class Main
         
         int threads = Runtime.getRuntime().availableProcessors();
         System.out.println("Using " + threads + " threads");
-        QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, 1);
+        QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth);
+        manager.setThreads(threads);
         
         // System.out.println("start " + new Date());
         // System.out.println("end after " + stop);
         
         long computedNodes = 0;
-        long nodesPerCycle = 1000;
+        int nodesPerCycle = 1000;
         while (computedNodes < nodesPerCycle * 1)
         {
             manager.compute(nodesPerCycle);
-            computedNodes += nodesPerCycle;
+            computedNodes += (long) nodesPerCycle;
             System.out.println("Nodes computed so far : " + computedNodes);
             
             Statistics statistics = manager.computeStatistics();
             System.out.println(statistics);
         }
-        manager.saveToXML(FileSystems.getDefault().getPath(".", "out", "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v" + 1),
-        true, 6);
+        manager.saveToXML(FileSystems.getDefault().getPath(".", "out", "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v" + 1));
         
         long endTimer = System.currentTimeMillis();
         

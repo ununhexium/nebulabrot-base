@@ -8,9 +8,11 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.Statistics;
@@ -19,6 +21,7 @@ import net.lab0.nebula.data.SynchronizedCounter;
 import net.lab0.nebula.enums.SaveMode;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
+import net.lab0.nebula.listener.QuadTreeManagerListener;
 import net.lab0.tools.Pair;
 import nu.xom.Attribute;
 import nu.xom.Builder;
@@ -31,24 +34,33 @@ import nu.xom.ValidityException;
 
 public class QuadTreeManager
 {
-    private QuadTreeNode              root;
-    private int                       pointsPerSide      = 100;
-    private int                       maxIter            = 512;
-    private int                       diffIterLimit      = 5;
-    private int                       maxDepth           = 6;
-    private long                      totalComputingTime = 0;
-    private SaveMode                  saveMode;
-    private int                       filesCount;
+    private QuadTreeNode                 root;
+    private int                          pointsPerSide;
+    private int                          maxIter;
+    private int                          diffIterLimit;
+    private int                          maxDepth;
+    private long                         totalComputingTime;
+    private SaveMode                     saveMode;
+    private int                          filesCount;
     
-    private int                       searchCounter      = 0;
-    private long                      searchTime         = 0;
-    private SynchronizedCounter       computedNodes;
-    private Queue<List<QuadTreeNode>> nodesList          = new LinkedList<>();
+    private int                          searchCounter;
+    private long                         searchTime;
+    private SynchronizedCounter          computedNodes;
+    private Queue<List<QuadTreeNode>>    nodesList         = new LinkedList<>();
+    private int                          maxCapacity       = 1 << 20;           // 1M nodes max
+                                                                                 
+    private int                          threads           = 1;
+    private boolean                      stop              = false;
+    private SynchronizedCounter          remainingNodesToCompute;
     
-    private int                       threads            = 1;
-    private boolean                   stop               = false;
+    private Set<QuadTreeManagerListener> eventListenerList = new HashSet<>();
+    private int                          totalComputedNodes;
+    private int                          totalNodesToCompute;
     
-    public QuadTreeManager(QuadTreeNode root, int pointsPerSide, int maxIter, int diffIterLimit, int maxDepth, int threads)
+    private Path                         originalPath;
+    private int                          splitDepth        = 6;
+    
+    public QuadTreeManager(QuadTreeNode root, int pointsPerSide, int maxIter, int diffIterLimit, int maxDepth)
     {
         super();
         this.root = root;
@@ -57,12 +69,15 @@ public class QuadTreeManager
         this.diffIterLimit = diffIterLimit;
         this.maxDepth = maxDepth;
         
-        this.threads = threads;
         this.computedNodes = new SynchronizedCounter(0);
     }
     
-    public QuadTreeManager(Path inputFolder) throws ValidityException, ParsingException, IOException
+    // TODO : change folder into index.xml
+    public QuadTreeManager(Path inputFolder)
+    throws ValidityException, ParsingException, IOException
     {
+        this.originalPath = inputFolder;
+        
         Builder parser = new Builder();
         Document doc = parser.build(new File(inputFolder.toFile(), "index.xml"));
         Element index = doc.getRootElement();
@@ -74,65 +89,203 @@ public class QuadTreeManager
         this.totalComputingTime = Long.parseLong(index.getAttributeValue("totalComputingTime"));
         this.computedNodes = new SynchronizedCounter(Long.parseLong(index.getAttributeValue("computedNodes")));
         
-        String mode = index.getAttributeValue("mode");
-        if (SaveMode.ONE_FILE.modeName.equals(mode))
+        saveMode = SaveMode.RECURSIVE;
+        Elements files = index.getChildElements("file");
+        ArrayList<Pair<File, String>> filesAndParent = new ArrayList<>(files.size());
+        for (int i = 0; i < files.size(); ++i)
         {
-            saveMode = SaveMode.ONE_FILE;
-            filesCount = 2;
-            Builder dataParser = new Builder();
-            File dataFile = new File(inputFolder.toFile(), index.getFirstChildElement("file").getAttributeValue("path"));
-            System.out.println("Opening " + dataFile.getPath());
-            Document dataDoc = dataParser.build(dataFile);
-            Element mandelbrot = dataDoc.getRootElement();
-            
-            this.root = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), null);
-            this.root.updateDepth();
+            Element file = files.get(i);
+            File xmlFile = new File(inputFolder.toFile().getAbsolutePath() + file.getAttributeValue("path"));
+            String quadTreeParentPath = file.getAttributeValue("parent");
+            filesAndParent.add(new Pair<File, String>(xmlFile, quadTreeParentPath));
         }
-        else if (SaveMode.RECURSIVE.modeName.equals(mode))
+        filesCount = filesAndParent.size() + 1;
+        
+        Pair<File, String> rootDataFile = filesAndParent.remove(0);
+        Builder dataParser = new Builder();
+        Document dataDoc = dataParser.build(rootDataFile.a);
+        Element mandelbrot = dataDoc.getRootElement();
+        this.root = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), null);
+        
+        int currentFileIndex = 0;
+        for (Pair<File, String> file : filesAndParent)
         {
-            saveMode = SaveMode.RECURSIVE;
-            Elements files = index.getChildElements("file");
-            ArrayList<Pair<File, String>> filesAndParent = new ArrayList<>(files.size());
-            for (int i = 0; i < files.size(); ++i)
-            {
-                Element file = files.get(i);
-                File xmlFile = new File(inputFolder.toFile().getAbsolutePath() + file.getAttributeValue("path"));
-                String quadTreeParentPath = file.getAttributeValue("parent");
-                filesAndParent.add(new Pair<File, String>(xmlFile, quadTreeParentPath));
-            }
-            filesCount = filesAndParent.size() + 1;
+            currentFileIndex++;
+            System.out.println("reading file " + currentFileIndex + " out of " + filesAndParent.size());
+            dataDoc = dataParser.build(file.a);
+            mandelbrot = dataDoc.getRootElement();
             
-            Pair<File, String> rootDataFile = filesAndParent.remove(0);
-            Builder dataParser = new Builder();
-            Document dataDoc = dataParser.build(rootDataFile.a);
-            Element mandelbrot = dataDoc.getRootElement();
-            this.root = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), null);
-            
-            int currentFileIndex = 0;
-            for (Pair<File, String> file : filesAndParent)
-            {
-                currentFileIndex++;
-                System.out.println("reading file " + currentFileIndex + " out of " + filesAndParent.size());
-                dataDoc = dataParser.build(file.a);
-                mandelbrot = dataDoc.getRootElement();
-                
-                QuadTreeNode parent = this.root.getNodeByPath(file.b);
-                QuadTreeNode node = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), parent);
-                // if (parent == null)
-                // {
-                // System.out.println("parent null " + file.b);
-                // }
-                parent.ensureChildrenArray();
-                parent.children[node.positionInParent.ordinal()] = node;
-                // System.out.println("attached child node n" + node.positionInParent.ordinal() + " : "
-                // + parent.children[node.positionInParent.ordinal()].getPath() + " to " + node.parent.getPath());
-            }
-            
-            this.root.updateDepth();
+            QuadTreeNode parent = this.root.getNodeByPath(file.b);
+            QuadTreeNode node = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), parent);
+            // if (parent == null)
+            // {
+            // System.out.println("parent null " + file.b);
+            // }
+            parent.ensureChildrenArray();
+            parent.children[node.positionInParent.ordinal()] = node;
+            // System.out.println("attached child node n" + node.positionInParent.ordinal() + " : "
+            // + parent.children[node.positionInParent.ordinal()].getPath() + " to " + node.parent.getPath());
+        }
+        
+        this.root.updateDepth();
+    }
+    
+    public void addQuadTreeManagerListener(QuadTreeManagerListener listener)
+    {
+        eventListenerList.add(listener);
+    }
+    
+    public void fireComputeProgress(int current, int total)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.computeProgress(current, total);
         }
     }
     
-    public synchronized List<QuadTreeNode> getNextNodeToCompute(int maxComputationDepth) throws NoMoreNodesToCompute
+    private void fireComputationFinished(boolean b)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.computationFinished(b);
+        }
+    }
+    
+    public void saveACopy(String prefix, String suffix)
+    throws IOException
+    {
+        File originalFile = originalPath.toFile();
+        if (prefix == null)
+        {
+            prefix = "";
+        }
+        if (suffix == null)
+        {
+            suffix = "";
+        }
+        File saveFile = new File(originalFile.getParentFile(), prefix + originalFile.getName() + suffix);
+        
+        saveToXML(saveFile.toPath());
+    }
+    
+    public void saveToXML(Path outputDirectoryPath)
+    throws IOException
+    {
+        File outputDirectoryFile = outputDirectoryPath.toFile();
+        if (!outputDirectoryFile.exists())
+        {
+            outputDirectoryFile.mkdirs();
+        }
+        
+        // file containing general information and information about other created files
+        Element index = new Element("index");
+        index.addAttribute(new Attribute("mode", "recursive"));
+        index.addAttribute(new Attribute("pointsPerSide", "" + pointsPerSide));
+        index.addAttribute(new Attribute("maxIter", "" + maxIter));
+        index.addAttribute(new Attribute("diffIterLimit", "" + diffIterLimit));
+        index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
+        index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
+        index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
+        
+        int dataIndex = 0;
+        
+        // list containing the nodes which are splitting the tree for a given depth
+        List<QuadTreeNode> splittingNodes = new LinkedList<>();
+        splittingNodes.add(this.root);
+        
+        while (!splittingNodes.isEmpty())
+        {
+            QuadTreeNode currentNode = splittingNodes.remove(0);
+            
+            Element docRoot = new Element("mandelbrotQuadTree");
+            docRoot.addAttribute(new Attribute("path", currentNode.getPath()));
+            
+            recursiveAppendChildren(docRoot, currentNode, currentNode.depth + splitDepth, currentNode.depth + 2 * splitDepth, splittingNodes);
+            
+            List<String> relativeFilePath = new LinkedList<>();
+            int value = dataIndex;
+            
+            value >>= 8;
+            int folder1 = value & 0xff;
+            int folder2 = (value & 0xff00) >> 8;
+            int folder3 = (value & 0xff0000) >> 16;
+            // int folder4 = (value & 0xff000000)>>24;
+            
+            // relativeFilePath.add("" + folder4);
+            relativeFilePath.add("" + folder3);
+            relativeFilePath.add("" + folder2);
+            relativeFilePath.add("" + folder1);
+            
+            relativeFilePath.add("data" + dataIndex + ".xml");
+            File baseFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), relativeFilePath.toArray(new String[0])).toFile();
+            
+            if (!baseFile.getParentFile().exists())
+            {
+                baseFile.getParentFile().mkdirs();
+            }
+            
+            String fileName = FileSystems.getDefault().getPath(".", relativeFilePath.toArray(new String[0])).toFile().getPath();
+            Element file = new Element("file");
+            if (currentNode.parent == null)
+            {
+                file.addAttribute(new Attribute("parent", "null"));
+            }
+            else
+            {
+                file.addAttribute(new Attribute("parent", currentNode.parent.getPath()));
+            }
+            file.addAttribute(new Attribute("path", fileName));
+            index.appendChild(file);
+            
+            // if (dataIndex == 0 || dataIndex == 64 || dataIndex == 4096 || dataIndex == 4096 * 64 || dataIndex == 4096 * 4096)
+            // {
+            // System.out.println("Generating file " + fileName + " for " + currentNode.getPath() + " datablock=" + dataIndex);
+            // }
+            
+            Document dataDocument = new Document(docRoot);
+            
+            Serializer dataSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(baseFile)), "utf8");
+            dataSerializer.setIndent(2);
+            dataSerializer.setMaxLength(0);
+            dataSerializer.write(dataDocument);
+            
+            dataIndex++;
+        }
+        
+        File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
+        
+        Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
+        indexSerializer.setIndent(2);
+        indexSerializer.setMaxLength(0);
+        Document indexDocument = new Document(index);
+        indexSerializer.write(indexDocument);
+    }
+    
+    private void recursiveAppendChildren(Element containingXmlNode, QuadTreeNode quadTreeNode, int minSplitDepth, int maxSplitDepth,
+    List<QuadTreeNode> splittingNodes)
+    {
+        // System.out.println("depth " + quadTreeNode.depth);
+        if (quadTreeNode.depth < minSplitDepth || quadTreeNode.getMaxChildrenDepth() < maxSplitDepth)
+        {
+            Element childNode = quadTreeNode.asXML(false);
+            containingXmlNode.appendChild(childNode);
+            
+            if (quadTreeNode.children != null)
+            {
+                for (QuadTreeNode childQuadTreeNode : quadTreeNode.children)
+                {
+                    recursiveAppendChildren(childNode, childQuadTreeNode, minSplitDepth, maxSplitDepth, splittingNodes);
+                }
+            }
+        }
+        else
+        {
+            splittingNodes.add(quadTreeNode);
+        }
+    }
+    
+    public synchronized List<QuadTreeNode> getNextNodeToCompute(int maxComputationDepth)
+    throws NoMoreNodesToCompute
     {
         if (nodesList.isEmpty())
         {
@@ -156,6 +309,7 @@ public class QuadTreeManager
             
             int blockSize = 16;
             int currentSize = 0;
+            int remaining = (int) (remainingNodesToCompute.getValue() > (long) maxCapacity ? maxCapacity : remainingNodesToCompute.getValue());
             List<QuadTreeNode> nodes = new ArrayList<>(blockSize);
             for (QuadTreeNode n : tmpList)
             {
@@ -165,12 +319,17 @@ public class QuadTreeManager
                     if (!n.isFlagedForComputing())
                     {
                         nodes.add(n);
+                        remaining--;
                         currentSize++;
                         if (currentSize >= blockSize)
                         {
                             nodesList.add(nodes);
                             nodes = new ArrayList<>(blockSize);
                             currentSize = 0;
+                        }
+                        if (remaining <= 0)
+                        {
+                            break;
                         }
                     }
                 }
@@ -205,166 +364,24 @@ public class QuadTreeManager
         return nodes;
     }
     
-    public void saveToXML(Path outputDirectoryPath, boolean splitIntoMultipleFiles, int splitDepth) throws IOException
-    {
-        File outputDirectoryFile = outputDirectoryPath.toFile();
-        if (!outputDirectoryFile.exists())
-        {
-            outputDirectoryFile.mkdirs();
-        }
-        
-        // file containing general information and information about other created files
-        Element index = new Element("index");
-        index.addAttribute(new Attribute("mode", "recursive"));
-        index.addAttribute(new Attribute("pointsPerSide", "" + pointsPerSide));
-        index.addAttribute(new Attribute("maxIter", "" + maxIter));
-        index.addAttribute(new Attribute("diffIterLimit", "" + diffIterLimit));
-        index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
-        index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
-        index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
-        
-        int dataIndex = 0;
-        
-        if (splitIntoMultipleFiles)
-        {
-            // list containing the nodes which are splitting the tree for a given depth
-            List<QuadTreeNode> splittingNodes = new LinkedList<>();
-            splittingNodes.add(this.root);
-            
-            while (!splittingNodes.isEmpty())
-            {
-                QuadTreeNode currentNode = splittingNodes.remove(0);
-                
-                Element docRoot = new Element("mandelbrotQuadTree");
-                docRoot.addAttribute(new Attribute("path", currentNode.getPath()));
-                
-                recursiveAppendChildren(docRoot, currentNode, currentNode.depth + splitDepth, currentNode.depth + 2 * splitDepth, splittingNodes);
-                
-                List<String> relativeFilePath = new LinkedList<>();
-                int value = dataIndex;
-                
-                value >>= 8;
-                int folder1 = value & 0xff;
-                int folder2 = (value & 0xff00) >> 8;
-                int folder3 = (value & 0xff0000) >> 16;
-                // int folder4 = (value & 0xff000000)>>24;
-                
-                // relativeFilePath.add("" + folder4);
-                relativeFilePath.add("" + folder3);
-                relativeFilePath.add("" + folder2);
-                relativeFilePath.add("" + folder1);
-                
-                relativeFilePath.add("data" + dataIndex + ".xml");
-                File baseFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), relativeFilePath.toArray(new String[0])).toFile();
-                
-                if (!baseFile.getParentFile().exists())
-                {
-                    baseFile.getParentFile().mkdirs();
-                }
-                
-                String fileName = FileSystems.getDefault().getPath(".", relativeFilePath.toArray(new String[0])).toFile().getPath();
-                Element file = new Element("file");
-                if (currentNode.parent == null)
-                {
-                    file.addAttribute(new Attribute("parent", "null"));
-                }
-                else
-                {
-                    file.addAttribute(new Attribute("parent", currentNode.parent.getPath()));
-                }
-                file.addAttribute(new Attribute("path", fileName));
-                index.appendChild(file);
-                
-                // if (dataIndex == 0 || dataIndex == 64 || dataIndex == 4096 || dataIndex == 4096 * 64 || dataIndex == 4096 * 4096)
-                // {
-                // System.out.println("Generating file " + fileName + " for " + currentNode.getPath() + " datablock=" + dataIndex);
-                // }
-                
-                Document dataDocument = new Document(docRoot);
-                
-                Serializer dataSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(baseFile)), "utf8");
-                dataSerializer.setIndent(2);
-                dataSerializer.setMaxLength(0);
-                dataSerializer.write(dataDocument);
-                
-                dataIndex++;
-            }
-            
-            File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
-            
-            Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
-            indexSerializer.setIndent(2);
-            indexSerializer.setMaxLength(0);
-            Document indexDocument = new Document(index);
-            indexSerializer.write(indexDocument);
-        }
-        else
-        {
-            Element docRoot = new Element("mandelbrotQuadTree");
-            docRoot.appendChild(this.root.asXML(true));
-            
-            Document dataDocument = new Document(docRoot);
-            
-            File baseFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "data0.xml").toFile();
-            Serializer serializer = new Serializer(new BufferedOutputStream(new FileOutputStream(baseFile)), "utf8");
-            serializer.setIndent(2);
-            serializer.setMaxLength(0);
-            serializer.write(dataDocument);
-            
-            index.addAttribute(new Attribute("mode", SaveMode.ONE_FILE.modeName));
-            Element file = new Element("file");
-            file.addAttribute(new Attribute("parent", "null"));
-            file.addAttribute(new Attribute("path", "data0.xml"));
-            index.appendChild(file);
-            
-            File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
-            
-            serializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
-            serializer.setIndent(2);
-            serializer.setMaxLength(0);
-            Document indexDocument = new Document(index);
-            serializer.write(indexDocument);
-        }
-    }
-    
-    private void recursiveAppendChildren(Element containingXmlNode, QuadTreeNode quadTreeNode, int splitDepth, int maxSplitDepth,
-            List<QuadTreeNode> splittingNodes)
-    {
-        // System.out.println("depth " + quadTreeNode.depth);
-        if (quadTreeNode.depth < splitDepth || quadTreeNode.getMaxChildrenDepth() < maxSplitDepth)
-        {
-            Element childNode = quadTreeNode.asXML(false);
-            containingXmlNode.appendChild(childNode);
-            
-            if (quadTreeNode.children != null)
-            {
-                for (QuadTreeNode childQuadTreeNode : quadTreeNode.children)
-                {
-                    recursiveAppendChildren(childNode, childQuadTreeNode, splitDepth, maxSplitDepth, splittingNodes);
-                }
-            }
-        }
-        else
-        {
-            splittingNodes.add(quadTreeNode);
-        }
-    }
-    
     /**
      * 
      * @param quantity
      * @return true if there is more nodes to compute
      * @throws InterruptedException
      */
-    public boolean compute(long quantity) throws InterruptedException
+    public boolean compute(int quantity)
+    throws InterruptedException
     {
-        SynchronizedCounter maxNodesToCompute = new SynchronizedCounter(quantity);
+        totalComputedNodes = 0;
+        totalNodesToCompute = quantity;
+        remainingNodesToCompute = new SynchronizedCounter(quantity);
         long startTime = System.currentTimeMillis();
         
         List<Thread> threadsList = new ArrayList<>(threads);
         for (int i = 0; i < threads; ++i)
         {
-            QuadTreeComputeThread thread = new QuadTreeComputeThread(this, maxNodesToCompute, computedNodes);
+            QuadTreeComputeThread thread = new QuadTreeComputeThread(this, remainingNodesToCompute, computedNodes);
             thread.setPriority(Thread.MIN_PRIORITY);
             threadsList.add(thread);
             thread.start();
@@ -382,12 +399,14 @@ public class QuadTreeManager
         try
         {
             List<QuadTreeNode> list = getNextNodeToCompute(getMaxDepth());
-            System.out.println("More nodes : "+list.size());
+            System.out.println("More nodes : " + list.size());
+            fireComputationFinished(true);
             return true;
         }
         catch (NoMoreNodesToCompute e)
         {
             System.out.println("No node left");
+            fireComputationFinished(false);
             return false;
         }
     }
@@ -460,6 +479,11 @@ public class QuadTreeManager
         return stop;
     }
     
+    public synchronized void stopNow()
+    {
+        stop = true;
+    }
+    
     public int getSearchCounter()
     {
         return searchCounter;
@@ -493,6 +517,27 @@ public class QuadTreeManager
     public void setThreads(int threads)
     {
         this.threads = threads;
+    }
+    
+    public void computedNodes(int computed)
+    {
+        totalComputedNodes += computed;
+        fireComputeProgress(totalComputedNodes, totalNodesToCompute);
+    }
+    
+    public Path getOriginalPath()
+    {
+        return originalPath;
+    }
+    
+    public int getSplitDepth()
+    {
+        return splitDepth;
+    }
+    
+    public void setSplitDepth(int splitDepth)
+    {
+        this.splitDepth = splitDepth;
     }
     
 }

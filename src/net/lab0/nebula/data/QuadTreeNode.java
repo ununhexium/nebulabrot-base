@@ -1,10 +1,14 @@
 package net.lab0.nebula.data;
 
+import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
+import net.lab0.tools.geom.PointInterface;
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
@@ -230,7 +234,7 @@ public class QuadTreeNode
     private boolean isChildNode(PositionInParent position)
     {
         return position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
-                || position.equals(PositionInParent.BottomRight);
+        || position.equals(PositionInParent.BottomRight);
     }
     
     private double getCenterY()
@@ -784,7 +788,7 @@ public class QuadTreeNode
         else
         {
             return Math.max(Math.max(children[0].getMaxChildrenDepth(), children[1].getMaxChildrenDepth()),
-                    Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
+            Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
         }
     }
     
@@ -820,4 +824,167 @@ public class QuadTreeNode
             }
         }
     }
+    
+    public int getMaxNodeDepth()
+    {
+        if (children == null)
+        {
+            return this.depth;
+        }
+        else
+        {
+            return Math.max(Math.max(children[0].getMaxNodeDepth(), children[1].getMaxNodeDepth()),
+            Math.max(children[2].getMaxNodeDepth(), children[3].getMaxNodeDepth()));
+        }
+    }
+    
+    public Collection<QuadTreeNode> getNodesInRectangle(Point2D.Double p1, Point2D.Double p2)
+    {
+        ArrayList<QuadTreeNode> c = new ArrayList<QuadTreeNode>();
+        getNodesOverlappingRectangle(p1, p2, c);
+        return c;
+    }
+    
+    /**
+     * Ajoute toutes les nodes et sous-nodes contenues dans le rectangle défini par les 2 points à <code>collection</code>
+     * 
+     * @param rectMaxX
+     * @param rectMaxY
+     * @param rectMinX
+     * @param rectMinY
+     * @param collection
+     *            la collection contenant le résultat
+     */
+    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<QuadTreeNode> collection)
+    {
+        double rectMaxX = Math.max(p1.getX(), p2.getX());
+        double rectMaxY = Math.max(p1.getY(), p2.getY());
+        double rectMinX = Math.min(p1.getX(), p2.getX());
+        double rectMinY = Math.min(p1.getY(), p2.getY());
+        
+        getNodesOverlappingRectangle(rectMaxX, rectMaxY, rectMinX, rectMinY, collection);
+    }
+    
+    /**
+     * Ajoute toutes les nodes et sous-nodes contenues dans le rectangle défini par ses 4 bords à <code>collection</code>
+     * 
+     * @param rectMaxX
+     * @param rectMaxY
+     * @param rectMinX
+     * @param rectMinY
+     * @param collection
+     *            la collection contenant le résultat
+     */
+    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<QuadTreeNode> collection)
+    {
+        // si la zone de cette node est entièrement contenue dans le rectangle
+        if (this.minX >= rectMinX && this.maxX <= rectMaxX && this.maxY <= rectMaxY && this.minY >= rectMinY)
+        {
+            this.getAllNodes(collection);
+        }
+        else
+        {
+            // si la zone de cette node est partiellement contenue dans le rectangle
+            if ((this.minX <= maxX || this.maxX >= minX) && (this.minY <= maxY || this.maxY >= minY))
+            {
+                collection.add(this);
+            }
+            // si la node a des enfants : tester lesquels sont dans le rectangle
+            if (children != null)
+            {
+                for (PositionInParent zone : getZonesOverlappingRectangle(rectMaxX, rectMaxY, rectMinX, rectMinY))
+                {
+                    children[zone.ordinal()].getNodesOverlappingRectangle(rectMaxX, rectMaxY, rectMinX, rectMinY, collection);
+                }
+            }
+        }
+    }
+    
+    private void getAllNodes(Collection<QuadTreeNode> collection)
+    {
+        collection.add(this);
+        if (children != null)
+        {
+            for (QuadTreeNode n : children)
+            {
+                n.getAllNodes(collection);
+            }
+        }
+    }
+    
+    /**
+     * Renvoie les zones de cette node qui touchent le rectangle défini par ses 4 bords
+     * 
+     * @param rectMaxX
+     * @param rectMaxY
+     * @param rectMinX
+     * @param rectMinY
+     * @return une liste des zones contenues dans le rectangle
+     */
+    protected ArrayList<PositionInParent> getZonesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY)
+    {
+        ArrayList<PositionInParent> ret = new ArrayList<PositionInParent>(4);
+        
+        if (getCenterX() <= rectMinX) // le split est à gauche du rectangle
+        {
+            if (getCenterY() <= rectMinY)
+            {
+                ret.add(PositionInParent.TopRight);
+            }
+            else if (getCenterY() > rectMaxY)
+            {
+                ret.add(PositionInParent.BottomRight);
+            }
+            else
+            {
+                ret.add(PositionInParent.TopRight);
+                ret.add(PositionInParent.BottomRight);
+            }
+        }
+        else if (getCenterX() > rectMaxX) // le split est à droite du rectangle
+        {
+            if (getCenterY() <= rectMinY)
+            {
+                ret.add(PositionInParent.TopLeft);
+            }
+            else if (getCenterY() > rectMaxY)
+            {
+                ret.add(PositionInParent.BottomLeft);
+            }
+            else
+            {
+                ret.add(PositionInParent.TopLeft);
+                ret.add(PositionInParent.BottomLeft);
+            }
+        }
+        else
+        // le split est au dans le rectangle en x
+        {
+            if (getCenterY() <= rectMinY)
+            {
+                ret.add(PositionInParent.TopLeft);
+                ret.add(PositionInParent.TopRight);
+            }
+            else if (getCenterY() > rectMaxY)
+            {
+                ret.add(PositionInParent.BottomLeft);
+                ret.add(PositionInParent.BottomRight);
+            }
+            else
+            {
+                ret.add(PositionInParent.TopLeft);
+                ret.add(PositionInParent.TopRight);
+                ret.add(PositionInParent.BottomLeft);
+                ret.add(PositionInParent.BottomRight);
+            }
+        }
+        
+        return ret;
+    }
+    
+    public boolean isLeafNode()
+    {
+        return children == null;
+    }
+    
 }

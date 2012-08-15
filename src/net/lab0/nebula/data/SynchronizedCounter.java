@@ -21,7 +21,7 @@ public class SynchronizedCounter
         ++count;
     }
     
-    public synchronized void increment(int quantity)
+    public synchronized void increment(long quantity)
     {
         count += quantity;
     }
@@ -31,7 +31,7 @@ public class SynchronizedCounter
         --count;
     }
     
-    public synchronized void decrement(int quantity)
+    public synchronized void decrement(long quantity)
     {
         count -= quantity;
     }

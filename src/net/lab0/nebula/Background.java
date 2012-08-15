@@ -15,7 +15,8 @@ import nu.xom.ValidityException;
 
 public class Background
 {
-    public static void main(String[] args) throws InterruptedException, IOException, ValidityException, ParsingException
+    public static void main(String[] args)
+    throws InterruptedException, IOException, ValidityException, ParsingException
     {
         QuadTreeNode root = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         
@@ -33,42 +34,36 @@ public class Background
         int threads = Runtime.getRuntime().availableProcessors();
         System.out.println("Using " + threads + " threads");
         // QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, threads / 2);
-        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16v123"));
+        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16v167"));
         manager.setThreads(threads);
         
         // System.out.println("start " + new Date());
         // System.out.println("end after " + stop);
         
         long computedNodes = 0;
-        long nodesPerCycle = 100_000;
+        int nodesPerCycle = 100_000;
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
         cal.add(Calendar.HOUR, 20);
-        int pass = 123;
+        int pass = 167;
         
         boolean goOn = true;
+        // while (goOn)
         while (goOn)
-        // while (computedNodes < nodesPerCycle*10)
         {
-             pass++;
+            pass++;
             goOn = manager.compute(nodesPerCycle);
-            computedNodes += nodesPerCycle;
+            computedNodes += (long) nodesPerCycle;
             System.out.println("Nodes computed so far : " + computedNodes);
             
-//            Statistics statistics = manager.computeStatistics();
-//            System.out.println(statistics);
+            // Statistics statistics = manager.computeStatistics();
+            // System.out.println(statistics);
             
-            Path path = FileSystems.getDefault()
-                    .getPath(
-                            "F:",
-                            "dev",
-                            "nebula",
-                            "tree",
-                            "p" + manager.getPointsPerSide() + "i" + manager.getMaxIter() + "d" + manager.getDiffIterLimit() + "D" + manager.getMaxDepth()
-                                    + "v" + pass);
+            Path path = FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree",
+            "p" + manager.getPointsPerSide() + "i" + manager.getMaxIter() + "d" + manager.getDiffIterLimit() + "D" + manager.getMaxDepth() + "v" + pass);
             
             System.out.println("save to " + path);
-            manager.saveToXML(path, true, 6);
+            manager.saveToXML(path);
         }
         
         long endTimer = System.currentTimeMillis();

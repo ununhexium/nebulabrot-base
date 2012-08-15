@@ -53,9 +53,15 @@ public class QuadTreeComputeThread extends Thread
                             // times.add(end - start);
                             // System.out.println("" + (end - start));
                         }
+                        
+                        if(quadTreeManager.stopRequired())
+                        {
+                            break;
+                        }
                     }
                     long end = System.currentTimeMillis();
                     
+                    quadTreeManager.computedNodes(computed);
                     maxNodesToCompute.decrement(computed);
                     computedNodes.increment(computed);
                     
