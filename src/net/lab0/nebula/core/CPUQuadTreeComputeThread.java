@@ -6,7 +6,8 @@ import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.SynchronizedCounter;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
 
-public class QuadTreeComputeThread extends Thread
+public class CPUQuadTreeComputeThread
+extends Thread
 {
     private static int          idCounter;
     
@@ -14,9 +15,9 @@ public class QuadTreeComputeThread extends Thread
     private SynchronizedCounter maxNodesToCompute;
     private SynchronizedCounter computedNodes;
     
-    public QuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes)
+    public CPUQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes)
     {
-        super("QuadTreeComputeThread-" + idCounter++);
+        super("CPUQuadTreeComputeThread-" + idCounter++);
         this.quadTreeManager = quadTreeManager;
         this.maxNodesToCompute = maxNodesToCompute;
         this.computedNodes = computedNodes;
@@ -30,12 +31,12 @@ public class QuadTreeComputeThread extends Thread
             // System.out.println(Thread.currentThread().getName() + " Try next");
             try
             {
-                List<QuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth());
+                List<QuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), 16);
                 
                 if (!nodes.isEmpty())
                 {
                     int computed = 0;
-//                    System.out.println("Retrieved " + nodes.size() + " nodes. Still " +maxNodesToCompute.getValue()+" nodes to compute");
+                    // System.out.println("Retrieved " + nodes.size() + " nodes. Still " +maxNodesToCompute.getValue()+" nodes to compute");
                     
                     int pointsPerSide = quadTreeManager.getPointsPerSide();
                     int maxIter = quadTreeManager.getMaxIter();
@@ -44,17 +45,14 @@ public class QuadTreeComputeThread extends Thread
                     long start = System.currentTimeMillis();
                     for (QuadTreeNode node : nodes)
                     {
-                        if (node != null)
-                        {
-//                             System.out.println(Thread.currentThread().getName() + " computing");
+                            // System.out.println(Thread.currentThread().getName() + " computing");
                             // System.out.println(getName()+" "+node.getPath());
                             node.computeStatus(pointsPerSide, maxIter, diffIterLimit);
                             computed++;
                             // times.add(end - start);
                             // System.out.println("" + (end - start));
-                        }
                         
-                        if(quadTreeManager.stopRequired())
+                        if (quadTreeManager.stopRequired())
                         {
                             break;
                         }
@@ -70,7 +68,7 @@ public class QuadTreeComputeThread extends Thread
                     // {
                     // total += l;
                     // }
-                    System.out.println("Total time = " + (end - start) + ". Still " +maxNodesToCompute.getValue()+" nodes to compute");
+                    System.out.println("Total time = " + (end - start) + ". Still " + maxNodesToCompute.getValue() + " nodes to compute");
                 }
                 else
                 {

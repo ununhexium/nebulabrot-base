@@ -60,6 +60,8 @@ public class QuadTreeManager
     private Path                         originalPath;
     private int                          splitDepth        = 6;
     
+    private boolean                      useOpenCL;
+    
     public QuadTreeManager(QuadTreeNode root, int pointsPerSide, int maxIter, int diffIterLimit, int maxDepth)
     {
         super();
@@ -284,7 +286,7 @@ public class QuadTreeManager
         }
     }
     
-    public synchronized List<QuadTreeNode> getNextNodeToCompute(int maxComputationDepth)
+    public synchronized List<QuadTreeNode> getNextNodeToCompute(int maxComputationDepth, int blockSize)
     throws NoMoreNodesToCompute
     {
         if (nodesList.isEmpty())
@@ -307,7 +309,6 @@ public class QuadTreeManager
             boolean nodesAvailable = false;
             root.getNodesByStatus(tmpList, Arrays.asList(Status.VOID));
             
-            int blockSize = 16;
             int currentSize = 0;
             int remaining = (int) (remainingNodesToCompute.getValue() > (long) maxCapacity ? maxCapacity : remainingNodesToCompute.getValue());
             List<QuadTreeNode> nodes = new ArrayList<>(blockSize);
@@ -379,14 +380,23 @@ public class QuadTreeManager
         long startTime = System.currentTimeMillis();
         
         List<Thread> threadsList = new ArrayList<>(threads);
-        for (int i = 0; i < threads; ++i)
-        {
-            QuadTreeComputeThread thread = new QuadTreeComputeThread(this, remainingNodesToCompute, computedNodes);
-            thread.setPriority(Thread.MIN_PRIORITY);
-            threadsList.add(thread);
-            thread.start();
-        }
         
+        if (useOpenCL)
+        {
+            Thread t = new OpenCLQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes);
+            threadsList.add(t);
+            t.start();
+        }
+        else
+        {
+            for (int i = 0; i < threads; ++i)
+            {
+                CPUQuadTreeComputeThread thread = new CPUQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes);
+                thread.setPriority(Thread.MIN_PRIORITY);
+                threadsList.add(thread);
+                thread.start();
+            }
+        }
         for (Thread thread : threadsList)
         {
             thread.join();
@@ -398,8 +408,9 @@ public class QuadTreeManager
         
         try
         {
-            List<QuadTreeNode> list = getNextNodeToCompute(getMaxDepth());
+            List<QuadTreeNode> list = getNextNodeToCompute(getMaxDepth(), 1);
             System.out.println("More nodes : " + list.size());
+            list.get(0).unFlagForComputing();
             fireComputationFinished(true);
             return true;
         }
@@ -484,6 +495,11 @@ public class QuadTreeManager
         stop = true;
     }
     
+    public void resetStop()
+    {
+        stop = false;
+    }
+    
     public int getSearchCounter()
     {
         return searchCounter;
@@ -538,6 +554,16 @@ public class QuadTreeManager
     public void setSplitDepth(int splitDepth)
     {
         this.splitDepth = splitDepth;
+    }
+    
+    public boolean isUseOpenCL()
+    {
+        return useOpenCL;
+    }
+    
+    public void setUseOpenCL(boolean useOpenCL)
+    {
+        this.useOpenCL = useOpenCL;
     }
     
 }

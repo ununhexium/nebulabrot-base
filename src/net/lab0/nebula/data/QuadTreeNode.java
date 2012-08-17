@@ -2,6 +2,7 @@ package net.lab0.nebula.data;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +35,6 @@ public class QuadTreeNode
     public int              max = -1;
     
     private boolean         flagedForComputing;
-    private Date            flagDate;
     
     public QuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
@@ -765,18 +765,20 @@ public class QuadTreeNode
         if (!flagedForComputing)
         {
             flagedForComputing = true;
-            flagDate = new Date();
+        }
+    }
+    
+    public synchronized void unFlagForComputing()
+    {
+        if (flagedForComputing)
+        {
+            flagedForComputing = false;
         }
     }
     
     public boolean isFlagedForComputing()
     {
         return flagedForComputing;
-    }
-    
-    public Date getFlagDate()
-    {
-        return flagDate;
     }
     
     public int getMaxChildrenDepth()
@@ -986,5 +988,12 @@ public class QuadTreeNode
     {
         return children == null;
     }
+
+    @Override
+    public String toString()
+    {
+        return "QuadTreeNode [minX=" + minX + ", maxX=" + maxX + ", minY=" + minY + ", maxY=" + maxY + ", status=" + status + "]";
+    }
+    
     
 }
