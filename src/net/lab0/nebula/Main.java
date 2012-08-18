@@ -61,7 +61,7 @@ public class Main
         // Statistics statistics = manager.computeStatistics();
         // System.out.println(statistics);
         
-        System.out.println("Searched for " + manager.getSearchTime() + "ms and " + manager.getSearchCounter() + " times");
+//        System.out.println("Searched for " + manager.getSearchTime() + "ms and " + manager.getSearchCounter() + " times");
         System.out.println("Computing time = " + (endTimer - startTimer));
         
         // QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("M:\\p256i65536d5D12v5"));

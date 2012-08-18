@@ -1,24 +1,24 @@
+
 package net.lab0.nebula.data;
+
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
-import net.lab0.tools.geom.PointInterface;
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
 
+
 /**
+ * The nodes used for the computation of the quad tree. The root node has a depth of 0.
  * 
  * @author 116
  * 
- *         The root node has a depth of 0
  * 
  */
 public class QuadTreeNode
@@ -36,11 +36,31 @@ public class QuadTreeNode
     
     private boolean         flagedForComputing;
     
+    /**
+     * Creates a node with the given coordinates. The position in parent will be Root. Therefore this will be a root node.
+     * 
+     * @param minX
+     * @param maxX
+     * @param minY
+     * @param maxY
+     */
     public QuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
         this(minX, maxX, minY, maxY, null, PositionInParent.Root);
     }
     
+    /**
+     * Creates a node with the given parameters. If parent is null, them this will be a root node.
+     * 
+     * @param minX
+     * @param maxX
+     * @param minY
+     * @param maxY
+     * @param parent
+     *            the parent node
+     * @param positionInParent
+     *            only used if parent is not null
+     */
     public QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent, PositionInParent positionInParent)
     {
         if (parent != null)
@@ -66,6 +86,14 @@ public class QuadTreeNode
         this.status = Status.VOID;
     }
     
+    /**
+     * Creates a quad tree node from an xml element. If parent is null, the created node will be a root node.
+     * 
+     * @param nodeElement
+     *            the xml node
+     * @param parent
+     *            the parent node
+     */
     public QuadTreeNode(Element nodeElement, QuadTreeNode parent)
     {
         this.parent = parent;
@@ -146,6 +174,9 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Updates the field 'depth' of this node and the tree below the node. Useful when adding a tree to another one.
+     */
     public void updateDepth()
     {
         this.depth = this.computeDepth();
@@ -159,6 +190,12 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * This method is marked private because it consumes a lot of computation time. It is preferable to compute the depth for all the nodes and then use the
+     * 'depth' field.
+     * 
+     * @return the depth of this node.
+     */
     private int computeDepth()
     {
         if (parent == null)
@@ -171,6 +208,9 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Splits this node. Creates 4 children, initialized with the appropriate fields' values and a VOID status
+     */
     public void splitNode()
     {
         // split only if it's not already split
@@ -231,10 +271,14 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * 
+     * @param position
+     * @return
+     */
     private boolean isChildNode(PositionInParent position)
     {
-        return position.equals(PositionInParent.TopLeft) || position.equals(PositionInParent.TopRight) || position.equals(PositionInParent.BottomLeft)
-        || position.equals(PositionInParent.BottomRight);
+        return position != PositionInParent.Root;
     }
     
     private double getCenterY()
@@ -247,7 +291,13 @@ public class QuadTreeNode
         return (minX + maxX) / 2.0d;
     }
     
-    public void testInsideMandelbrotSet(int pointsPerSide, int maxIter)
+    /**
+     * Assigns the {@link Status}.INSIDE value if the node is inside the mandelbrot set.
+     * 
+     * @param pointsPerSide
+     * @param maxIter
+     */
+    private void testInsideMandelbrotSet(int pointsPerSide, int maxIter)
     {
         double minX = this.minX;
         double maxX = this.maxX;
@@ -403,53 +453,13 @@ public class QuadTreeNode
         this.status = Status.INSIDE;
     }
     
-    // private double[] borderPointsAsDouble(int pointsPerSide)
-    // {
-    // double minX = this.minX;
-    // double maxX = this.maxX;
-    // double minY = this.minY;
-    // double maxY = this.maxY;
-    //
-    // double[] destArray = new double[pointsPerSide * 8];
-    //
-    // double step = (maxX - minX) / (double) (pointsPerSide - 1);
-    //
-    // // bottom side of the rectangle
-    // int baseIndex = 0;
-    // for (int i = 0; i < pointsPerSide; i++)
-    // {
-    // destArray[baseIndex + 2 * i] = (minX + (double) i * step);
-    // destArray[baseIndex + 2 * i + 1] = (minY);
-    // }
-    // baseIndex += 2 * pointsPerSide;
-    //
-    // // top side of the rectangle
-    // for (int i = 0; i < pointsPerSide; ++i)
-    // {
-    // destArray[baseIndex + 2 * i] = (minX + (double) i * step);
-    // destArray[baseIndex + 2 * i + 1] = (maxY);
-    // }
-    // baseIndex += 2 * pointsPerSide;
-    //
-    // // left side of the rectangle
-    // for (int i = 0; i < pointsPerSide; ++i)
-    // {
-    // destArray[baseIndex + 2 * i] = (minX);
-    // destArray[baseIndex + 2 * i + 1] = (minY + (double) i * step);
-    // }
-    // baseIndex += 2 * pointsPerSide;
-    //
-    // // bottom side of the rectangle
-    // for (int i = 0; i < pointsPerSide; ++i)
-    // {
-    // destArray[baseIndex + 2 * i] = (maxX);
-    // destArray[baseIndex + 2 * i + 1] = (minY + (double) i * step);
-    // }
-    //
-    // return destArray;
-    // }
-    
-    public void testOutsideMandelbrotSet(int pointsPerSide, int maxIter, int diffIterLimit)
+    /**
+     * Assigns the {@link Status}.OUTSIDE or BROWED status.
+     * 
+     * @param pointsPerSide
+     * @param maxIter
+     */
+    private void testOutsideMandelbrotSet(int pointsPerSide, int maxIter, int diffIterLimit)
     {
         // double[] array = innerPointsAsDouble(pointsPerSide);
         
@@ -551,33 +561,13 @@ public class QuadTreeNode
         this.max = max;
     }
     
-    // private double[] innerPointsAsDouble(int pointsPerSide)
-    // {
-    // double minX = this.minX;
-    // double maxX = this.maxX;
-    // double minY = this.minY;
-    // double maxY = this.maxY;
-    //
-    // double stepX = (maxX - minX) / (double) (pointsPerSide - 1);
-    // double stepY = (maxY - minY) / (double) (pointsPerSide - 1);
-    //
-    // double[] array = new double[pointsPerSide * pointsPerSide * 2];
-    //
-    // // bottom side of the rectangle
-    // for (int i = 0; i < pointsPerSide; i++)
-    // {
-    // int base = i * pointsPerSide;
-    // double xVal = minX + (double) i * stepX;
-    // for (int j = 0; j < pointsPerSide; ++j)
-    // {
-    // array[2 * (base + j)] = xVal;
-    // array[2 * (base + j) + 1] = (minY + (double) j * stepY);
-    // }
-    // }
-    //
-    // return array;
-    // }
-    
+    /**
+     * Assigns the {@link Status} INSIDE, OUTSIDE, or BROWSED to this node
+     * 
+     * @param pointsPerSide
+     * @param maxIter
+     * @param diffIterLimit
+     */
     public void computeStatus(int pointsPerSide, int maxIter, int diffIterLimit)
     {
         // System.out.println(Thread.currentThread().getName() + " computing testInsideMandelbrotSet");
@@ -591,6 +581,10 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * 
+     * @return the path of this node. For instance : R0123
+     */
     public String getPath()
     {
         if (this.parent == null)
@@ -603,6 +597,13 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Converts this node to an xml {@link Element}
+     * 
+     * @param recursive
+     *            if <code>true</code>, converts recursively all children
+     * @return the xml {@link Element}
+     */
     public Element asXML(boolean recursive)
     {
         Element thisNode = new Element("node");
@@ -638,6 +639,11 @@ public class QuadTreeNode
         return thisNode;
     }
     
+    /**
+     * Computes the surface of this node
+     * 
+     * @return the surface of this node
+     */
     public double getSurface()
     {
         double xDiff = maxX - minX;
@@ -645,17 +651,24 @@ public class QuadTreeNode
         return xDiff * yDiff;
     }
     
+    /**
+     * Retrieves a node for the given path. This method should be (but is not required to be) called on the root of the tree. The node is searched in the whole
+     * tree containing this node.
+     * 
+     * @param path
+     *            the path of the node to look for
+     * @return a {@link QuadTreeNode} is any is found. <code>null</code> otherwise.
+     */
     public QuadTreeNode getNodeByPath(String path)
     {
-        if (parent == null)
-        {
-            return getNodeByPathRecusively(path);
-        }
-        else
-        {
-            // System.out.println("Seek parent");
-            return getRootNode().getNodeByPath(path);
-        }
+        // System.out.println("Seek parent");
+        return getRootNode().getNodeByPathRecusively(path);
+    }
+    
+    public QuadTreeNode getSubnodeByPath(String path)
+    {
+        // System.out.println("Seek parent");
+        return getNodeByPath(path);
     }
     
     private QuadTreeNode getNodeByPathRecusively(String path)
@@ -664,7 +677,7 @@ public class QuadTreeNode
         // pop 1st char : this node
         path = path.replaceFirst("[R0-3]", "");
         
-        // if no more char : we are the node shich was seeked
+        // if no more char : we are the node which was seeked
         if (path.length() == 0)
         {
             return this;
@@ -674,7 +687,6 @@ public class QuadTreeNode
         // can't find the node
         if (children == null)
         {
-            System.out.println("no children");
             return null;
         }
         
@@ -701,6 +713,10 @@ public class QuadTreeNode
         return null;
     }
     
+    /**
+     * 
+     * @return the root of the tree containing this node
+     */
     private QuadTreeNode getRootNode()
     {
         if (parent == null)
@@ -713,6 +729,9 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * ensures the existence of the children array but not its content
+     */
     public void ensureChildrenArray()
     {
         if (children == null)
@@ -721,6 +740,14 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Returns the nodes having a {@link Status} in <code>status</code> and puts it in <code>nodesList</code>
+     * 
+     * @param nodesList
+     *            a list which will contain the nodes
+     * @param status
+     *            the status the nodes must have to be returned
+     */
     public void getNodesByStatus(List<QuadTreeNode> nodesList, List<Status> status)
     {
         if (status.contains(this.status))
@@ -737,6 +764,41 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Returns the nodes having a {@link Status} in <code>status</code> and puts it in <code>nodesList</code>
+     * 
+     * @param nodesList
+     *            a list which will contain the nodes
+     * @param status
+     *            the status the nodes must have to be returned
+     * @param maxQuantity
+     *            the method stops when the list has at least <code>maxQuantity</code> elements in it.
+     */
+    public void getNodesByStatus(List<QuadTreeNode> nodesList, List<Status> status, int maxQuantity)
+    {
+        if (status.contains(this.status))
+        {
+            nodesList.add(this);
+        }
+        
+        if (nodesList.size() >= maxQuantity)
+        {
+            return;
+        }
+        
+        if (this.children != null)
+        {
+            for (QuadTreeNode child : children)
+            {
+                child.getNodesByStatus(nodesList, status, maxQuantity);
+            }
+        }
+    }
+    
+    /**
+     * 
+     * @return <code>true</code> if the node has computed direct children
+     */
     public boolean hasComputedChildren()
     {
         if (this.status == Status.VOID)
@@ -760,6 +822,9 @@ public class QuadTreeNode
         return false;
     }
     
+    /**
+     * Flags this node to inform that it is being computed.
+     */
     public synchronized void flagForComputing()
     {
         if (!flagedForComputing)
@@ -768,6 +833,9 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Removes the falg indicating that the node is being computed.
+     */
     public synchronized void unFlagForComputing()
     {
         if (flagedForComputing)
@@ -781,19 +849,12 @@ public class QuadTreeNode
         return flagedForComputing;
     }
     
-    public int getMaxChildrenDepth()
-    {
-        if (children == null)
-        {
-            return depth;
-        }
-        else
-        {
-            return Math.max(Math.max(children[0].getMaxChildrenDepth(), children[1].getMaxChildrenDepth()),
-            Math.max(children[2].getMaxChildrenDepth(), children[3].getMaxChildrenDepth()));
-        }
-    }
-    
+    /**
+     * Retrieves the leaf nodes of this branch.
+     * 
+     * @param leafNodes
+     *            a list which will contain the leaf nodes.
+     */
     public void getLeafNodes(List<QuadTreeNode> leafNodes)
     {
         if (this.children == null)
@@ -809,6 +870,14 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * Retrieves the leaf nodes of this branch.
+     * 
+     * @param leafNodes
+     *            a list which will contain the leaf nodes.
+     * @param status
+     *            the node must have one of the given status to be retrieved
+     */
     public void getLeafNodes(List<QuadTreeNode> leafNodes, List<Status> status)
     {
         if (this.children == null)
@@ -848,14 +917,14 @@ public class QuadTreeNode
     }
     
     /**
-     * Ajoute toutes les nodes et sous-nodes contenues dans le rectangle défini par les 2 points à <code>collection</code>
+     * Adds all nodes and subnodes contained in the rectangle defined by the 2 given points in <code>collection</code>
      * 
      * @param rectMaxX
      * @param rectMaxY
      * @param rectMinX
      * @param rectMinY
      * @param collection
-     *            la collection contenant le résultat
+     *            la collection contenant le rﾃｩsultat
      */
     public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<QuadTreeNode> collection)
     {
@@ -868,18 +937,18 @@ public class QuadTreeNode
     }
     
     /**
-     * Ajoute toutes les nodes et sous-nodes contenues dans le rectangle défini par ses 4 bords à <code>collection</code>
+     * Adds all nodes and subnodes contained in the rectangle defined by its 4 edges in <code>collection</code>
      * 
      * @param rectMaxX
      * @param rectMaxY
      * @param rectMinX
      * @param rectMinY
      * @param collection
-     *            la collection contenant le résultat
+     *            la collection contenant le rﾃｩsultat
      */
     private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<QuadTreeNode> collection)
     {
-        // si la zone de cette node est entièrement contenue dans le rectangle
+        // si la zone de cette node est entiﾃｨrement contenue dans le rectangle
         if (this.minX >= rectMinX && this.maxX <= rectMaxX && this.maxY <= rectMaxY && this.minY >= rectMinY)
         {
             this.getAllNodes(collection);
@@ -915,19 +984,19 @@ public class QuadTreeNode
     }
     
     /**
-     * Renvoie les zones de cette node qui touchent le rectangle défini par ses 4 bords
+     * Returns the areas of this zone which touch the rectangles defined by its 4 edges.
      * 
      * @param rectMaxX
      * @param rectMaxY
      * @param rectMinX
      * @param rectMinY
-     * @return une liste des zones contenues dans le rectangle
+     * @return a list of the zones contained in the rectangle
      */
     protected ArrayList<PositionInParent> getZonesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY)
     {
         ArrayList<PositionInParent> ret = new ArrayList<PositionInParent>(4);
         
-        if (getCenterX() <= rectMinX) // le split est à gauche du rectangle
+        if (getCenterX() <= rectMinX) // le split est ﾃ�gauche du rectangle
         {
             if (getCenterY() <= rectMinY)
             {
@@ -943,7 +1012,7 @@ public class QuadTreeNode
                 ret.add(PositionInParent.BottomRight);
             }
         }
-        else if (getCenterX() > rectMaxX) // le split est à droite du rectangle
+        else if (getCenterX() > rectMaxX) // le split est ﾃ�droite du rectangle
         {
             if (getCenterY() <= rectMinY)
             {
@@ -988,12 +1057,11 @@ public class QuadTreeNode
     {
         return children == null;
     }
-
+    
     @Override
     public String toString()
     {
         return "QuadTreeNode [minX=" + minX + ", maxX=" + maxX + ", minY=" + minY + ", maxY=" + maxY + ", status=" + status + "]";
     }
-    
     
 }

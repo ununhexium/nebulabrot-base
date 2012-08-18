@@ -1,4 +1,6 @@
+
 package net.lab0.nebula.core;
+
 
 import static org.lwjgl.opencl.CL10.CL_DEVICE_TYPE_GPU;
 import static org.lwjgl.opencl.CL10.CL_MEM_COPY_HOST_PTR;
@@ -45,23 +47,24 @@ import org.lwjgl.opencl.CLPlatform;
 import org.lwjgl.opencl.CLProgram;
 import org.lwjgl.opencl.Util;
 
+
+/**
+ * 
+ * Thread to compute the {@link QuadTreeNode}s' status of the given {@link QuadTreeManager} using OpenCL
+ * 
+ * @author 116
+ * 
+ */
 public class OpenCLQuadTreeComputeThread
-extends Thread
+extends AbstractQuadTreeComputeThread
 {
-    private static int          idCounter;
-    
-    private QuadTreeManager     quadTreeManager;
-    private SynchronizedCounter maxNodesToCompute;
-    private SynchronizedCounter computedNodes;
-    
-    private int                 blockSize = 256;
-    
-    public OpenCLQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes)
+    /**
+     * @see AbstractQuadTreeComputeThread
+     */
+    public OpenCLQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes,
+    int computeBlockSize)
     {
-        super("OpenCLQuadTreeComputeThread-" + idCounter++);
-        this.quadTreeManager = quadTreeManager;
-        this.maxNodesToCompute = maxNodesToCompute;
-        this.computedNodes = computedNodes;
+        super(quadTreeManager, maxNodesToCompute, computedNodes, computeBlockSize);
     }
     
     @Override
@@ -69,13 +72,11 @@ extends Thread
     {
         try
         {
-            
             while (!quadTreeManager.stopRequired() && maxNodesToCompute.isPositive())
             {
-                // System.out.println(Thread.currentThread().getName() + " Try next");
                 try
                 {
-                    List<QuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), blockSize);
+                    List<QuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), computeBlockSize);
                     
                     System.out.println("Recieved " + nodes.size() + " nodes");
                     
@@ -91,17 +92,17 @@ extends Thread
                         CLContext context = CLContext.create(platform, devices, null, null, null);
                         CLCommandQueue queue = clCreateCommandQueue(context, devices.get(0), CL_QUEUE_PROFILING_ENABLE, null);
                         
-                        // program/kernel creation
+                        // program and kernel creation
                         String insideTestSource = readSource(getClass().getResourceAsStream("/cl/insideTest.cl"));
                         CLProgram insideTestProgramm = clCreateProgramWithSource(context, insideTestSource, null);
                         Util.checkCLError(clBuildProgram(insideTestProgramm, devices.get(0), "", null));
                         CLKernel insideTestKernel = clCreateKernel(insideTestProgramm, "insideTest", null);
                         
-                        DoubleBuffer minX = BufferUtils.createDoubleBuffer(blockSize);
-                        DoubleBuffer maxX = BufferUtils.createDoubleBuffer(blockSize);
-                        DoubleBuffer minY = BufferUtils.createDoubleBuffer(blockSize);
-                        DoubleBuffer maxY = BufferUtils.createDoubleBuffer(blockSize);
-                        IntBuffer statusResult = BufferUtils.createIntBuffer(blockSize);
+                        DoubleBuffer minX = BufferUtils.createDoubleBuffer(computeBlockSize);
+                        DoubleBuffer maxX = BufferUtils.createDoubleBuffer(computeBlockSize);
+                        DoubleBuffer minY = BufferUtils.createDoubleBuffer(computeBlockSize);
+                        DoubleBuffer maxY = BufferUtils.createDoubleBuffer(computeBlockSize);
+                        IntBuffer statusResult = BufferUtils.createIntBuffer(computeBlockSize);
                         
                         // prepare data
                         minX.rewind();
@@ -153,7 +154,6 @@ extends Thread
                         clFinish(queue);
                         
                         // assigning status result
-                        // List<QuadTreeNode> remainder = new ArrayList<>(nodes.size());
                         // TODO : optimization : compute only the ones which are not inside
                         for (QuadTreeNode node : nodes)
                         {
@@ -237,12 +237,6 @@ extends Thread
                             }
                         }
                         
-                        // for (int i = 0; i < nodes.size(); ++i)
-                        // {
-                        // System.out.println("Node : minX" + minX.get(i) + " maxX" + maxX.get(i) + " minY" + minY.get(i) + " maxY" + maxY.get(i));
-                        // System.out.println("Status@" + i + " : " + statusOutside.get(i));
-                        // }
-                        
                         // teardown
                         System.out.println("Teardown");
                         clReleaseKernel(insideTestKernel);
@@ -287,21 +281,37 @@ extends Thread
         }
     }
     
-    private static String readSource(InputStream in)
-    throws IOException
+    /**
+     * Read a file and returns it as a string
+     * 
+     * @param in
+     *            the stream to read from
+     * @return a conversion of this stream to a string
+     * @throws IOException
+     */
+    private static String readSource(InputStream in) throws IOException
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String line = null;
         StringBuilder sb = new StringBuilder();
         while ((line = br.readLine()) != null)
         {
-            sb.append(line);
+            sb.append(line).append('\n');
         }
         return sb.toString();
     }
     
-    public static void main(String[] args)
-    throws InterruptedException
+    public int getComputeBlockSize()
+    {
+        return computeBlockSize;
+    }
+    
+    public void setComputeBlockSize(int computeBlockSize)
+    {
+        this.computeBlockSize = computeBlockSize;
+    }
+    
+    public static void main(String[] args) throws InterruptedException
     {
         long start = System.currentTimeMillis();
         QuadTreeManager manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 4096, 5, 10);
