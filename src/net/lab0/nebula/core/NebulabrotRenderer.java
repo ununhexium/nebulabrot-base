@@ -154,15 +154,18 @@ public class NebulabrotRenderer
         fireFinishedOrStop(raw);
         return raw;
     }
-
+    
     /**
      * computation for 1 point
      * 
      * @param minIter
      * @param maxIter
-     * @param data the data array to save the results to
-     * @param real real part of the point
-     * @param img imaginary part of the point
+     * @param data
+     *            the data array to save the results to
+     * @param real
+     *            real part of the point
+     * @param img
+     *            imaginary part of the point
      */
     private void computePoint(int minIter, int maxIter, int[][] data, double real, double img)
     {
@@ -212,6 +215,8 @@ public class NebulabrotRenderer
             
             iter++;
         }
+        
+//        System.out.println("Point ;" + iter + ";" + real + ";+i;" + img);
     }
     
     /**
@@ -253,9 +258,32 @@ public class NebulabrotRenderer
                 
                 if (node.min <= maxIter || node.max >= minIter)
                 {
+                    double xStart = Math.floor(Math.abs(node.minX) / stepX) * stepX;
+                    double yStart = Math.floor(Math.abs(node.minY) / stepY) * stepY;
                     
-                    double xStart = Math.floor(node.minX / stepX) * stepX + stepX;
-                    double yStart = Math.floor(node.minY / stepY) * stepY + stepY;
+                    if (Math.IEEEremainder(node.minX, stepX) != 0)
+                    {
+                        if (node.minX < 0)
+                        {
+                            xStart = -xStart;
+                        }
+                        else
+                        {
+                            xStart += stepX;
+                        }
+                    }
+                    
+                    if (Math.IEEEremainder(node.minY, stepY) != 0)
+                    {
+                        if (node.minY < 0)
+                        {
+                            yStart = -yStart;
+                        }
+                        else
+                        {
+                            yStart += stepY;
+                        }
+                    }
                     
                     double x = xStart;
                     
@@ -267,7 +295,7 @@ public class NebulabrotRenderer
                             double real = x;
                             double img = y;
                             
-                            //if the node is inside and the number of iterations match the requirements
+                            // if the node is inside and the number of iterations match the requirements
                             if ((node.status == Status.OUTSIDE && (node.min < maxIter || node.max > minIter))
                             // or if the point is outside
                             || isOutsideMandelbrotSet(real, img, maxIter))
@@ -276,7 +304,7 @@ public class NebulabrotRenderer
                                 {
                                     break exit;
                                 }
-
+                                
                                 computePoint(minIter, maxIter, data, real, img);
                             }
                             

@@ -8,6 +8,8 @@ import java.util.Map;
 import net.lab0.nebula.enums.Status;
 import net.lab0.tools.NumberBox;
 
+import com.flaptor.hist4j.AdaptiveHistogram;
+
 
 /**
  * Complement of the {@link Statistics} class. Contains the per-depth statistics.
@@ -17,8 +19,9 @@ import net.lab0.tools.NumberBox;
  */
 public class StatisticsData
 {
-    private Map<Status, NumberBox<Double>>  surfaces    = new HashMap<>();
-    private Map<Status, NumberBox<Integer>> statusCount = new HashMap<>();
+    private Map<Status, NumberBox<Double>>  surfaces                 = new HashMap<>();
+    private Map<Status, NumberBox<Integer>> statusCount              = new HashMap<>();
+    private AdaptiveHistogram               outsideIterationHitogram = new AdaptiveHistogram();
     
     public void addSurface(Status status, double quantity)
     {
@@ -42,6 +45,14 @@ public class StatisticsData
             statusCount.put(status, box);
         }
         box.value += quantity;
+    }
+    
+    public void addIterations(int startIter, int endIter)
+    {
+        for (int i = startIter; i <= endIter; ++i)
+        {
+            outsideIterationHitogram.addValue(i);
+        }
     }
     
     public int getCountFor(Status status)
@@ -70,6 +81,11 @@ public class StatisticsData
         }
     }
     
+    public AdaptiveHistogram getOutsideIterationHitogram()
+    {
+        return outsideIterationHitogram;
+    }
+    
     @Override
     public String toString()
     {
@@ -95,5 +111,4 @@ public class StatisticsData
         
         return sb.toString();
     }
-    
 }

@@ -1,4 +1,6 @@
+
 package net.lab0.nebula.data;
+
 
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
@@ -6,14 +8,20 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.Serializable;
 
+import net.lab0.nebula.color.ColorationModel;
+import net.lab0.nebula.color.GrayScaleColorationModel;
+import net.lab0.nebula.color.PointValues;
+
+
 /**
  * 
  * Contains the raw computation of a mandelbrot / nebulabrot set
  * 
  * @author 116
- *
+ * 
  */
-public class RawMandelbrotData implements Serializable
+public class RawMandelbrotData
+implements Serializable
 {
     private static final long serialVersionUID = 1L;
     
@@ -44,7 +52,7 @@ public class RawMandelbrotData implements Serializable
         return data;
     }
     
-    public BufferedImage computeBufferedImage()
+    public BufferedImage computeBufferedImage(ColorationModel colorationModel)
     {
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
         final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth, pixelHeight, BufferedImage.TYPE_INT_RGB);
@@ -67,15 +75,17 @@ public class RawMandelbrotData implements Serializable
             }
         }
         
-        long gap = max - min + 1;
         WritableRaster raster = bufferedImage.getRaster();
+        float[] fArray = new float[3];
+        PointValues value = new PointValues();
+        value.minIter = min;
+        value.maxIter = max;
         for (int x = 0; x < pixelWidth; ++x)
         {
             for (int y = 0; y < pixelHeight; ++y)
             {
-                float[] fArray = new float[3];
-                fArray[0] = fArray[1] = fArray[2] = 255 * (data[x][y] - min) / gap;
-                
+                value.value = data[x][y];
+                colorationModel.computeColorForPoints(fArray, value);
                 raster.setPixel(x, y, fArray);
             }
         }

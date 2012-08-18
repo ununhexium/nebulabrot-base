@@ -427,16 +427,14 @@ public class QuadTreeManager
                     node.splitNode();
                 }
             }
-            tmpList.clear();
-            // the maximum quantity of nodes to retrieve
-            int quantity = (int) (remainingNodesToCompute.getValue() > (long) maxCapacity ? maxCapacity : remainingNodesToCompute.getValue());
-            // get 'quantity' non computed nodes
-            root.getNodesByStatus(tmpList, Arrays.asList(Status.VOID), quantity);
             
-            // is set to true if there may be more nodes to compute
+            tmpList.clear();
             boolean nodesAvailable = false;
+            root.getNodesByStatus(tmpList, Arrays.asList(Status.VOID));
+            
+            int currentSize = 0;
+            int remaining = (int) (remainingNodesToCompute.getValue() > (long) maxCapacity ? maxCapacity : remainingNodesToCompute.getValue());
             List<QuadTreeNode> nodes = new ArrayList<>(blockSize);
-            // group nodes by blocks of size 'blockSize'
             for (QuadTreeNode n : tmpList)
             {
                 if (n.depth <= maxComputationDepth)
@@ -445,10 +443,17 @@ public class QuadTreeManager
                     if (!n.isFlagedForComputing())
                     {
                         nodes.add(n);
-                        if (nodes.size() >= blockSize)
+                        remaining--;
+                        currentSize++;
+                        if (currentSize >= blockSize)
                         {
                             nodesList.add(nodes);
                             nodes = new ArrayList<>(blockSize);
+                            currentSize = 0;
+                        }
+                        if (remaining <= 0)
+                        {
+                            break;
                         }
                     }
                 }
@@ -574,6 +579,11 @@ public class QuadTreeManager
         StatisticsData data = statistics.getStatisticsDataForDepth(node.depth);
         data.addStatusCount(node.status, 1);
         data.addSurface(node.status, node.getSurface());
+        if (node.status == Status.OUTSIDE)
+        {
+            data.addIterations(node.min, node.max);
+            statistics.updateMaxKnownIter(node.max);
+        }
         
         if (node.children != null)
         {
@@ -667,6 +677,7 @@ public class QuadTreeManager
     
     /**
      * adds <code>computed</code> node to the toal of computed nodes and fires a compute progress
+     * 
      * @param computed
      */
     public void computedNodes(int computed)

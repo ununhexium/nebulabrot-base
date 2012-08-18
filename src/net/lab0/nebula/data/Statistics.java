@@ -8,17 +8,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 //TODO : min iter, max iter, histo iter
 /**
  * 
  * Classe used for storage of statistics data
  * 
  * @author 116
- *
+ * 
  */
 public class Statistics
 {
     private Map<Integer, StatisticsData> statisticsDepth = new HashMap<>();
+    private int                          maxKnownIter    = 0;
     
     public StatisticsData getStatisticsDataForDepth(int depth)
     {
@@ -37,7 +39,7 @@ public class Statistics
         int max = -1;
         for (Integer i : statisticsDepth.keySet())
         {
-//            System.out.println(i);
+            // System.out.println(i);
             if (i > max)
             {
                 max = i;
@@ -46,6 +48,21 @@ public class Statistics
         return max;
     }
     
+    public void updateMaxKnownIter(int iter)
+    {
+        if (iter > maxKnownIter)
+        {
+            maxKnownIter = iter;
+        }
+    }
+    
+    
+    
+    public int getMaxKnownIter()
+    {
+        return maxKnownIter;
+    }
+
     @Override
     public String toString()
     {
@@ -64,5 +81,4 @@ public class Statistics
         
         return sb.toString();
     }
-    
 }
