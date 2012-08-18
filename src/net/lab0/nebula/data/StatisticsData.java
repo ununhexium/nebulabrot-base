@@ -9,6 +9,12 @@ import net.lab0.nebula.enums.Status;
 import net.lab0.tools.NumberBox;
 
 
+/**
+ * Complement of the {@link Statistics} class. Contains the per-depth statistics.
+ * 
+ * @author 116
+ * 
+ */
 public class StatisticsData
 {
     private Map<Status, NumberBox<Double>>  surfaces    = new HashMap<>();

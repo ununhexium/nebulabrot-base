@@ -9,6 +9,13 @@ import java.util.List;
 import java.util.Map;
 
 //TODO : min iter, max iter, histo iter
+/**
+ * 
+ * Classe used for storage of statistics data
+ * 
+ * @author 116
+ *
+ */
 public class Statistics
 {
     private Map<Integer, StatisticsData> statisticsDepth = new HashMap<>();

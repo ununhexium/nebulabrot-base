@@ -2,6 +2,12 @@
 package net.lab0.nebula.data;
 
 
+/**
+ * A synchronized counter
+ * 
+ * @author 116
+ * 
+ */
 public class SynchronizedCounter
 {
     private long count;

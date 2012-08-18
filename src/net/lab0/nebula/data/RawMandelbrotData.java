@@ -6,6 +6,13 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.Serializable;
 
+/**
+ * 
+ * Contains the raw computation of a mandelbrot / nebulabrot set
+ * 
+ * @author 116
+ *
+ */
 public class RawMandelbrotData implements Serializable
 {
     private static final long serialVersionUID = 1L;
