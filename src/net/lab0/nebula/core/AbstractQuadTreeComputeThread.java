@@ -12,7 +12,7 @@ extends Thread
     /**
      * counter used for the {@link CPUQuadTreeComputeThread} id generation
      */
-    private static int            idCounter;
+    private static int            counter;
     
     /**
      * The {@link QuadTreeManager} to work with
@@ -46,7 +46,7 @@ extends Thread
     public AbstractQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes,
     int computeBlockSize)
     {
-        super("CPUQuadTreeComputeThread-" + idCounter++);
+        super("CPUQuadTreeComputeThread-" + ++counter);
         this.quadTreeManager = quadTreeManager;
         this.maxNodesToCompute = maxNodesToCompute;
         this.computedNodes = computedNodes;

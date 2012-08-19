@@ -615,9 +615,6 @@ public class QuadTreeNode
         thisNode.addAttribute(new Attribute("pos", positionInParent.toString()));
         thisNode.addAttribute(new Attribute("status", status.toString()));
         
-        // TODO : rm debug
-        // thisNode.addAttribute(new Attribute("path", getPath()));
-        
         if (status == Status.BROWSED)
         {
             thisNode.addAttribute(new Attribute("min", "" + min));

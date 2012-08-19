@@ -147,12 +147,16 @@ public class QuadTreeManager
         this.computedNodes = new SynchronizedCounter(0);
     }
     
-    // TODO : change folder into index.xml
-    public QuadTreeManager(Path inputFolder)
+    public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
     throws ValidityException, ParsingException, IOException
     {
         // Save the location of the original file. Useful for saveACopy()
         this.originalPath = inputFolder;
+        
+        if (listener != null)
+        {
+            this.eventListenerList.add(listener);
+        }
         
         // start by parsing the index file
         Builder parser = new Builder();
@@ -191,21 +195,21 @@ public class QuadTreeManager
         for (Pair<File, String> file : filesAndParent)
         {
             currentFileIndex++;
-            // System.out.println("reading file " + currentFileIndex + " out of " + filesAndParent.size()); TODO : listener
+            fireLoadingFile(currentFileIndex, filesAndParent.size());
             dataDoc = dataParser.build(file.a);
             mandelbrot = dataDoc.getRootElement();
             
             QuadTreeNode parent = this.root.getNodeByPath(file.b);
             QuadTreeNode node = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), parent);
             
-            parent.ensureChildrenArray();// TODO : use splitNode only to be sure that all nodes are created and loaded ?
+            parent.splitNode();//was parent.ensureChildrenArray();
             parent.children[node.positionInParent.ordinal()] = node;
         }
         
         // computes the QuadTreeNode.depth field for the whole tree
         this.root.updateDepth();
     }
-    
+
     public void addQuadTreeManagerListener(QuadTreeManagerListener listener)
     {
         eventListenerList.add(listener);
@@ -219,11 +223,43 @@ public class QuadTreeManager
         }
     }
     
+    public void fireThreadSleeping(long threadId)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.threadSleeping(threadId);
+        }
+    }
+    
+    public void fireThreadStarted(long threadId)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.threadStarted(threadId);
+        }
+    }
+    
+    public void fireThreadResumed(long threadId)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.threadResumed(threadId);
+        }
+    }
+    
     private void fireComputationFinished(boolean b)
     {
         for (QuadTreeManagerListener listener : eventListenerList)
         {
             listener.computationFinished(b);
+        }
+    }
+    
+    private void fireLoadingFile(int current, int total)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.loadingFile(current, total);
         }
     }
     

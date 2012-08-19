@@ -1,4 +1,6 @@
+
 package net.lab0.nebula;
+
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -10,13 +12,15 @@ import java.util.GregorianCalendar;
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.Statistics;
+import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
+import net.lab0.nebula.listener.QuadTreeManagerListener;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
+
 public class Background
 {
-    public static void main(String[] args)
-    throws InterruptedException, IOException, ValidityException, ParsingException
+    public static void main(String[] args) throws InterruptedException, IOException, ValidityException, ParsingException
     {
         QuadTreeNode root = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         
@@ -34,7 +38,7 @@ public class Background
         int threads = Runtime.getRuntime().availableProcessors();
         System.out.println("Using " + threads + " threads");
         // QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, threads / 2);
-        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16v167"));
+        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16v167"), new ConsoleQuadTreeManagerListener());
         manager.setThreads(threads);
         
         // System.out.println("start " + new Date());

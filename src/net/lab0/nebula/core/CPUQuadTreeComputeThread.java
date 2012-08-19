@@ -29,6 +29,7 @@ extends AbstractQuadTreeComputeThread
     @Override
     public void run()
     {
+        quadTreeManager.fireThreadStarted(getId());
         // while the quad tree manager doesn't require to stop and there are more nodes to compute
         while (!quadTreeManager.stopRequired() && maxNodesToCompute.isPositive())
         {
@@ -40,8 +41,6 @@ extends AbstractQuadTreeComputeThread
                 if (!nodes.isEmpty())
                 {
                     int computed = 0;
-                    // System.out.println("Retrieved " + nodes.size() + " nodes. Still " +maxNodesToCompute.getValue()+" nodes to compute");
-                    // TODO : change sysout to event
                     
                     int pointsPerSide = quadTreeManager.getPointsPerSide();
                     int maxIter = quadTreeManager.getMaxIter();
@@ -77,9 +76,9 @@ extends AbstractQuadTreeComputeThread
                 {
                     try
                     {
-                        // System.out.println(Thread.currentThread().getName() + " sleeping"); TODO : change sysout to event
+                        quadTreeManager.fireThreadSleeping(getId());
                         Thread.sleep(1000);
-                        // System.out.println(Thread.currentThread().getName() + " resumed"); TODO : change sysout to event
+                        quadTreeManager.fireThreadResumed(getId());
                     }
                     catch (InterruptedException e)
                     {
