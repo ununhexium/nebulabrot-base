@@ -26,7 +26,7 @@ implements QuadTreeManagerListener
     @Override
     public void loadingFile(int current, int total)
     {
-        System.out.println("Loadin file " + current + " out of " + total);
+        System.out.println("Loading file " + current + " out of " + total);
     }
     
     @Override
