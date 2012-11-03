@@ -18,4 +18,10 @@ implements ColorationModel
         }
         vector[0] = vector[1] = vector[2] = rgb / (float) count;
     }
+
+    @Override
+    public int getChannelsCount()
+    {
+        return 1;
+    }
 }
