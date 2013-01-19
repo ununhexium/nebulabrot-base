@@ -1,6 +1,4 @@
-
 package net.lab0.nebula.core;
-
 
 import static org.lwjgl.opencl.CL10.CL_DEVICE_TYPE_GPU;
 import static org.lwjgl.opencl.CL10.CL_MEM_COPY_HOST_PTR;
@@ -47,10 +45,11 @@ import org.lwjgl.opencl.CLPlatform;
 import org.lwjgl.opencl.CLProgram;
 import org.lwjgl.opencl.Util;
 
-
 /**
  * 
  * Thread to compute the {@link QuadTreeNode}s' status of the given {@link QuadTreeManager} using OpenCL
+ * 
+ * TODO : find an efficient way to use openCL
  * 
  * @author 116
  * 
@@ -270,7 +269,7 @@ extends AbstractQuadTreeComputeThread
                 }
                 catch (NoMoreNodesToCompute e)
                 {
-                    System.out.println("Mo more nodes to compute");
+                    System.out.println("No more nodes to compute");
                     break;
                 }
             }
@@ -289,7 +288,8 @@ extends AbstractQuadTreeComputeThread
      * @return a conversion of this stream to a string
      * @throws IOException
      */
-    private static String readSource(InputStream in) throws IOException
+    private static String readSource(InputStream in)
+    throws IOException
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String line = null;
@@ -311,20 +311,28 @@ extends AbstractQuadTreeComputeThread
         this.computeBlockSize = computeBlockSize;
     }
     
-    public static void main(String[] args) throws InterruptedException
+    public static void main(String[] args)
+    throws InterruptedException, IOException
     {
         long start = System.currentTimeMillis();
-        QuadTreeManager manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 4096, 5, 10);
+        QuadTreeManager manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 4096, 5, 4);
         manager.setUseOpenCL(true);
-        manager.compute(10);
+        boolean goOn = true;
+        int retries = 5;
+        while (goOn && retries > 0)
+        {
+            goOn = manager.compute(1000);
+            retries--;
+        }
         long end = System.currentTimeMillis();
         System.out.println("Time : " + (end - start));
         
-        start = System.currentTimeMillis();
-        manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 4096, 5, 10);
-        manager.setUseOpenCL(false);
-        manager.compute(10);
-        end = System.currentTimeMillis();
-        System.out.println("Time : " + (end - start));
+        // start = System.currentTimeMillis();
+        // manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 4096, 5, 10);
+        // manager.setUseOpenCL(false);
+        // manager.compute(10);
+        // end = System.currentTimeMillis();
+        // System.out.println("Time : " + (end - start));
+        // System.out.println("source : "+OpenCLQuadTreeComputeThread.class.getResourceAsStream("/cl/insideTest.cl"));
     }
 }
