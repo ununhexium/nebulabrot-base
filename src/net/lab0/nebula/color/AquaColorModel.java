@@ -1,30 +1,34 @@
 
 package net.lab0.nebula.color;
 
-
+/**
+ * 
+ * blue and turquoise
+ * 
+ * @author 116
+ *
+ */
 public class AquaColorModel
 implements ColorationModel
 {
     
     @Override
-    public void computeColorForPoints(float[] vector, PointValues... values)
+    public void computeColorForPoint(float[] vector, PointValues... values)
     {
         float red = 0;
         float green = 0;
         float blue = 0;
         double x = Math.log(256d) / 255d;
         
-        int count = 0;
         PointValues v = values[0];
         float tmp = 255f * (v.value - v.minIter) / (v.maxIter - v.minIter + 1);
-        red += Math.exp(tmp * x) - 1;
-        green += tmp;
-        blue += Math.sqrt(255f * tmp);
-        count++;
+        red = (float) (Math.exp(tmp * x) - 1);
+        green = tmp;
+        blue = (float) Math.sqrt(255f * tmp);
         
-        vector[0] = red / (float) count;
-        vector[1] = green / (float) count;
-        vector[2] = blue / (float) count;
+        vector[0] = red;
+        vector[1] = green;
+        vector[2] = blue;
     }
     
     @Override
