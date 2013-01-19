@@ -9,7 +9,7 @@ import java.awt.image.WritableRaster;
 import java.io.Serializable;
 
 import net.lab0.nebula.color.ColorationModel;
-import net.lab0.nebula.color.GrayScaleColorationModel;
+import net.lab0.nebula.color.GrayScaleColorModel;
 import net.lab0.nebula.color.PointValues;
 
 
@@ -52,6 +52,11 @@ implements Serializable
         return data;
     }
     
+    /**
+     * 
+     * @param colorationModel
+     * @return a BufferedImage
+     */
     public BufferedImage computeBufferedImage(ColorationModel colorationModel)
     {
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
@@ -85,7 +90,7 @@ implements Serializable
             for (int y = 0; y < pixelHeight; ++y)
             {
                 value.value = data[x][y];
-                colorationModel.computeColorForPoints(fArray, value);
+                colorationModel.computeColorForPoint(fArray, value);
                 raster.setPixel(x, y, fArray);
             }
         }
