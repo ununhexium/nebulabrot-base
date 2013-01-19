@@ -1,6 +1,4 @@
-
 package net.lab0.nebula;
-
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -17,10 +15,10 @@ import net.lab0.nebula.listener.QuadTreeManagerListener;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
-
 public class Background
 {
-    public static void main(String[] args) throws InterruptedException, IOException, ValidityException, ParsingException
+    public static void main(String[] args)
+    throws InterruptedException, IOException, ValidityException, ParsingException
     {
         QuadTreeNode root = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         
@@ -28,17 +26,18 @@ public class Background
         int pointsPerSide = 256;
         int maxIter = 4096;
         int diffIterLimit = 5;
-        // bruteForceVSQuadTreeComparison(maxDepth, pointsPerSide, maxIter,
-        // diffIterLimit);
         
         long startTimer = System.currentTimeMillis();
         // GregorianCalendar cal = new GregorianCalendar(2012, Calendar.AUGUST, 5, 21, 35);
         // Date stop = cal.getTime();
         
-        int threads = Runtime.getRuntime().availableProcessors();
+        int threads = Runtime.getRuntime().availableProcessors() - 1;
         System.out.println("Using " + threads + " threads");
         // QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth, threads / 2);
-        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16v167"), new ConsoleQuadTreeManagerListener());
+        
+        int pass = 430;
+        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16v" + pass),
+        new ConsoleQuadTreeManagerListener());
         manager.setThreads(threads);
         
         // System.out.println("start " + new Date());
@@ -46,16 +45,19 @@ public class Background
         
         long computedNodes = 0;
         int nodesPerCycle = 100_000;
+        
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
-        cal.add(Calendar.HOUR, 20);
-        int pass = 167;
+        cal.add(Calendar.MINUTE, 90);
+
+        GregorianCalendar end = new GregorianCalendar();
+        end.setTime(new Date());
+        end.add(Calendar.DAY_OF_YEAR, 2);
         
         boolean goOn = true;
         // while (goOn)
-        while (goOn)
+        while (new Date().before(end.getTime()))
         {
-            pass++;
             goOn = manager.compute(nodesPerCycle);
             computedNodes += (long) nodesPerCycle;
             System.out.println("Nodes computed so far : " + computedNodes);
@@ -63,11 +65,17 @@ public class Background
             // Statistics statistics = manager.computeStatistics();
             // System.out.println(statistics);
             
-            Path path = FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree",
-            "p" + manager.getPointsPerSide() + "i" + manager.getMaxIter() + "d" + manager.getDiffIterLimit() + "D" + manager.getMaxDepth() + "v" + pass);
-            
-            System.out.println("save to " + path);
-            manager.saveToXML(path);
+            if (new Date().after(cal.getTime())) //save every 30 minutes
+            {
+                pass++;
+                Path path = FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree",
+                "p" + manager.getPointsPerSide() + "i" + manager.getMaxIter() + "d" + manager.getDiffIterLimit() + "D" + manager.getMaxDepth() + "v" + pass);
+                
+                System.out.println("save to " + path);
+                manager.saveToXML(path);
+
+                cal.add(Calendar.MINUTE, 90);
+            }
         }
         
         long endTimer = System.currentTimeMillis();
