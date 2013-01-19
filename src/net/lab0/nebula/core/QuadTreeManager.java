@@ -1,11 +1,11 @@
-
 package net.lab0.nebula.core;
-
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -34,7 +34,6 @@ import nu.xom.Elements;
 import nu.xom.ParsingException;
 import nu.xom.Serializer;
 import nu.xom.ValidityException;
-
 
 /**
  * 
@@ -147,6 +146,16 @@ public class QuadTreeManager
         this.computedNodes = new SynchronizedCounter(0);
     }
     
+    /**
+     * Creates a quadTree by reading it from files located in the given <code>inputFolder</code>
+     * 
+     * @param inputFolder
+     *            the folder to read the file from
+     * @param listener
+     * @throws ValidityException
+     * @throws ParsingException
+     * @throws IOException
+     */
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
     throws ValidityException, ParsingException, IOException
     {
@@ -202,14 +211,14 @@ public class QuadTreeManager
             QuadTreeNode parent = this.root.getNodeByPath(file.b);
             QuadTreeNode node = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), parent);
             
-            parent.splitNode();//was parent.ensureChildrenArray();
+            parent.splitNode();// was parent.ensureChildrenArray();
             parent.children[node.positionInParent.ordinal()] = node;
         }
         
         // computes the QuadTreeNode.depth field for the whole tree
         this.root.updateDepth();
     }
-
+    
     public void addQuadTreeManagerListener(QuadTreeManagerListener listener)
     {
         eventListenerList.add(listener);
@@ -272,7 +281,8 @@ public class QuadTreeManager
      *            suffix to add to the save folder location
      * @throws IOException
      */
-    public void saveACopy(String prefix, String suffix) throws IOException
+    public void saveACopy(String prefix, String suffix)
+    throws IOException
     {
         File originalFile = originalPath.toFile();
         if (prefix == null)
@@ -288,7 +298,8 @@ public class QuadTreeManager
         saveToXML(saveFile.toPath());
     }
     
-    public void save() throws IOException
+    public void save()
+    throws IOException
     {
         saveToXML(originalPath);
     }
@@ -300,7 +311,8 @@ public class QuadTreeManager
      *            a folder to save the quad tree to
      * @throws IOException
      */
-    public void saveToXML(Path outputDirectoryPath) throws IOException
+    public void saveToXML(Path outputDirectoryPath)
+    throws IOException
     {
         File outputDirectoryFile = outputDirectoryPath.toFile();
         if (!outputDirectoryFile.exists())
@@ -316,6 +328,7 @@ public class QuadTreeManager
         index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
         index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
         index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
+        index.addAttribute(new Attribute("method", "xmlTree"));
         
         // counts the number of data files created
         int dataIndex = 0;
@@ -378,7 +391,7 @@ public class QuadTreeManager
             file.addAttribute(new Attribute("path", fileName));
             index.appendChild(file);
             
-            // creates the documents and saves it
+            // creates the document and saves it
             Document dataDocument = new Document(docRoot);
             Serializer dataSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(baseFile)), "utf8");
             dataSerializer.setIndent(2);
@@ -388,7 +401,51 @@ public class QuadTreeManager
             dataIndex++;
         }
         
-        // creates ans saves the index file
+        // creates and saves the index file
+        File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
+        Document indexDocument = new Document(index);
+        Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
+        indexSerializer.setIndent(2);
+        indexSerializer.setMaxLength(0);
+        indexSerializer.write(indexDocument);
+    }
+    
+    /**
+     * saves the root node as a java serialized object with an associated index file
+     * 
+     * @param outputDirectoryPath
+     * @throws IOException
+     */
+    public void saveToSearializedJavaObject(Path outputDirectoryPath) throws IOException
+    {
+        File outputDirectoryFile = outputDirectoryPath.toFile();
+        if (!outputDirectoryFile.exists())
+        {
+            outputDirectoryFile.mkdirs();
+        }
+        
+        // file containing general information and information about other created files
+        Element index = new Element("index");
+        index.addAttribute(new Attribute("pointsPerSide", "" + pointsPerSide));
+        index.addAttribute(new Attribute("maxIter", "" + maxIter));
+        index.addAttribute(new Attribute("diffIterLimit", "" + diffIterLimit));
+        index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
+        index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
+        index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
+        index.addAttribute(new Attribute("method", "javaSerialize"));
+        
+        File serializedFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "data.serialized").toFile();
+        Element serializedFileNode = new Element("serializedFile");
+        serializedFileNode.addAttribute(new Attribute("path", "./data.serialized"));
+        index.appendChild(serializedFileNode);
+        
+        FileOutputStream fileOutputStream = new FileOutputStream(serializedFile);
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+        objectOutputStream.writeObject(root);
+        objectOutputStream.close();
+        fileOutputStream.close();
+        
+        // creates and saves the index file
         File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
         Document indexDocument = new Document(index);
         Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
@@ -447,7 +504,8 @@ public class QuadTreeManager
      * @return a list of {@link QuadTreeNode}s, which may contains between 0 and <code>blockSize</code> elements. Never returns null.
      * @throws NoMoreNodesToCompute
      */
-    public synchronized List<QuadTreeNode> getNextNodeToCompute(int maxComputationDepth, int blockSize) throws NoMoreNodesToCompute
+    public synchronized List<QuadTreeNode> getNextNodeToCompute(int maxComputationDepth, int blockSize)
+    throws NoMoreNodesToCompute
     {
         // if there is no list of nodes left : refill it
         if (nodesList.isEmpty())
@@ -530,7 +588,8 @@ public class QuadTreeManager
      * @return true if there is more nodes to compute
      * @throws InterruptedException
      */
-    public boolean compute(int quantity) throws InterruptedException
+    public boolean compute(int quantity)
+    throws InterruptedException
     {
         totalComputedNodes = 0;
         totalNodesToCompute = quantity;
@@ -542,7 +601,7 @@ public class QuadTreeManager
         if (useOpenCL)
         {
             // TODO : find the best quantity instead of 256
-            Thread t = new OpenCLQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes, 256);
+            Thread t = new OpenCLQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes, 4096);
             threadsList.add(t);
             t.start();
         }
