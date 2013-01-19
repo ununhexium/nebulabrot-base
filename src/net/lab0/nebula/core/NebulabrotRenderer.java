@@ -1,6 +1,4 @@
-
 package net.lab0.nebula.core;
-
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +11,6 @@ import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.listener.MandelbrotRendererListener;
 import net.lab0.tools.geom.RectangleInterface;
-
 
 /**
  * 
@@ -216,7 +213,7 @@ public class NebulabrotRenderer
             iter++;
         }
         
-//        System.out.println("Point ;" + iter + ";" + real + ";+i;" + img);
+        // System.out.println("Point ;" + iter + ";" + real + ";+i;" + img);
     }
     
     /**
@@ -247,6 +244,20 @@ public class NebulabrotRenderer
         List<QuadTreeNode> nodesList = new ArrayList<>();
         root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID));
         
+        double workSurface = 0;
+        double browsedSurface = 0;
+        for (QuadTreeNode n : nodesList)
+        {
+            workSurface += n.getSurface();
+            if (n.status == Status.BROWSED)
+            {
+                browsedSurface += n.getSurface();
+            }
+        }
+        System.out.println("work surface = " + workSurface);
+        System.out.println("browsed surface = " + browsedSurface);
+        
+        double discardedSurface = 0;
         long current = 0;
         // label set here to exit the main loop is case of stop request
         exit:
