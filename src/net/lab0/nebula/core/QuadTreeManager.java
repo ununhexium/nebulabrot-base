@@ -1,11 +1,15 @@
 package net.lab0.nebula.core;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,11 +22,16 @@ import java.util.Set;
 
 import javax.swing.event.EventListenerList;
 
+import org.apache.commons.lang3.BitField;
+
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.Statistics;
 import net.lab0.nebula.data.StatisticsData;
 import net.lab0.nebula.data.SynchronizedCounter;
+import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
+import net.lab0.nebula.enums.TreeSaveMode;
+import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
 import net.lab0.nebula.listener.QuadTreeManagerListener;
 import net.lab0.tools.Pair;
@@ -115,6 +124,8 @@ public class QuadTreeManager
      */
     private int                          splitDepth        = 6;
     
+    private TreeSaveMode                 treeSaveMode;
+    
     /**
      * Uses openCL if true.
      */
@@ -155,9 +166,11 @@ public class QuadTreeManager
      * @throws ValidityException
      * @throws ParsingException
      * @throws IOException
+     * @throws ClassNotFoundException
+     * @throws InvalidBinaryFileException
      */
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
-    throws ValidityException, ParsingException, IOException
+    throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException
     {
         // Save the location of the original file. Useful for saveACopy()
         this.originalPath = inputFolder;
@@ -179,7 +192,207 @@ public class QuadTreeManager
         this.maxDepth = Integer.parseInt(index.getAttributeValue("maxDepth"));
         this.totalComputingTime = Long.parseLong(index.getAttributeValue("totalComputingTime"));
         this.computedNodes = new SynchronizedCounter(Long.parseLong(index.getAttributeValue("computedNodes")));
+        this.treeSaveMode = TreeSaveMode.valueOf(index.getAttributeValue("saveMode"));
         
+        switch (treeSaveMode)
+        {
+            case JAVA_SERIALIZE:
+                loadAsJavaSerialized(inputFolder, index);
+                break;
+            
+            case XML_TREE:
+                loadAsXmlTree(inputFolder, index);
+                // computes the QuadTreeNode.depth field for the whole tree
+                this.root.updateDepth();
+                break;
+            
+            case CUSTOM_BINARY:
+                loadAsCustomBinary(inputFolder, index);
+                break;
+            
+            default:
+                break;
+        }
+        
+    }
+    
+    private void loadAsCustomBinary(Path inputFolder, Element index)
+    throws IOException, ClassNotFoundException, InvalidBinaryFileException
+    {
+        Element serializedFile = index.getFirstChildElement("serializedFile");
+        Element rootInformation = serializedFile.getFirstChildElement("rootInformation");
+        
+        boolean indexed = Boolean.parseBoolean(serializedFile.getAttributeValue("indexed"));
+        
+        File inputFile = FileSystems.getDefault().getPath(inputFolder.toString(), serializedFile.getAttributeValue("path")).toFile();
+        FileInputStream fileInputStream = new FileInputStream(inputFile);
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+        if (indexed)
+        {
+            this.root = recursivelyConvertToQuadTreeWithIndexes(bufferedInputStream);
+        }
+        else
+        {
+            this.root = recursivelyConvertToQuadTreeWithoutIndexes(bufferedInputStream);
+        }
+        
+        this.root.positionInParent = PositionInParent.Root;
+        this.root.minX = Double.parseDouble(rootInformation.getAttributeValue("minX"));
+        this.root.maxX = Double.parseDouble(rootInformation.getAttributeValue("maxX"));
+        this.root.minY = Double.parseDouble(rootInformation.getAttributeValue("minY"));
+        this.root.maxY = Double.parseDouble(rootInformation.getAttributeValue("maxY"));
+        
+        bufferedInputStream.close();
+        fileInputStream.close();
+    }
+    
+    private QuadTreeNode recursivelyConvertToQuadTreeWithIndexes(BufferedInputStream bufferedInputStream)
+    throws IOException, InvalidBinaryFileException
+    {
+        byte[] bytes = new byte[26];
+        
+        if (bufferedInputStream.read(bytes, 0, 26) > 0)
+        {
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+            byteBuffer.position(0);
+            
+            byte statusValue = byteBuffer.get();
+            Status status = Status.values()[statusValue];
+            
+            QuadTreeNode node = new QuadTreeNode();
+            node.status = status;
+            node.min = byteBuffer.getInt();
+            node.max = byteBuffer.getInt();
+            
+            byte childrenValue = byteBuffer.get();
+            
+            // we don't care when we load everything
+            // int[] pos = new int[4];
+            // pos[0] = nodeIndex+1;
+            // pos[1] = byteBuffer.getInt();
+            // pos[2] = byteBuffer.getInt();
+            // pos[3] = byteBuffer.getInt();
+            
+            if (childrenValue != 0) // has children
+            {
+                node.children = new QuadTreeNode[4];
+                for (int i = 0; i < 4; ++i)
+                {
+                    node.children[i] = recursivelyConvertToQuadTreeWithIndexes(bufferedInputStream);
+                }
+            }
+            
+            return node;
+        }
+        else
+        {
+            throw new InvalidBinaryFileException();
+        }
+    }
+    
+    /**
+     * @see save for doc
+     * @param bufferedInputStream
+     * @return
+     * @throws IOException
+     * @throws InvalidBinaryFileException
+     */
+    private QuadTreeNode recursivelyConvertToQuadTreeWithoutIndexes(BufferedInputStream bufferedInputStream)
+    throws IOException, InvalidBinaryFileException
+    {
+        byte[] bytes = new byte[26];
+        
+        if (bufferedInputStream.read(bytes, 0, 1) > 0)
+        {
+            QuadTreeNode node = new QuadTreeNode();
+            ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+            
+            byte statusByte = byteBuffer.get(0);
+            node.status = Status.values()[statusByte];
+            
+            if (node.status.equals(Status.BROWSED) || node.status.equals(Status.OUTSIDE))
+            {
+                if (bufferedInputStream.read(bytes, 0, 4) > 0)
+                {
+                    node.min = byteBuffer.getInt(0);
+                }
+                else
+                {
+                    throw new InvalidBinaryFileException();
+                }
+                
+                if (node.status.equals(Status.OUTSIDE))
+                {
+                    if (bufferedInputStream.read(bytes, 0, 4) > 0)
+                    {
+                        node.max = byteBuffer.getInt(0);
+                    }
+                    else
+                    {
+                        throw new InvalidBinaryFileException();
+                    }
+                }
+            }
+            
+            if (bufferedInputStream.read(bytes, 0, 1) > 0)
+            {
+                byte hasChildrenByte = byteBuffer.get();
+                boolean hasChildren = (hasChildrenByte != 0);
+                
+                if (hasChildren)
+                {
+                    node.children = new QuadTreeNode[4];
+                    for (int i = 0; i < 4; ++i)
+                    {
+                        node.children[i] = recursivelyConvertToQuadTreeWithoutIndexes(bufferedInputStream);
+                    }
+                }
+            }
+            
+            return node;
+        }
+        else
+        {
+            throw new InvalidBinaryFileException();
+        }
+    }
+    
+    /**
+     * Loads the root as from a serialized object stored in a file
+     * 
+     * @param inputFolder
+     *            the input folder where the index is located
+     * @param index
+     *            the index file
+     * @throws ClassNotFoundException
+     *             if the class indicated in the serialized file can't be loaded
+     * @throws IOException
+     */
+    private void loadAsJavaSerialized(Path inputFolder, Element index)
+    throws ClassNotFoundException, IOException
+    {
+        Element serializedFile = index.getFirstChildElement("serializedFile");
+        Element rootInformation = serializedFile.getFirstChildElement("rootInformation");
+        
+        File inputFile = FileSystems.getDefault().getPath(inputFolder.toString(), serializedFile.getAttributeValue("path")).toFile();
+        FileInputStream fileInputStream = new FileInputStream(inputFile);
+        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+        this.root = (QuadTreeNode) objectInputStream.readObject();
+        
+        this.root.positionInParent = PositionInParent.Root;
+        this.root.minX = Double.parseDouble(rootInformation.getAttributeValue("minX"));
+        this.root.maxX = Double.parseDouble(rootInformation.getAttributeValue("maxX"));
+        this.root.minY = Double.parseDouble(rootInformation.getAttributeValue("minY"));
+        this.root.maxY = Double.parseDouble(rootInformation.getAttributeValue("maxY"));
+        this.root.status = Status.valueOf(rootInformation.getAttributeValue("status"));
+        
+        objectInputStream.close();
+        fileInputStream.close();
+    }
+    
+    private void loadAsXmlTree(Path inputFolder, Element index)
+    throws ParsingException, ValidityException, IOException
+    {
         // reading all the data files' location
         Elements files = index.getChildElements("file");
         ArrayList<Pair<File, String>> filesAndParent = new ArrayList<>(files.size());
@@ -214,9 +427,6 @@ public class QuadTreeManager
             parent.splitNode();// was parent.ensureChildrenArray();
             parent.children[node.positionInParent.ordinal()] = node;
         }
-        
-        // computes the QuadTreeNode.depth field for the whole tree
-        this.root.updateDepth();
     }
     
     public void addQuadTreeManagerListener(QuadTreeManagerListener listener)
@@ -416,7 +626,8 @@ public class QuadTreeManager
      * @param outputDirectoryPath
      * @throws IOException
      */
-    public void saveToSearializedJavaObject(Path outputDirectoryPath) throws IOException
+    public void saveToSearializedJavaObject(Path outputDirectoryPath)
+    throws IOException
     {
         File outputDirectoryFile = outputDirectoryPath.toFile();
         if (!outputDirectoryFile.exists())
@@ -432,12 +643,20 @@ public class QuadTreeManager
         index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
         index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
         index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
-        index.addAttribute(new Attribute("method", "javaSerialize"));
+        index.addAttribute(new Attribute("saveMode", TreeSaveMode.JAVA_SERIALIZE.toString()));
         
         File serializedFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "data.serialized").toFile();
         Element serializedFileNode = new Element("serializedFile");
         serializedFileNode.addAttribute(new Attribute("path", "./data.serialized"));
         index.appendChild(serializedFileNode);
+        
+        Element rootInformations = new Element("rootInformation");
+        rootInformations.addAttribute(new Attribute("minX", Double.toString(this.root.minX)));
+        rootInformations.addAttribute(new Attribute("maxX", Double.toString(this.root.maxX)));
+        rootInformations.addAttribute(new Attribute("minY", Double.toString(this.root.minY)));
+        rootInformations.addAttribute(new Attribute("maxY", Double.toString(this.root.maxY)));
+        rootInformations.addAttribute(new Attribute("status", this.root.status.toString()));
+        serializedFileNode.appendChild(rootInformations);
         
         FileOutputStream fileOutputStream = new FileOutputStream(serializedFile);
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
@@ -452,6 +671,215 @@ public class QuadTreeManager
         indexSerializer.setIndent(2);
         indexSerializer.setMaxLength(0);
         indexSerializer.write(indexDocument);
+    }
+    
+    /**
+     * saves the quad tree in a custom binary format.
+     * 
+     * Format :
+     * 
+     * 
+     * @param outputDirectoryPath
+     * @throws IOException
+     */
+    public void saveToBinaryFile(Path outputDirectoryPath, boolean indexed)
+    throws IOException
+    {
+        File outputDirectoryFile = outputDirectoryPath.toFile();
+        if (!outputDirectoryFile.exists())
+        {
+            outputDirectoryFile.mkdirs();
+        }
+        
+        // file containing general information and information about other created files
+        Element index = new Element("index");
+        index.addAttribute(new Attribute("pointsPerSide", "" + pointsPerSide));
+        index.addAttribute(new Attribute("maxIter", "" + maxIter));
+        index.addAttribute(new Attribute("diffIterLimit", "" + diffIterLimit));
+        index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
+        index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
+        index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
+        index.addAttribute(new Attribute("saveMode", TreeSaveMode.CUSTOM_BINARY.toString()));
+        
+        File serializedFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "tree.dat").toFile();
+        Element serializedFileNode = new Element("serializedFile");
+        serializedFileNode.addAttribute(new Attribute("path", "./tree.dat"));
+        serializedFileNode.addAttribute(new Attribute("binaryVersion", "1"));
+        serializedFileNode.addAttribute(new Attribute("indexed", Boolean.toString(indexed)));
+        index.appendChild(serializedFileNode);
+        
+        Element rootInformations = new Element("rootInformation");
+        rootInformations.addAttribute(new Attribute("minX", Double.toString(this.root.minX)));
+        rootInformations.addAttribute(new Attribute("maxX", Double.toString(this.root.maxX)));
+        rootInformations.addAttribute(new Attribute("minY", Double.toString(this.root.minY)));
+        rootInformations.addAttribute(new Attribute("maxY", Double.toString(this.root.maxY)));
+        serializedFileNode.appendChild(rootInformations);
+        
+        FileOutputStream fileOutputStream = new FileOutputStream(serializedFile);
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+        if (indexed)
+        {
+            recursivelyConvertToBinaryFileWithIndexes(bufferedOutputStream, root, 0);
+        }
+        else
+        {
+            recursivelyConvertToBinaryFileWithoutIndexes(bufferedOutputStream, root);
+        }
+        bufferedOutputStream.close();
+        fileOutputStream.close();
+        
+        // creates and saves the index file
+        File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
+        Document indexDocument = new Document(index);
+        Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
+        indexSerializer.setIndent(2);
+        indexSerializer.setMaxLength(0);
+        indexSerializer.write(indexDocument);
+    }
+    
+    /**
+     * Recursively translates the quad tree into a binary file
+     * 
+     * Each node contains 0 or 4 nodes.
+     * 
+     * <pre>
+     * Node
+     *  size: 144 bits
+     *  infos:
+     *      status: 8bits, enum {BROWSED: 0, INSIDE: 1, OUTSIDE: 2, VOID: 3} Theses values are decimal ones.
+     *      min: 32 bits if status is BROWSED or OUTSIDE. Set to -1 otherwise.
+     *      max: 32 bits if status is OUTSIDE. Set to -1 otherwise.
+     *      hasChildren: 8 bit, enum {true: 1, false: 0}
+     *      
+     *      Positions :
+     *      
+     *      pos1: 32bits, the absolute position of the second child node.
+     *      pos2: 32bits, the absolute position of the third child node.
+     *      pos3: 32bits, the absolute position of the fourth child node.
+     *      
+     *      notes:
+     *      RootNode has always index 0
+     *      RootNode.firstChild has always index 1
+     *      pos0 doesn't need to be written as it is the node right after the current one
+     *      The position of subsequent nodes are always indicated even if they don't exist.
+     *      This is useful to seek a node in the tree using the tree structure directly in the file instead of reading it all and then browsing it from memory.
+     * </pre>
+     * 
+     * @param bufferedOutputStream
+     *            output file
+     * @param node
+     *            the node to serialize
+     * @param nodesCount
+     *            the amount of nodes already written in the file
+     * @throws IOException
+     */
+    private void recursivelyConvertToBinaryFileWithIndexes(BufferedOutputStream bufferedOutputStream, QuadTreeNode node, int nodesCount)
+    throws IOException
+    {
+        byte[] bytes = new byte[26];
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        
+        // put the fized size elements
+        byteBuffer.put((byte) node.status.ordinal());
+        byteBuffer.putInt(node.min);
+        byteBuffer.putInt(node.max);
+        
+        int[] pos = new int[4];
+        if (node.children != null)
+        {
+            pos[0] = nodesCount + 1;
+            pos[1] = node.children[0].getTotalNodesCount() + pos[0];
+            pos[2] = node.children[1].getTotalNodesCount() + pos[1];
+            pos[3] = node.children[2].getTotalNodesCount() + pos[2];
+            
+            byteBuffer.put((byte) 1);
+            byteBuffer.putInt(pos[1]);
+            byteBuffer.putInt(pos[2]);
+            byteBuffer.putInt(pos[3]);
+            
+        }
+        else
+        {
+            byteBuffer.put((byte) 0);
+            byteBuffer.putInt(-1);
+            byteBuffer.putInt(-1);
+            byteBuffer.putInt(-1);
+        }
+        
+        bufferedOutputStream.write(bytes, 0, 26);
+        
+        if (node.children != null)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                recursivelyConvertToBinaryFileWithIndexes(bufferedOutputStream, node.children[i], pos[i]);
+            }
+        }
+    }
+    
+    /**
+     * Recursively translates the quad tree into a binary file
+     * 
+     * Each node contains 0 or 4 nodes.
+     * 
+     * <pre>
+     * Node
+     *  size: 16-80 bits
+     *  infos:
+     *      status: 8bits, enum {BROWSED: 0, INSIDE: 1, OUTSIDE: 2, VOID: 3} Theses values are decimal ones.
+     *      min: 32 bits if status is BROWSED or OUTSIDE. Doesn't exist if it is another status.
+     *      max: 32 bits if status is OUTSIDE. Set to -1 otherwise. Doesn't exist if it is another status.
+     *      hasChildren: 8 bit, enum {true: 1, false: 0}
+     * </pre>
+     * 
+     * @param bufferedOutputStream
+     *            output file
+     * @param node
+     *            the node to serialize
+     * @param nodesCount
+     *            the amount of nodes already written in the file
+     * @throws IOException
+     */
+    private void recursivelyConvertToBinaryFileWithoutIndexes(BufferedOutputStream bufferedOutputStream, QuadTreeNode node)
+    throws IOException
+    {
+        byte[] bytes = new byte[10];
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        
+        // put the fized size elements
+        byteBuffer.put((byte) node.status.ordinal());
+        int size = 1;
+        
+        if (node.status.equals(Status.BROWSED) || node.status.equals(Status.OUTSIDE))
+        {
+            byteBuffer.putInt(node.min);
+            size += 4;
+            if (node.status.equals(Status.OUTSIDE))
+            {
+                byteBuffer.putInt(node.max);
+                size += 4;
+            }
+        }
+        
+        if (node.children == null)
+        {
+            byteBuffer.put((byte) 0);
+        }
+        else
+        {
+            byteBuffer.put((byte) 1);
+        }
+        size += 1;
+        
+        bufferedOutputStream.write(bytes, 0, size);
+        
+        if (node.children != null)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                recursivelyConvertToBinaryFileWithoutIndexes(bufferedOutputStream, node.children[i]);
+            }
+        }
     }
     
     /**

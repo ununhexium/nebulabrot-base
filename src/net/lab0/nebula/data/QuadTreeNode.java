@@ -1,10 +1,9 @@
-
 package net.lab0.nebula.data;
-
 
 import java.awt.geom.Point2D;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -14,32 +13,69 @@ import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
 
-
 /**
  * The nodes used for the computation of the quad tree. The root node has a depth of 0.
  * 
  * @author 116
  * 
  */
-public class QuadTreeNode implements Serializable
+public class QuadTreeNode
+implements Serializable
 {
     /**
      * do not forget to increment on changes
      */
-    private static final long serialVersionUID = 1L;
+    private static final long         serialVersionUID = 1L;
     
-    public QuadTreeNode     parent;
-    public QuadTreeNode[]   children;
+    /**
+     * the link to the parent node. If the parent is null, then this is a quad tree root
+     */
+    public transient QuadTreeNode     parent;
     
-    public double           minX, maxX, minY, maxY;
-    public int              depth;
+    /**
+     * if children is not null, children must be QuadTreeNode[4]
+     */
+    public QuadTreeNode[]             children;
     
-    public PositionInParent positionInParent;
-    public Status           status;
-    public int              min = -1;
-    public int              max = -1;
+    /**
+     * bounds of this node
+     */
+    public transient double           minX, maxX, minY, maxY;
     
-    private boolean         flagedForComputing;
+    /**
+     * depth of this node
+     */
+    public transient int              depth;
+    
+    /**
+     * the position of this node in the parent node
+     */
+    public transient PositionInParent positionInParent;
+    
+    /**
+     * the status of this node. Must not be null
+     */
+    public Status                     status;
+    
+    /**
+     * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status.
+     */
+    public int                        min              = -1;
+    
+    /**
+     * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the computing limit
+     */
+    public int                        max              = -1;
+    
+    private transient boolean         flagedForComputing;
+    
+    /**
+     * Creates an empty quad tree node
+     */
+    public QuadTreeNode()
+    {
+        
+    }
     
     /**
      * Creates a node with the given coordinates. The position in parent will be Root. Therefore this will be a root node.
@@ -113,46 +149,10 @@ public class QuadTreeNode implements Serializable
         this.maxY = Double.parseDouble(nodeElement.getAttributeValue("maxY"));
         
         String positionInParentString = nodeElement.getAttributeValue("pos");
-        
-        switch (positionInParentString)
-        {
-            case "TopLeft":
-                this.positionInParent = PositionInParent.TopLeft;
-                break;
-            
-            case "TopRight":
-                this.positionInParent = PositionInParent.TopRight;
-                break;
-            
-            case "BottomLeft":
-                this.positionInParent = PositionInParent.BottomLeft;
-                break;
-            
-            case "BottomRight":
-                this.positionInParent = PositionInParent.BottomRight;
-                break;
-        }
+        this.positionInParent = PositionInParent.valueOf(positionInParentString);
         
         String statusString = nodeElement.getAttributeValue("status");
-        
-        switch (statusString)
-        {
-            case "BROWSED":
-                this.status = Status.BROWSED;
-                break;
-            
-            case "OUTSIDE":
-                this.status = Status.OUTSIDE;
-                break;
-            
-            case "INSIDE":
-                this.status = Status.INSIDE;
-                break;
-            
-            case "VOID":
-                this.status = Status.VOID;
-                break;
-        }
+        this.status = Status.valueOf(statusString);
         
         if (this.status == Status.BROWSED)
         {
@@ -196,6 +196,38 @@ public class QuadTreeNode implements Serializable
     }
     
     /**
+     * updates the transient fields. Should be use at loading by the QuadTreeManager.
+     */
+    public void updateFields()
+    {
+        // will be set by the parent
+        // this.parent;
+        
+        if (this.children != null)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                this.children[i].parent = this;
+                
+                this.children[i].positionInParent = PositionInParent.values()[i];
+                List<Double> values = getBoundsValuesForChildNode(this.children[i].positionInParent);
+                
+                this.children[i].minX = values.get(0);
+                this.children[i].maxX = values.get(1);
+                this.children[i].minY = values.get(2);
+                this.children[i].maxY = values.get(3);
+                
+                this.children[i].updateFields();
+            }
+        }
+        
+        this.depth = this.computeDepth();
+        
+        // useless to set value
+        // this.flagedForComputing = false;
+    }
+    
+    /**
      * This method is marked private because it consumes a lot of computation time. It is preferable to compute the depth for all the nodes and then use the
      * 'depth' field.
      * 
@@ -229,46 +261,11 @@ public class QuadTreeNode implements Serializable
             {
                 if (isChildNode(position))
                 {
-                    double minX = 0;
-                    double maxX = 0;
-                    double minY = 0;
-                    double maxY = 0;
-                    
-                    switch (position)
-                    {
-                        case TopLeft:
-                            minX = this.minX;
-                            maxX = this.getCenterX();
-                            minY = this.getCenterY();
-                            maxY = this.maxY;
-                            break;
-                        
-                        case TopRight:
-                            
-                            minX = this.getCenterX();
-                            maxX = this.maxX;
-                            minY = this.getCenterY();
-                            maxY = this.maxY;
-                            break;
-                        
-                        case BottomLeft:
-                            minX = this.minX;
-                            maxX = this.getCenterX();
-                            minY = this.minY;
-                            maxY = this.getCenterY();
-                            break;
-                        
-                        case BottomRight:
-                            
-                            minX = this.getCenterX();
-                            maxX = this.maxX;
-                            minY = this.minY;
-                            maxY = this.getCenterY();
-                            break;
-                        
-                        default:
-                            break;
-                    }
+                    List<Double> values = getBoundsValuesForChildNode(position);
+                    double minX = values.get(0);
+                    double maxX = values.get(1);
+                    double minY = values.get(2);
+                    double maxY = values.get(3);
                     
                     children[position.ordinal()] = new QuadTreeNode(minX, maxX, minY, maxY, this, position);
                 }
@@ -277,9 +274,62 @@ public class QuadTreeNode implements Serializable
     }
     
     /**
+     * computes the minX maxX minY and maxY values
      * 
      * @param position
-     * @return
+     *            the position of the child in this node
+     * 
+     * @return a List<Double> containing [minX, maxX, minY, maxY] in this order
+     */
+    private List<Double> getBoundsValuesForChildNode(PositionInParent position)
+    {
+        List<Double> ret = new ArrayList<>();
+        
+        switch (position)
+        {
+            case TopLeft:
+                ret.add(this.minX);
+                ret.add(this.getCenterX());
+                ret.add(this.getCenterY());
+                ret.add(this.maxY);
+                break;
+            
+            case TopRight:
+                
+                ret.add(this.getCenterX());
+                ret.add(this.maxX);
+                ret.add(this.getCenterY());
+                ret.add(this.maxY);
+                break;
+            
+            case BottomLeft:
+                ret.add(this.minX);
+                ret.add(this.getCenterX());
+                ret.add(this.minY);
+                ret.add(this.getCenterY());
+                break;
+            
+            case BottomRight:
+                
+                ret.add(this.getCenterX());
+                ret.add(this.maxX);
+                ret.add(this.minY);
+                ret.add(this.getCenterY());
+                break;
+            
+            default:
+                break;
+        }
+        
+        return ret;
+    }
+    
+    /**
+     * Returns true if this is a child node position.
+     * 
+     * @param position
+     * @return <code>true</code> if child node position. <code>false</code> if <code>this</code> is a root indicator which must be equivalent to say that
+     *         <code>this</code> is a root node.
      */
     private boolean isChildNode(PositionInParent position)
     {
@@ -1066,4 +1116,80 @@ public class QuadTreeNode implements Serializable
         return "QuadTreeNode [minX=" + minX + ", maxX=" + maxX + ", minY=" + minY + ", maxY=" + maxY + ", status=" + status + "]";
     }
     
+    /**
+     * test that all fields are exactly the same. Doesn't test parents.
+     * 
+     * @param other
+     * @return
+     */
+    public boolean testIsExactlyTheSameAs(QuadTreeNode other)
+    {
+        if (this.minX == other.minX && this.maxX == other.maxX && this.minY == other.minY && this.maxY == other.maxY && this.min == other.min
+        && this.max == other.max && this.depth == other.depth && this.positionInParent == other.positionInParent && this.status == other.status
+        && this.flagedForComputing == other.flagedForComputing)
+        {
+            if (this.children == null)
+            {
+                if (other.children == null)
+                {
+                    return true;
+                }
+                else
+                {
+                    System.out.println("children : null / not null");
+                    System.out.println(this.completeToString());
+                    System.out.println(other.completeToString());
+                    return false;
+                }
+            }
+            else
+            {
+                boolean same = true;
+                for (int i = 0; i < 4; ++i)
+                {
+                    same &= this.children[i].testIsExactlyTheSameAs(other.children[i]);
+                    
+                    // stop as soon as there is a difference
+                    if (!same)
+                    {
+                        return false;
+                    }
+                }
+                return same;
+            }
+        }
+        
+        System.out.println("node difference at " + getPath());
+        System.out.println(this.completeToString());
+        System.out.println(other.completeToString());
+        return false;
+    }
+    
+    public String completeToString()
+    {
+        return "QuadTreeNode [parent=" + parent + ", children=" + Arrays.toString(children) + ", minX=" + minX + ", maxX=" + maxX + ", minY=" + minY
+        + ", maxY=" + maxY + ", depth=" + depth + ", positionInParent=" + positionInParent + ", status=" + status + ", min=" + min + ", max=" + max
+        + ", flagedForComputing=" + flagedForComputing + "]";
+    }
+    
+    /**
+     * 
+     * @return the total amount of nodes that this node contains. Includes itself and all its children.
+     */
+    public int getTotalNodesCount()
+    {
+        int total = 0;
+        if (children == null)
+        {
+            total += 1;
+        }
+        else
+        {
+            for (QuadTreeNode child : children)
+            {
+                total += child.getTotalNodesCount();
+            }
+        }
+        return total;
+    }
 }
