@@ -241,6 +241,7 @@ public class QuadTreeManager
         this.root.maxX = Double.parseDouble(rootInformation.getAttributeValue("maxX"));
         this.root.minY = Double.parseDouble(rootInformation.getAttributeValue("minY"));
         this.root.maxY = Double.parseDouble(rootInformation.getAttributeValue("maxY"));
+        this.root.updateFields();
         
         bufferedInputStream.close();
         fileInputStream.close();
@@ -385,6 +386,7 @@ public class QuadTreeManager
         this.root.minY = Double.parseDouble(rootInformation.getAttributeValue("minY"));
         this.root.maxY = Double.parseDouble(rootInformation.getAttributeValue("maxY"));
         this.root.status = Status.valueOf(rootInformation.getAttributeValue("status"));
+        this.root.updateFields();
         
         objectInputStream.close();
         fileInputStream.close();
@@ -539,6 +541,7 @@ public class QuadTreeManager
         index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
         index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
         index.addAttribute(new Attribute("method", "xmlTree"));
+        index.addAttribute(new Attribute("saveMode", TreeSaveMode.XML_TREE.toString()));
         
         // counts the number of data files created
         int dataIndex = 0;
@@ -614,7 +617,7 @@ public class QuadTreeManager
         // creates and saves the index file
         File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
         Document indexDocument = new Document(index);
-        Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf8");
+        Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf-8");
         indexSerializer.setIndent(2);
         indexSerializer.setMaxLength(0);
         indexSerializer.write(indexDocument);

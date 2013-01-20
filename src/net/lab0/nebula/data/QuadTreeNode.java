@@ -1122,11 +1122,18 @@ implements Serializable
      * @param other
      * @return
      */
-    public boolean testIsExactlyTheSameAs(QuadTreeNode other)
+    public boolean testIsExactlyTheSameAs(QuadTreeNode other, boolean testFlag)
     {
+        if (testFlag)
+        {
+            if(! this.flagedForComputing == other.flagedForComputing)
+            {
+                return false;
+            }
+        }
+        
         if (this.minX == other.minX && this.maxX == other.maxX && this.minY == other.minY && this.maxY == other.maxY && this.min == other.min
-        && this.max == other.max && this.depth == other.depth && this.positionInParent == other.positionInParent && this.status == other.status
-        && this.flagedForComputing == other.flagedForComputing)
+        && this.max == other.max && this.depth == other.depth && this.positionInParent == other.positionInParent && this.status == other.status)
         {
             if (this.children == null)
             {
@@ -1147,7 +1154,7 @@ implements Serializable
                 boolean same = true;
                 for (int i = 0; i < 4; ++i)
                 {
-                    same &= this.children[i].testIsExactlyTheSameAs(other.children[i]);
+                    same &= this.children[i].testIsExactlyTheSameAs(other.children[i], testFlag);
                     
                     // stop as soon as there is a difference
                     if (!same)
