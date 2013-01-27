@@ -1,7 +1,6 @@
 package net.lab0.nebula.data;
 
 import java.awt.geom.Point2D;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,13 +19,7 @@ import nu.xom.Elements;
  * 
  */
 public class QuadTreeNode
-implements Serializable
 {
-    /**
-     * do not forget to increment on changes
-     */
-    private static final long         serialVersionUID = 1L;
-    
     /**
      * the link to the parent node. If the parent is null, then this is a quad tree root
      */

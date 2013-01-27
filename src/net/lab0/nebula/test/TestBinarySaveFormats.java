@@ -77,16 +77,6 @@ public class TestBinarySaveFormats
     }
     
     @Test
-    public void testSerialized()
-    throws IOException, ValidityException, ClassNotFoundException, ParsingException, InvalidBinaryFileException, NoSuchAlgorithmException
-    {
-        quadTreeManager.saveToSearializedJavaObject(savePath);
-        QuadTreeManager manager = new QuadTreeManager(savePath, null);
-        QuadTreeNode root = manager.getQuadTreeRoot();
-        assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
-    }
-    
-    @Test
     public void testIndexedBinary()
     throws IOException, ValidityException, ClassNotFoundException, ParsingException, InvalidBinaryFileException, NoSuchAlgorithmException
     {

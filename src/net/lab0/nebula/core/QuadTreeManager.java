@@ -7,8 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
@@ -201,10 +199,6 @@ public class QuadTreeManager
         
         switch (treeSaveMode)
         {
-            case JAVA_SERIALIZE:
-                loadAsJavaSerialized(inputFolder, index);
-                break;
-            
             case XML_TREE:
                 loadAsXmlTree(inputFolder, index);
                 // computes the QuadTreeNode.depth field for the whole tree
@@ -371,40 +365,6 @@ public class QuadTreeManager
         {
             throw new InvalidBinaryFileException();
         }
-    }
-    
-    /**
-     * Loads the root as from a serialized object stored in a file
-     * 
-     * @param inputFolder
-     *            the input folder where the index is located
-     * @param index
-     *            the index file
-     * @throws ClassNotFoundException
-     *             if the class indicated in the serialized file can't be loaded
-     * @throws IOException
-     */
-    private void loadAsJavaSerialized(Path inputFolder, Element index)
-    throws ClassNotFoundException, IOException
-    {
-        Element serializedFile = index.getFirstChildElement("serializedFile");
-        Element rootInformation = serializedFile.getFirstChildElement("rootInformation");
-        
-        File inputFile = FileSystems.getDefault().getPath(inputFolder.toString(), serializedFile.getAttributeValue("path")).toFile();
-        FileInputStream fileInputStream = new FileInputStream(inputFile);
-        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-        this.root = (QuadTreeNode) objectInputStream.readObject();
-        
-        this.root.positionInParent = PositionInParent.Root;
-        this.root.minX = Double.parseDouble(rootInformation.getAttributeValue("minX"));
-        this.root.maxX = Double.parseDouble(rootInformation.getAttributeValue("maxX"));
-        this.root.minY = Double.parseDouble(rootInformation.getAttributeValue("minY"));
-        this.root.maxY = Double.parseDouble(rootInformation.getAttributeValue("maxY"));
-        this.root.status = Status.valueOf(rootInformation.getAttributeValue("status"));
-        this.root.updateFields();
-        
-        objectInputStream.close();
-        fileInputStream.close();
     }
     
     private void loadAsXmlTree(Path inputFolder, Element index)
@@ -628,59 +588,6 @@ public class QuadTreeManager
             
             dataIndex++;
         }
-        
-        // creates and saves the index file
-        File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
-        Document indexDocument = new Document(index);
-        Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf-8");
-        indexSerializer.setIndent(2);
-        indexSerializer.setMaxLength(0);
-        indexSerializer.write(indexDocument);
-    }
-    
-    /**
-     * saves the root node as a java serialized object with an associated index file
-     * 
-     * @param outputDirectoryPath
-     * @throws IOException
-     */
-    public void saveToSearializedJavaObject(Path outputDirectoryPath)
-    throws IOException
-    {
-        File outputDirectoryFile = outputDirectoryPath.toFile();
-        if (!outputDirectoryFile.exists())
-        {
-            outputDirectoryFile.mkdirs();
-        }
-        
-        // file containing general information and information about other created files
-        Element index = new Element("index");
-        index.addAttribute(new Attribute("pointsPerSide", "" + pointsPerSide));
-        index.addAttribute(new Attribute("maxIter", "" + maxIter));
-        index.addAttribute(new Attribute("diffIterLimit", "" + diffIterLimit));
-        index.addAttribute(new Attribute("maxDepth", "" + maxDepth));
-        index.addAttribute(new Attribute("totalComputingTime", "" + totalComputingTime));
-        index.addAttribute(new Attribute("computedNodes", "" + computedNodes.getValue()));
-        index.addAttribute(new Attribute("saveMode", TreeSaveMode.JAVA_SERIALIZE.toString()));
-        
-        File serializedFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "data.serialized").toFile();
-        Element serializedFileNode = new Element("serializedFile");
-        serializedFileNode.addAttribute(new Attribute("path", "./data.serialized"));
-        index.appendChild(serializedFileNode);
-        
-        Element rootInformations = new Element("rootInformation");
-        rootInformations.addAttribute(new Attribute("minX", Double.toString(this.root.minX)));
-        rootInformations.addAttribute(new Attribute("maxX", Double.toString(this.root.maxX)));
-        rootInformations.addAttribute(new Attribute("minY", Double.toString(this.root.minY)));
-        rootInformations.addAttribute(new Attribute("maxY", Double.toString(this.root.maxY)));
-        rootInformations.addAttribute(new Attribute("status", this.root.status.toString()));
-        serializedFileNode.appendChild(rootInformations);
-        
-        FileOutputStream fileOutputStream = new FileOutputStream(serializedFile);
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-        objectOutputStream.writeObject(root);
-        objectOutputStream.close();
-        fileOutputStream.close();
         
         // creates and saves the index file
         File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();

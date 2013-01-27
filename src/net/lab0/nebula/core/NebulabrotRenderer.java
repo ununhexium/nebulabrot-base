@@ -257,7 +257,7 @@ public class NebulabrotRenderer
         System.out.println("work surface = " + workSurface);
         System.out.println("browsed surface = " + browsedSurface);
         
-        double discardedSurface = 0;
+//        double discardedSurface = 0;
         long current = 0;
         // label set here to exit the main loop is case of stop request
         exit:
