@@ -90,22 +90,22 @@ public class StatisticsData
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("\tSurfaces").append("\n");
+        sb.append("\tSurfaces").append('\n');
         for (Status status : Status.values())
         {
             NumberBox<Double> box = surfaces.get(status);
             if (box != null)
             {
-                sb.append("\t\t").append(status.toString()).append(": ").append(box.value).append("\n");
+                sb.append("\t\t").append(status.toString()).append(": ").append(box.value).append('\n');
             }
         }
-        sb.append("\tCounts").append("\n");
+        sb.append("\tCounts").append('\n');
         for (Status status : Status.values())
         {
             NumberBox<Integer> box = statusCount.get(status);
             if (box != null)
             {
-                sb.append("\t\t").append(status.toString()).append(": ").append(box.value).append("\n");
+                sb.append("\t\t").append(status.toString()).append(": ").append(box.value).append('\n');
             }
         }
         

@@ -3,23 +3,22 @@ package net.lab0.nebula;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.QuadTreeNode;
-import net.lab0.nebula.data.Statistics;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
-import net.lab0.nebula.listener.QuadTreeManagerListener;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
 public class Background
 {
     public static void main(String[] args)
-    throws InterruptedException, IOException, ValidityException, ParsingException, ClassNotFoundException, InvalidBinaryFileException
+    throws InterruptedException, IOException, ValidityException, ParsingException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
         QuadTreeNode root = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         

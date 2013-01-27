@@ -9,7 +9,6 @@ import java.awt.image.WritableRaster;
 import java.io.Serializable;
 
 import net.lab0.nebula.color.ColorationModel;
-import net.lab0.nebula.color.GrayScaleColorModel;
 import net.lab0.nebula.color.PointValues;
 
 

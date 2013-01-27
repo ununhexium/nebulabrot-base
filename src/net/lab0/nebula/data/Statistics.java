@@ -70,12 +70,12 @@ public class Statistics
         List<Integer> depths = new ArrayList<>(statisticsDepth.keySet());
         Collections.sort(depths);
         
-        sb.append("Statitics").append("\n");
+        sb.append("Statitics").append('\n');
         for (Integer i : depths)
         {
-            sb.append("Depth ").append(i).append("\n");
-            sb.append(statisticsDepth.get(i).toString()).append("\n");
-            sb.append("\n");
+            sb.append("Depth ").append(i).append('\n');
+            sb.append(statisticsDepth.get(i).toString()).append('\n');
+            sb.append('\n');
         }
         
         return sb.toString();
