@@ -456,7 +456,7 @@ public class QuadTreeManager
             dataDoc = dataParser.build(file.a);
             mandelbrot = dataDoc.getRootElement();
             
-            QuadTreeNode parent = this.root.getNodeByPath(file.b);
+            QuadTreeNode parent = this.root.getNodeByAbsolutePath(file.b);
             QuadTreeNode node = new QuadTreeNode(mandelbrot.getFirstChildElement("node"), parent);
             
             parent.splitNode();// was parent.ensureChildrenArray();

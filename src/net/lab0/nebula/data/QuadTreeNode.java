@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
@@ -55,14 +56,23 @@ public class QuadTreeNode
     /**
      * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status.
      */
-    public int                        min = -1;
+    public int                        min               = -1;
     
     /**
      * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the computing limit
      */
-    public int                        max = -1;
+    public int                        max               = -1;
     
     private transient boolean         flagedForComputing;
+    
+    /**
+     * The absolute path regex
+     */
+    private static Pattern            absolutePathRegex = Pattern.compile("R[0-3]*");
+    /**
+     * The relative path regex
+     */
+    private static Pattern            relativePathRegex = Pattern.compile("[0-3]+");
     
     /**
      * Creates an empty quad tree node
@@ -707,30 +717,52 @@ public class QuadTreeNode
     }
     
     /**
-     * Retrieves a node for the given path. This method should be (but is not required to be) called on the root of the tree. The node is searched in the whole
-     * tree containing this node.
+     * Get a node for the given path. This method should be (but is not required to be) called on the root of the tree. The node is searched in the whole tree
+     * containing this node, starting by the root node and must therefore start with an R. For relative path, use {@link getSubnodeByPath}.
      * 
      * @param path
-     *            the path of the node to look for
+     *            The path of the node to get.
      * @return a {@link QuadTreeNode} is any is found. <code>null</code> otherwise.
+     * @throws IllegalArgumentException
+     *             if the path is invalid
      */
-    public QuadTreeNode getNodeByPath(String path)
+    public QuadTreeNode getNodeByAbsolutePath(String path)
     {
-        // System.out.println("Seek parent");
-        return getRootNode().getNodeByPathRecusively(path);
+        if (!absolutePathRegex.matcher(path).matches())
+        {
+            throw new IllegalArgumentException("Invalid path " + path);
+        }
+        return getRootNode().getNodeByPathRecursively(path);
     }
     
-    public QuadTreeNode getSubnodeByPath(String path)
+    /**
+     * Get a node for the given path. The node is searched from the node it was invoked on. The given path must be relative. For instance, to get
+     * <code>this</code>, use <code>""</code>(empty string). To get the top left child, use <code>"0"</code>.
+     * 
+     * @param path
+     *            The relative path to another node
+     * @return The requested node if any, <code>null</code> otherwise.
+     * @throws IllegalArgumentException
+     *             if the path is invalid
+     */
+    public QuadTreeNode getSubnodeByRelativePath(String path)
     {
-        // System.out.println("Seek parent");
-        return getNodeByPath(path);
+        if (!relativePathRegex.matcher(path).matches())
+        {
+            throw new IllegalArgumentException("Invalid path " + path);
+        }
+        return getNodeByPathRecursively(Integer.toString(this.positionInParent.ordinal()) + path);
     }
     
-    private QuadTreeNode getNodeByPathRecusively(String path)
+    private QuadTreeNode getNodeByPathRecursively(String path)
     {
-        // System.out.println("Path = " + path);
+        if (path.length() == 0)
+        {
+            throw new IllegalArgumentException("The path can't be an empty string.");
+        }
+        
         // pop 1st char : this node
-        path = path.replaceFirst("[R0-3]", "");
+        path = path.substring(1);
         
         // if no more char : we are the node which was seeked
         if (path.length() == 0)
@@ -749,16 +781,16 @@ public class QuadTreeNode
         switch (path.charAt(0))
         {
             case '0':
-                return children[0].getNodeByPathRecusively(path);
+                return children[0].getNodeByPathRecursively(path);
                 
             case '1':
-                return children[1].getNodeByPathRecusively(path);
+                return children[1].getNodeByPathRecursively(path);
                 
             case '2':
-                return children[2].getNodeByPathRecusively(path);
+                return children[2].getNodeByPathRecursively(path);
                 
             case '3':
-                return children[3].getNodeByPathRecusively(path);
+                return children[3].getNodeByPathRecursively(path);
                 
             default:
                 assert (false);
@@ -784,16 +816,16 @@ public class QuadTreeNode
         }
     }
     
-    /**
-     * ensures the existence of the children array but not its content
-     */
-    public void ensureChildrenArray()
-    {
-        if (children == null)
-        {
-            children = new QuadTreeNode[4];
-        }
-    }
+//    /**
+//     * ensures the existence of the children array but not its content
+//     */
+//    public void ensureChildrenArray()
+//    {
+//        if (children == null)
+//        {
+//            children = new QuadTreeNode[4];
+//        }
+//    }
     
     /**
      * Returns the nodes having a {@link Status} in <code>status</code> and puts it in <code>nodesList</code>
@@ -951,6 +983,10 @@ public class QuadTreeNode
         }
     }
     
+    /**
+     * 
+     * @return The depth of the deepest node in this node subtree.
+     */
     public int getMaxNodeDepth()
     {
         if (children == null)
@@ -964,7 +1000,13 @@ public class QuadTreeNode
         }
     }
     
-    public Collection<QuadTreeNode> getNodesInRectangle(Point2D.Double p1, Point2D.Double p2)
+    /**
+     * 
+     * @param p1
+     * @param p2
+     * @return The nodes overlapping the given closed rectangle.
+     */
+    public Collection<QuadTreeNode> getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2)
     {
         ArrayList<QuadTreeNode> c = new ArrayList<QuadTreeNode>();
         getNodesOverlappingRectangle(p1, p2, c);
@@ -1026,7 +1068,7 @@ public class QuadTreeNode
         }
     }
     
-    private void getAllNodes(Collection<QuadTreeNode> collection)
+    public void getAllNodes(Collection<QuadTreeNode> collection)
     {
         collection.add(this);
         if (children != null)
@@ -1204,7 +1246,7 @@ public class QuadTreeNode
     }
     
     /**
-     * removes any node deeper than maxDepth. A node of depth equal to maxDepth is kept.
+     * Removes any node deeper than <code>maxDepth</code>. A node of depth equal to <code>maxDepth</code> is kept.
      * 
      * @param maxLoadDepth
      */
@@ -1225,5 +1267,42 @@ public class QuadTreeNode
                 node.strip(maxDepth);
             }
         }
+    }
+    
+    /**
+     * Recursively computes this node depth. The depth of a root node is 0.
+     * 
+     * @return the depth of this node
+     */
+    public int getDepth()
+    {
+        if (this.parent == null)
+        {
+            return 0;
+        }
+        else
+        {
+            return 1 + parent.getDepth();
+        }
+    }
+    
+    public double getMinX()
+    {
+        return minX;
+    }
+    
+    public double getMaxX()
+    {
+        return maxX;
+    }
+    
+    public double getMinY()
+    {
+        return minY;
+    }
+    
+    public double getMaxY()
+    {
+        return maxY;
     }
 }
