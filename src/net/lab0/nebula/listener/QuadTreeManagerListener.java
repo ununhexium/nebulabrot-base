@@ -19,4 +19,6 @@ extends EventListener
     public void threadStarted(long threadId);
     
     public void loadingFile(int current, int total);
+    
+    public void loadingOfCurrentFileProgress(long current, long total);
 }

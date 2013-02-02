@@ -116,7 +116,7 @@ public class NebulabrotRenderer
         // wouldn't make sens otherwise (no point computed)
         assert (minIter < maxIter);
         
-        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight);
+        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, minIter, maxIter, pointsCount);
         int[][] data = raw.getData();
         
         int side = (int) Math.sqrt(pointsCount);
@@ -234,7 +234,7 @@ public class NebulabrotRenderer
      */
     public RawMandelbrotData quadTreeRender(long pointsCount, int minIter, int maxIter, QuadTreeNode root)
     {
-        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight);
+        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, minIter, maxIter, pointsCount);
         int[][] data = raw.getData();
         
         long side = (long) Math.sqrt(pointsCount);
@@ -257,7 +257,7 @@ public class NebulabrotRenderer
         System.out.println("work surface = " + workSurface);
         System.out.println("browsed surface = " + browsedSurface);
         
-//        double discardedSurface = 0;
+        // double discardedSurface = 0;
         long current = 0;
         // label set here to exit the main loop is case of stop request
         exit:

@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses(value = { TestBinarySaveFormats.class,  })
+@SuiteClasses(value = { TestRawMandelbrotDataSave.class, TestBinarySaveFormats.class, })
 public class All
 {
     

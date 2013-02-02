@@ -1,13 +1,10 @@
-
 package net.lab0.nebula.data;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 /**
  * 
@@ -55,13 +52,11 @@ public class Statistics
         }
     }
     
-    
-    
     public int getMaxKnownIter()
     {
         return maxKnownIter;
     }
-
+    
     @Override
     public String toString()
     {

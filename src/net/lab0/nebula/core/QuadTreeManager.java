@@ -88,20 +88,20 @@ public class QuadTreeManager
     /**
      * the queue of computation blocks
      */
-    private Queue<List<QuadTreeNode>>    nodesList         = new LinkedList<>();
+    private Queue<List<QuadTreeNode>>    nodesList          = new LinkedList<>();
     /**
      * this value is set in order not to have too long queues
      */
-    private int                          maxCapacity       = 1 << 20;           // 1M nodes max in the queue
-                                                                                 
+    private int                          maxCapacity        = 1 << 20;           // 1M nodes max in the queue
+                                                                                  
     /**
      * defaults to 1 and can't be <1
      */
-    private int                          threads           = 1;
+    private int                          threads            = 1;
     /**
      * set to true when your need to stop all the threads
      */
-    private boolean                      stop              = false;
+    private boolean                      stop               = false;
     /**
      * counter for the quantity of nodes to be computed
      */
@@ -110,7 +110,7 @@ public class QuadTreeManager
     /**
      * not a {@link EventListenerList} because only one type of listeners is accepted. It is a {@link Set} because we don't want duplicated event listeners
      */
-    private Set<QuadTreeManagerListener> eventListenerList = new HashSet<>();
+    private Set<QuadTreeManagerListener> eventListenerList  = new HashSet<>();
     /**
      * the total quantity of computed nodes, includes current computation and the quantity indicated in the original file which saw loaded if any.
      */
@@ -124,7 +124,7 @@ public class QuadTreeManager
     /**
      * The desired split depth to use when saving the tree to xml files.
      */
-    private int                          splitDepth        = 6;
+    private int                          splitDepth         = 6;
     
     private TreeSaveMode                 treeSaveMode;
     
@@ -133,6 +133,26 @@ public class QuadTreeManager
      */
     private boolean                      useOpenCL;
     
+    /**
+     * This value stores the size of the current read file
+     */
+    private long                         currentReadFileSize;
+    
+    /**
+     * This value stores the amount of bytes read from an input stream
+     */
+    private long                         bytesRead;
+    
+    /**
+     * This value stores the amount of bytes read from an input stream
+     */
+    private long                         previousBytesRead;
+    
+    /**
+     * This value indicates every how many bytes we fire an event for bytes read
+     */
+    private long                         fireBytesReadEvery = 1024 * 1024;       // 1MiB
+                                                                                  
     /**
      * Build a new {@link QuadTreeManager}
      * 
@@ -159,8 +179,20 @@ public class QuadTreeManager
         this.computedNodes = new SynchronizedCounter(0);
     }
     
+    public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
+    throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
+    {
+        load(inputFolder, listener);
+    }
+    
+    public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
+    throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
+    {
+        load(inputFolder, listener);
+    }
+    
     /**
-     * Creates a quadTree by reading it from files located in the given <code>inputFolder</code>
+     * Loads a quadTree by reading it from files located in the given <code>inputFolder</code>
      * 
      * @param inputFolder
      *            the folder to read the file from
@@ -172,8 +204,8 @@ public class QuadTreeManager
      * @throws InvalidBinaryFileException
      * @throws NoSuchAlgorithmException
      */
-    public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
-    throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
+    private void load(Path inputFolder, QuadTreeManagerListener listener)
+    throws ParsingException, ValidityException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
         // Save the location of the original file. Useful for saveACopy()
         this.originalPath = inputFolder;
@@ -230,6 +262,10 @@ public class QuadTreeManager
         FileInputStream fileInputStream = new FileInputStream(inputFile);
         BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
         DigestInputStream digestInputStream = new DigestInputStream(bufferedInputStream, messageDigest);
+        fireLoadingFile(1, 1);
+        bytesRead = 0;
+        previousBytesRead = 0;
+        currentReadFileSize = inputFile.length();
         if (indexed)
         {
             this.root = recursivelyConvertToQuadTreeWithIndexes(digestInputStream);
@@ -240,7 +276,7 @@ public class QuadTreeManager
         }
         
         String fileDigest = MyString.getHexString(digestInputStream.getMessageDigest().digest());
-        if(!fileDigest.equalsIgnoreCase(checksum.getAttributeValue("value")))
+        if (!fileDigest.equalsIgnoreCase(checksum.getAttributeValue("value")))
         {
             throw new InvalidBinaryFileException("Checksums don't match");
         }
@@ -260,11 +296,17 @@ public class QuadTreeManager
     throws IOException, InvalidBinaryFileException
     {
         byte[] bytes = new byte[26];
+        if (bytesRead > previousBytesRead + fireBytesReadEvery)
+        {
+            previousBytesRead += fireBytesReadEvery;
+            fireLoadingOfCurrentFileProgress(bytesRead, currentReadFileSize);
+        }
         
         if (inputStream.read(bytes, 0, 26) > 0)
         {
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
             byteBuffer.position(0);
+            bytesRead += 26;
             
             byte statusValue = byteBuffer.get();
             Status status = Status.values()[statusValue];
@@ -311,9 +353,15 @@ public class QuadTreeManager
     throws IOException, InvalidBinaryFileException
     {
         byte[] bytes = new byte[26];
+        if (bytesRead > previousBytesRead + fireBytesReadEvery)
+        {
+            previousBytesRead += fireBytesReadEvery;
+            fireLoadingOfCurrentFileProgress(bytesRead, currentReadFileSize);
+        }
         
         if (inputStream.read(bytes, 0, 1) > 0)
         {
+            bytesRead += 1;
             QuadTreeNode node = new QuadTreeNode();
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
             
@@ -324,6 +372,7 @@ public class QuadTreeManager
             {
                 if (inputStream.read(bytes, 0, 4) > 0)
                 {
+                    bytesRead += 4;
                     node.min = byteBuffer.getInt(0);
                 }
                 else
@@ -335,6 +384,7 @@ public class QuadTreeManager
                 {
                     if (inputStream.read(bytes, 0, 4) > 0)
                     {
+                        bytesRead += 4;
                         node.max = byteBuffer.getInt(0);
                     }
                     else
@@ -346,6 +396,7 @@ public class QuadTreeManager
             
             if (inputStream.read(bytes, 0, 1) > 0)
             {
+                bytesRead += 1;
                 byte hasChildrenByte = byteBuffer.get();
                 boolean hasChildren = (hasChildrenByte != 0);
                 
@@ -456,6 +507,14 @@ public class QuadTreeManager
         for (QuadTreeManagerListener listener : eventListenerList)
         {
             listener.loadingFile(current, total);
+        }
+    }
+    
+    private void fireLoadingOfCurrentFileProgress(long bytesRead2, long currentReadFileSize2)
+    {
+        for (QuadTreeManagerListener listener : eventListenerList)
+        {
+            listener.loadingOfCurrentFileProgress(bytesRead2, currentReadFileSize2);
         }
     }
     
@@ -621,6 +680,12 @@ public class QuadTreeManager
             throw new IOException(e);
         }
         
+        File outputDirectoryFile = outputDirectoryPath.toFile();
+        if (!outputDirectoryFile.exists())
+        {
+            outputDirectoryFile.mkdirs();
+        }
+        
         File serializedFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "tree.dat").toFile();
         
         try (
@@ -635,11 +700,6 @@ public class QuadTreeManager
             else
             {
                 recursivelyConvertToBinaryFileWithoutIndexes(digestOutputStream, root);
-            }
-            File outputDirectoryFile = outputDirectoryPath.toFile();
-            if (!outputDirectoryFile.exists())
-            {
-                outputDirectoryFile.mkdirs();
             }
             
             // file containing general information and information about other created files

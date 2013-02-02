@@ -4,7 +4,8 @@ import java.util.EventListener;
 
 import net.lab0.nebula.data.RawMandelbrotData;
 
-public interface MandelbrotRendererListener extends EventListener
+public interface MandelbrotRendererListener
+extends EventListener
 {
     public void rendererProgress(long current, long total);
     

@@ -1,7 +1,10 @@
-
 package net.lab0.nebula.listener;
 
+import net.lab0.tools.HumanReadable;
 
+/**
+ * Basic console implementation of the <code>QuadTreeManagerListener</code> interface
+ */
 public class ConsoleQuadTreeManagerListener
 implements QuadTreeManagerListener
 {
@@ -39,6 +42,12 @@ implements QuadTreeManagerListener
     public void computationFinished(boolean remaining)
     {
         System.out.println("Computation finished. Remaining=" + remaining);
+    }
+    
+    @Override
+    public void loadingOfCurrentFileProgress(long current, long total)
+    {
+        System.out.println("Loading " + HumanReadable.humanReadableByteCount(current, true) + " out of " + HumanReadable.humanReadableByteCount(total, true));
     }
     
 }
