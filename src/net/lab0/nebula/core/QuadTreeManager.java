@@ -182,21 +182,25 @@ public class QuadTreeManager
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
     throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
-        load(inputFolder, listener);
+        this(inputFolder, listener, Integer.MAX_VALUE);
     }
     
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
     throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
-        load(inputFolder, listener);
+        load(inputFolder, listener, maxLoadDepth);
     }
     
     /**
      * Loads a quadTree by reading it from files located in the given <code>inputFolder</code>
      * 
      * @param inputFolder
-     *            the folder to read the file from
+     *            the folder to read the data from
      * @param listener
+     *            an optional listener to have information on the loading process
+     * @param maxLoadDepth
+     *            the maximum depth to load from the file, including maxLoadDepth. The root has a depth of 0.
+     * 
      * @throws ValidityException
      * @throws ParsingException
      * @throws IOException
@@ -204,7 +208,7 @@ public class QuadTreeManager
      * @throws InvalidBinaryFileException
      * @throws NoSuchAlgorithmException
      */
-    private void load(Path inputFolder, QuadTreeManagerListener listener)
+    private void load(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
     throws ParsingException, ValidityException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
         // Save the location of the original file. Useful for saveACopy()
@@ -244,6 +248,8 @@ public class QuadTreeManager
             default:
                 break;
         }
+        // TODO : better impl. Do not load over max depth
+        this.root.strip(maxLoadDepth);
     }
     
     private void loadAsCustomBinary(Path inputFolder, Element index)
@@ -295,6 +301,7 @@ public class QuadTreeManager
     private QuadTreeNode recursivelyConvertToQuadTreeWithIndexes(InputStream inputStream)
     throws IOException, InvalidBinaryFileException
     {
+        
         byte[] bytes = new byte[26];
         if (bytesRead > previousBytesRead + fireBytesReadEvery)
         {
@@ -1122,6 +1129,10 @@ public class QuadTreeManager
         }
     }
     
+    /**
+     * 
+     * @return the maximum depth parameter used for computing the quad tree
+     */
     public int getMaxDepth()
     {
         return maxDepth;

@@ -27,8 +27,8 @@ public class RenderingSpeed
     throws ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException, IOException, InvalidBinaryFileException
     {
         System.out.println("Start main");
-//        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16binaryNoIndex"),
-//        new ConsoleQuadTreeManagerListener());
+        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "p256i65536d5D16binaryNoIndex"),
+        new ConsoleQuadTreeManagerListener());
         
         List<RectangleInterface> viewPorts = new ArrayList<>();
         viewPorts.add(new Rectangle(new Point(2.0, 2.0), new Point(-2.0, -2.0)));
@@ -39,7 +39,7 @@ public class RenderingSpeed
         long pointsCount = xRes * xRes * maxIter;
         
         testLinearRenderingSpeed(xRes, viewPorts.get(0), pointsCount, minIter, maxIter);
-//        testQuadTreeRenderingSpeed(manager.getQuadTreeRoot(), xRes, viewPorts.get(0), pointsCount, minIter, maxIter);
+        testQuadTreeRenderingSpeed(manager.getQuadTreeRoot(), xRes, viewPorts.get(0), pointsCount, minIter, maxIter);
         
         System.out.println("End main");
     }

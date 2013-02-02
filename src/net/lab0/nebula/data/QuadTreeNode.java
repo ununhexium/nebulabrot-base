@@ -41,7 +41,9 @@ public class QuadTreeNode
     public transient int              depth;
     
     /**
-     * the position of this node in the parent node
+     * the position of this node in the parent node.
+     * 
+     * TopLeft = 0, TopRight = 1, BottomLeft = 2, BottomRight = 3, Root = undef
      */
     public transient PositionInParent positionInParent;
     
@@ -53,12 +55,12 @@ public class QuadTreeNode
     /**
      * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status.
      */
-    public int                        min              = -1;
+    public int                        min = -1;
     
     /**
      * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the computing limit
      */
-    public int                        max              = -1;
+    public int                        max = -1;
     
     private transient boolean         flagedForComputing;
     
@@ -95,10 +97,18 @@ public class QuadTreeNode
      * @param positionInParent
      *            only used if parent is not null
      */
-    public QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent, PositionInParent positionInParent)
+    private QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent, PositionInParent positionInParent)
     {
         if (parent != null)
         {
+            // if (parent.children == null)
+            // {
+            // throw new IllegalArgumentException("There is no child in the parent node.");
+            // }
+            // if (parent.children != null && parent.children[positionInParent.ordinal()] != this) // check that the place is free
+            // {
+            // throw new IllegalArgumentException("There is already another node at the given location. The tree would be inconsistent.");
+            // }
             this.positionInParent = positionInParent;
             this.parent = parent;
             this.depth = parent.depth + 1;
@@ -1119,7 +1129,7 @@ public class QuadTreeNode
     {
         if (testFlag)
         {
-            if(! this.flagedForComputing == other.flagedForComputing)
+            if (!this.flagedForComputing == other.flagedForComputing)
             {
                 return false;
             }
@@ -1191,5 +1201,29 @@ public class QuadTreeNode
             }
         }
         return total;
+    }
+    
+    /**
+     * removes any node deeper than maxDepth. A node of depth equal to maxDepth is kept.
+     * 
+     * @param maxLoadDepth
+     */
+    public void strip(int maxDepth)
+    {
+        if (this.depth > maxDepth)
+        {
+            throw new IllegalArgumentException("Trying to strip from a node af depth > maxDepth. Impossible operation.");
+        }
+        else if (this.depth == maxDepth)
+        {
+            this.children = null;
+        }
+        else if (children != null)
+        {
+            for (QuadTreeNode node : children)
+            {
+                node.strip(maxDepth);
+            }
+        }
     }
 }
