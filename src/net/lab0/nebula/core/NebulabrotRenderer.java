@@ -6,6 +6,8 @@ import java.util.List;
 
 import javax.swing.event.EventListenerList;
 
+import org.lwjgl.Sys;
+
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.enums.Status;
@@ -126,10 +128,10 @@ public class NebulabrotRenderer
         // label set here to exit the main loop is case of stop request
         exit:
         {
-            for (int x = 0; x < side; ++x)
+            for (int x = 0; x <= side; ++x)
             {
                 fireProgress(x, side);
-                for (int y = 0; y < side; ++y)
+                for (int y = 0; y <= side; ++y)
                 {
                     double real = viewPort.getCenter().getX() - viewPort.getWidth() / 2 + x * stepX;
                     double img = viewPort.getCenter().getY() - viewPort.getHeight() / 2 + y * stepY;
@@ -172,6 +174,8 @@ public class NebulabrotRenderer
         double real1 = real;
         double img1 = img;
         double real2, img2;
+        
+//        System.out.println("Compute : " + real + "+j" + img);
         
         // reach the minimum iteration count without rendering anything
         int iter = 0;
@@ -237,10 +241,12 @@ public class NebulabrotRenderer
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, minIter, maxIter, pointsCount);
         int[][] data = raw.getData();
         
-        long side = (long) Math.sqrt(pointsCount);
+        long side = Math.round(Math.sqrt(pointsCount));
+        // TODO : better method to dispatch points between X and Y
         double stepX = viewPort.getWidth() / side;
         double stepY = viewPort.getHeight() / side;
         
+        // get the appropriate nodes
         List<QuadTreeNode> nodesList = new ArrayList<>();
         root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID));
         
@@ -267,47 +273,24 @@ public class NebulabrotRenderer
                 current++;
                 fireProgress(current, nodesList.size());
                 
-                if (node.min <= maxIter || node.max >= minIter)
+                if (node.getMin() <= maxIter || node.getMax() >= minIter)
                 {
-                    double xStart = Math.floor(Math.abs(node.minX) / stepX) * stepX;
-                    double yStart = Math.floor(Math.abs(node.minY) / stepY) * stepY;
+                    // find the first point inside the node
                     
-                    if (Math.IEEEremainder(node.minX, stepX) != 0)
+                    double xStart = node.minX + Math.IEEEremainder(node.minX, stepX) - stepX;
+                    double yStart = node.minY + Math.IEEEremainder(node.minY, stepY) - stepY;
+                    
+//                    System.out.println("start1 (" + xStart + ";" + yStart + ")");
+                    
+                    double real = xStart;
+                    
+                    while (real < node.maxX)
                     {
-                        if (node.minX < 0)
+                        double img = yStart;
+                        while (img < node.maxY)
                         {
-                            xStart = -xStart;
-                        }
-                        else
-                        {
-                            xStart += stepX;
-                        }
-                    }
-                    
-                    if (Math.IEEEremainder(node.minY, stepY) != 0)
-                    {
-                        if (node.minY < 0)
-                        {
-                            yStart = -yStart;
-                        }
-                        else
-                        {
-                            yStart += stepY;
-                        }
-                    }
-                    
-                    double x = xStart;
-                    
-                    while (x < node.maxX)
-                    {
-                        double y = yStart;
-                        while (y < node.maxY)
-                        {
-                            double real = x;
-                            double img = y;
-                            
-                            // if the node is inside and the number of iterations match the requirements
-                            if ((node.status == Status.OUTSIDE && (node.min < maxIter || node.max > minIter))
+                            // if the node is outside and the number of iterations match the requirements
+                            if ((node.status == Status.OUTSIDE && (node.getMin() < maxIter || node.getMax() > minIter))
                             // or if the point is outside
                             || isOutsideMandelbrotSet(real, img, maxIter))
                             {
@@ -319,10 +302,10 @@ public class NebulabrotRenderer
                                 computePoint(minIter, maxIter, data, real, img);
                             }
                             
-                            y += stepY;
+                            img += stepY;
                         }
                         
-                        x += stepX;
+                        real += stepX;
                     }
                 }
             }

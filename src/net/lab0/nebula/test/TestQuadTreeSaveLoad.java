@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
 import junit.framework.Assert;
-
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;

@@ -112,8 +112,8 @@ public class TestQuadTreeNode
     {
         assertNull(standardRootQuadTreeNode.children);
         assertEquals(0, standardRootQuadTreeNode.getDepth());
-        assertEquals(-1, standardRootQuadTreeNode.max);
-        assertEquals(-1, standardRootQuadTreeNode.min);
+        assertEquals(-1, standardRootQuadTreeNode.getMax());
+        assertEquals(-1, standardRootQuadTreeNode.getMin());
         assertEquals(-2.0, standardRootQuadTreeNode.getMinX(), 0.0);
         assertEquals(2.0, standardRootQuadTreeNode.getMaxX(), 0.0);
         assertEquals(-2.0, standardRootQuadTreeNode.getMinY(), 0.0);
@@ -131,8 +131,8 @@ public class TestQuadTreeNode
         
         // assert that nothing else was changed in the root node
         assertEquals(0, standardRootQuadTreeNode.getDepth());
-        assertEquals(-1, standardRootQuadTreeNode.max);
-        assertEquals(-1, standardRootQuadTreeNode.min);
+        assertEquals(-1, standardRootQuadTreeNode.getMax());
+        assertEquals(-1, standardRootQuadTreeNode.getMin());
         assertEquals(-2.0, standardRootQuadTreeNode.getMinX(), 0.0);
         assertEquals(2.0, standardRootQuadTreeNode.getMaxX(), 0.0);
         assertEquals(-2.0, standardRootQuadTreeNode.getMinY(), 0.0);
@@ -143,8 +143,8 @@ public class TestQuadTreeNode
         
         QuadTreeNode topLeftChild = standardRootQuadTreeNode.children[PositionInParent.TopLeft.ordinal()];
         assertEquals(1, topLeftChild.getDepth());
-        assertEquals(-1, topLeftChild.max);
-        assertEquals(-1, topLeftChild.min);
+        assertEquals(-1, topLeftChild.getMax());
+        assertEquals(-1, topLeftChild.getMin());
         assertEquals(-2.0, topLeftChild.getMinX(), 0.0);
         assertEquals(0.0, topLeftChild.getMaxX(), 0.0);
         assertEquals(0.0, topLeftChild.getMinY(), 0.0);
@@ -155,8 +155,8 @@ public class TestQuadTreeNode
         
         QuadTreeNode topRightChild = standardRootQuadTreeNode.children[PositionInParent.TopRight.ordinal()];
         assertEquals(1, topRightChild.getDepth());
-        assertEquals(-1, topRightChild.max);
-        assertEquals(-1, topRightChild.min);
+        assertEquals(-1, topRightChild.getMax());
+        assertEquals(-1, topRightChild.getMin());
         assertEquals(0.0, topRightChild.getMinX(), 0.0);
         assertEquals(2.0, topRightChild.getMaxX(), 0.0);
         assertEquals(0.0, topRightChild.getMinY(), 0.0);
@@ -167,8 +167,8 @@ public class TestQuadTreeNode
         
         QuadTreeNode bottomLeftChild = standardRootQuadTreeNode.children[PositionInParent.BottomLeft.ordinal()];
         assertEquals(1, bottomLeftChild.getDepth());
-        assertEquals(-1, bottomLeftChild.max);
-        assertEquals(-1, bottomLeftChild.min);
+        assertEquals(-1, bottomLeftChild.getMax());
+        assertEquals(-1, bottomLeftChild.getMin());
         assertEquals(-2.0, bottomLeftChild.getMinX(), 0.0);
         assertEquals(0.0, bottomLeftChild.getMaxX(), 0.0);
         assertEquals(-2.0, bottomLeftChild.getMinY(), 0.0);
@@ -179,8 +179,8 @@ public class TestQuadTreeNode
         
         QuadTreeNode bottomRightChild = standardRootQuadTreeNode.children[PositionInParent.BottomRight.ordinal()];
         assertEquals(1, bottomRightChild.getDepth());
-        assertEquals(-1, bottomRightChild.max);
-        assertEquals(-1, bottomRightChild.min);
+        assertEquals(-1, bottomRightChild.getMax());
+        assertEquals(-1, bottomRightChild.getMin());
         assertEquals(0.0, bottomRightChild.getMinX(), 0.0);
         assertEquals(2.0, bottomRightChild.getMaxX(), 0.0);
         assertEquals(-2.0, bottomRightChild.getMinY(), 0.0);

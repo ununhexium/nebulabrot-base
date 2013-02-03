@@ -17,11 +17,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 
 import javax.swing.event.EventListenerList;
 
@@ -34,6 +32,7 @@ import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.enums.TreeSaveMode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
+import net.lab0.nebula.listener.QuadTreeComputeListener;
 import net.lab0.nebula.listener.QuadTreeManagerListener;
 import net.lab0.tools.MyString;
 import net.lab0.tools.Pair;
@@ -55,104 +54,104 @@ import nu.xom.ValidityException;
  */
 public class QuadTreeManager
 {
-    private QuadTreeNode                 root;
+    private QuadTreeNode              root;
     /**
      * the number of points per side for each node
      */
-    private int                          pointsPerSide;
+    private int                       pointsPerSide;
     /**
      * the maximum number of iterations to do
      */
-    private int                          maxIter;
+    private int                       maxIter;
     /**
      * the maximum number of iterations difference to consider a node as {@link Status}.OUTSIDE
      */
-    private int                          diffIterLimit;
+    private int                       diffIterLimit;
     /**
      * the max depth of computation for this tree
      */
-    private int                          maxDepth;
+    private int                       maxDepth;
     /**
      * the cumulated computation time for the nodes of this quad tree
      */
-    private long                         totalComputingTime;
+    private long                      totalComputingTime;
     /**
      * the number of file needed to save this tree
      */
-    private int                          filesCount;
+    private int                       filesCount;
     
     /**
      * the number of nodes which were computed
      */
-    private SynchronizedCounter          computedNodes;
+    private SynchronizedCounter       computedNodes;
     /**
      * the queue of computation blocks
      */
-    private Queue<List<QuadTreeNode>>    nodesList          = new LinkedList<>();
+    private Queue<List<QuadTreeNode>> nodesList          = new LinkedList<>();
     /**
      * this value is set in order not to have too long queues
      */
-    private int                          maxCapacity        = 1 << 20;           // 1M nodes max in the queue
-                                                                                  
+    private int                       maxCapacity        = 1 << 20;                // 1M nodes max in the queue
+                                                                                    
     /**
      * defaults to 1 and can't be <1
      */
-    private int                          threads            = 1;
+    private int                       threads            = 1;
     /**
      * set to true when your need to stop all the threads
      */
-    private boolean                      stop               = false;
+    private boolean                   stop               = false;
     /**
      * counter for the quantity of nodes to be computed
      */
-    private SynchronizedCounter          remainingNodesToCompute;
+    private SynchronizedCounter       remainingNodesToCompute;
     
     /**
-     * not a {@link EventListenerList} because only one type of listeners is accepted. It is a {@link Set} because we don't want duplicated event listeners
+     * The event listener list
      */
-    private Set<QuadTreeManagerListener> eventListenerList  = new HashSet<>();
+    private EventListenerList         eventListenerList  = new EventListenerList();
     /**
      * the total quantity of computed nodes, includes current computation and the quantity indicated in the original file which saw loaded if any.
      */
-    private int                          totalComputedNodes;
-    private int                          totalNodesToCompute;
+    private int                       totalComputedNodes;
+    private int                       totalNodesToCompute;
     
     /**
      * The path to the file which was loaded if any.
      */
-    private Path                         originalPath;
+    private Path                      originalPath;
     /**
      * The desired split depth to use when saving the tree to xml files.
      */
-    private int                          splitDepth         = 6;
+    private int                       splitDepth         = 6;
     
-    private TreeSaveMode                 treeSaveMode;
+    private TreeSaveMode              treeSaveMode;
     
     /**
      * Uses openCL if true.
      */
-    private boolean                      useOpenCL;
+    private boolean                   useOpenCL;
     
     /**
      * This value stores the size of the current read file
      */
-    private long                         currentReadFileSize;
+    private long                      currentReadFileSize;
     
     /**
      * This value stores the amount of bytes read from an input stream
      */
-    private long                         bytesRead;
+    private long                      bytesRead;
     
     /**
      * This value stores the amount of bytes read from an input stream
      */
-    private long                         previousBytesRead;
+    private long                      previousBytesRead;
     
     /**
      * This value indicates every how many bytes we fire an event for bytes read
      */
-    private long                         fireBytesReadEvery = 1024 * 1024;       // 1MiB
-                                                                                  
+    private long                      fireBytesReadEvery = 1024 * 1024;            // 1MiB
+                                                                                    
     /**
      * Build a new {@link QuadTreeManager}
      * 
@@ -216,7 +215,7 @@ public class QuadTreeManager
         
         if (listener != null)
         {
-            this.eventListenerList.add(listener);
+            this.eventListenerList.add(QuadTreeManagerListener.class, listener);
         }
         
         // start by parsing the index file
@@ -237,8 +236,6 @@ public class QuadTreeManager
         {
             case XML_TREE:
                 loadAsXmlTree(inputFolder, index);
-                // computes the QuadTreeNode.depth field for the whole tree
-                this.root.updateDepth();
                 break;
             
             case CUSTOM_BINARY:
@@ -250,6 +247,8 @@ public class QuadTreeManager
         }
         // TODO : better impl. Do not load over max depth
         this.root.strip(maxLoadDepth);
+        
+        this.root.updateFields();
     }
     
     private void loadAsCustomBinary(Path inputFolder, Element index)
@@ -292,7 +291,6 @@ public class QuadTreeManager
         this.root.maxX = Double.parseDouble(rootInformation.getAttributeValue("maxX"));
         this.root.minY = Double.parseDouble(rootInformation.getAttributeValue("minY"));
         this.root.maxY = Double.parseDouble(rootInformation.getAttributeValue("maxY"));
-        this.root.updateFields();
         
         bufferedInputStream.close();
         fileInputStream.close();
@@ -320,8 +318,8 @@ public class QuadTreeManager
             
             QuadTreeNode node = new QuadTreeNode();
             node.status = status;
-            node.min = byteBuffer.getInt();
-            node.max = byteBuffer.getInt();
+            node.setMin(byteBuffer.getInt());
+            node.setMax(byteBuffer.getInt());
             
             byte childrenValue = byteBuffer.get();
             
@@ -375,29 +373,17 @@ public class QuadTreeManager
             byte statusByte = byteBuffer.get(0);
             node.status = Status.values()[statusByte];
             
-            if (node.status.equals(Status.BROWSED) || node.status.equals(Status.OUTSIDE))
+            if (node.status.equals(Status.OUTSIDE))
             {
-                if (inputStream.read(bytes, 0, 4) > 0)
+                if (inputStream.read(bytes, 0, 8) > 0)
                 {
-                    bytesRead += 4;
-                    node.min = byteBuffer.getInt(0);
+                    bytesRead += 8;
+                    node.setMin(byteBuffer.getInt(0));
+                    node.setMax(byteBuffer.getInt(4));
                 }
                 else
                 {
                     throw new InvalidBinaryFileException();
-                }
-                
-                if (node.status.equals(Status.OUTSIDE))
-                {
-                    if (inputStream.read(bytes, 0, 4) > 0)
-                    {
-                        bytesRead += 4;
-                        node.max = byteBuffer.getInt(0);
-                    }
-                    else
-                    {
-                        throw new InvalidBinaryFileException();
-                    }
                 }
             }
             
@@ -466,12 +452,17 @@ public class QuadTreeManager
     
     public void addQuadTreeManagerListener(QuadTreeManagerListener listener)
     {
-        eventListenerList.add(listener);
+        eventListenerList.add(QuadTreeManagerListener.class, listener);
+    }
+    
+    public void addQuadTreeComputeListener(QuadTreeComputeListener listener)
+    {
+        eventListenerList.add(QuadTreeComputeListener.class, listener);
     }
     
     public void fireComputeProgress(int current, int total)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.computeProgress(current, total);
         }
@@ -479,7 +470,7 @@ public class QuadTreeManager
     
     public void fireThreadSleeping(long threadId)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.threadSleeping(threadId);
         }
@@ -487,7 +478,7 @@ public class QuadTreeManager
     
     public void fireThreadStarted(long threadId)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.threadStarted(threadId);
         }
@@ -495,7 +486,7 @@ public class QuadTreeManager
     
     public void fireThreadResumed(long threadId)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.threadResumed(threadId);
         }
@@ -503,7 +494,7 @@ public class QuadTreeManager
     
     private void fireComputationFinished(boolean b)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.computationFinished(b);
         }
@@ -511,7 +502,7 @@ public class QuadTreeManager
     
     private void fireLoadingFile(int current, int total)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.loadingFile(current, total);
         }
@@ -519,7 +510,7 @@ public class QuadTreeManager
     
     private void fireLoadingOfCurrentFileProgress(long bytesRead2, long currentReadFileSize2)
     {
-        for (QuadTreeManagerListener listener : eventListenerList)
+        for (QuadTreeManagerListener listener : eventListenerList.getListeners(QuadTreeManagerListener.class))
         {
             listener.loadingOfCurrentFileProgress(bytesRead2, currentReadFileSize2);
         }
@@ -758,7 +749,7 @@ public class QuadTreeManager
      *  size: 144 bits
      *  infos:
      *      status: 8bits, enum {BROWSED: 0, INSIDE: 1, OUTSIDE: 2, VOID: 3} Theses values are decimal ones.
-     *      min: 32 bits if status is BROWSED or OUTSIDE. Set to -1 otherwise.
+     *      min: 32 bits if status is OUTSIDE. Set to -1 otherwise.
      *      max: 32 bits if status is OUTSIDE. Set to -1 otherwise.
      *      hasChildren: 8 bit, enum {true: 1, false: 0}
      *      
@@ -791,10 +782,9 @@ public class QuadTreeManager
         byte[] bytes = new byte[26];
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         
-        // put the fized size elements
         byteBuffer.put((byte) node.status.ordinal());
-        byteBuffer.putInt(node.min);
-        byteBuffer.putInt(node.max);
+        byteBuffer.putInt(node.getMin());
+        byteBuffer.putInt(node.getMax());
         
         int[] pos = new int[4];
         if (node.children != null)
@@ -839,8 +829,8 @@ public class QuadTreeManager
      *  size: 16-80 bits
      *  infos:
      *      status: 8bits, enum {BROWSED: 0, INSIDE: 1, OUTSIDE: 2, VOID: 3} Theses values are decimal ones.
-     *      min: 32 bits if status is BROWSED or OUTSIDE. Doesn't exist if it is another status.
-     *      max: 32 bits if status is OUTSIDE. Set to -1 otherwise. Doesn't exist if it is another status.
+     *      min: 32 bits if status is OUTSIDE. Doesn't exist if it is another status.
+     *      max: 32 bits if status is OUTSIDE. Doesn't exist if it is another status.
      *      hasChildren: 8 bit, enum {true: 1, false: 0}
      * </pre>
      * 
@@ -862,15 +852,11 @@ public class QuadTreeManager
         byteBuffer.put((byte) node.status.ordinal());
         int size = 1;
         
-        if (node.status.equals(Status.BROWSED) || node.status.equals(Status.OUTSIDE))
+        if (node.status.equals(Status.OUTSIDE))
         {
-            byteBuffer.putInt(node.min);
-            size += 4;
-            if (node.status.equals(Status.OUTSIDE))
-            {
-                byteBuffer.putInt(node.max);
-                size += 4;
-            }
+            byteBuffer.putInt(node.getMin());
+            byteBuffer.putInt(node.getMax());
+            size += 8;
         }
         
         if (node.children == null)
@@ -1037,13 +1023,12 @@ public class QuadTreeManager
         long startTime = System.currentTimeMillis();
         
         // creation of the computing thread(s)
-        List<Thread> threadsList = new ArrayList<>(threads);
+        List<AbstractQuadTreeComputeThread> threadsList = new ArrayList<>(threads);
         if (useOpenCL)
         {
             // TODO : find the best quantity instead of 256
-            Thread t = new OpenCLQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes, 4096);
-            threadsList.add(t);
-            t.start();
+            OpenCLQuadTreeComputeThread thread = new OpenCLQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes, 4096);
+            threadsList.add(thread);
         }
         else
         {
@@ -1052,8 +1037,22 @@ public class QuadTreeManager
                 CPUQuadTreeComputeThread thread = new CPUQuadTreeComputeThread(this, remainingNodesToCompute, computedNodes, 16);
                 thread.setPriority(Thread.MIN_PRIORITY);
                 threadsList.add(thread);
-                thread.start();
             }
+        }
+        
+        // add the listeners
+        for (AbstractQuadTreeComputeThread thread : threadsList)
+        {
+            for (QuadTreeComputeListener listener : eventListenerList.getListeners(QuadTreeComputeListener.class))
+            {
+                thread.addQuadTreeComputeListener(listener);
+            }
+        }
+        
+        // start
+        for (AbstractQuadTreeComputeThread thread : threadsList)
+        {
+            thread.start();
         }
         
         // waiting for the threads to finish
@@ -1115,8 +1114,8 @@ public class QuadTreeManager
         data.addSurface(node.status, node.getSurface());
         if (node.status == Status.OUTSIDE)
         {
-            data.addIterations(node.min, node.max);
-            statistics.updateMaxKnownIter(node.max);
+            data.addIterations(node.getMin(), node.getMax());
+            statistics.updateMaxKnownIter(node.getMax());
         }
         
         if (node.children != null)

@@ -24,55 +24,55 @@ public class QuadTreeNode
     /**
      * the link to the parent node. If the parent is null, then this is a quad tree root
      */
-    public transient QuadTreeNode     parent;
+    public QuadTreeNode     parent;
     
     /**
      * if children is not null, children must be QuadTreeNode[4]
      */
-    public QuadTreeNode[]             children;
+    public QuadTreeNode[]   children;
     
     /**
      * bounds of this node
      */
-    public transient double           minX, maxX, minY, maxY;
+    public double           minX, maxX, minY, maxY;
     
     /**
      * depth of this node
      */
-    public transient int              depth;
+    public int              depth;
     
     /**
      * the position of this node in the parent node.
      * 
      * TopLeft = 0, TopRight = 1, BottomLeft = 2, BottomRight = 3, Root = undef
      */
-    public transient PositionInParent positionInParent;
+    public PositionInParent positionInParent;
     
     /**
      * the status of this node. Must not be null
      */
-    public Status                     status;
+    public Status           status;
     
     /**
-     * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status.
+     * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status).
      */
-    public int                        min               = -1;
+    private int             min               = -1;
     
     /**
-     * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the computing limit
+     * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the iteration limit
      */
-    public int                        max               = -1;
+    private int             max               = -1;
     
-    private transient boolean         flagedForComputing;
+    private boolean         flagedForComputing;
     
     /**
      * The absolute path regex
      */
-    private static Pattern            absolutePathRegex = Pattern.compile("R[0-3]*");
+    private static Pattern  absolutePathRegex = Pattern.compile("R[0-3]*");
     /**
      * The relative path regex
      */
-    private static Pattern            relativePathRegex = Pattern.compile("[0-3]+");
+    private static Pattern  relativePathRegex = Pattern.compile("[0-3]+");
     
     /**
      * Creates an empty quad tree node
@@ -167,10 +167,6 @@ public class QuadTreeNode
         String statusString = nodeElement.getAttributeValue("status");
         this.status = Status.valueOf(statusString);
         
-        if (this.status == Status.BROWSED)
-        {
-            this.min = Integer.parseInt(nodeElement.getAttributeValue("min"));
-        }
         if (this.status == Status.OUTSIDE)
         {
             this.min = Integer.parseInt(nodeElement.getAttributeValue("min"));
@@ -618,7 +614,6 @@ public class QuadTreeNode
                 if ((max - min + 1) > diffIterLimit)
                 {
                     this.status = Status.BROWSED;
-                    this.min = min;
                     return;
                 }
             }
@@ -683,10 +678,6 @@ public class QuadTreeNode
         thisNode.addAttribute(new Attribute("pos", positionInParent.toString()));
         thisNode.addAttribute(new Attribute("status", status.toString()));
         
-        if (status == Status.BROWSED)
-        {
-            thisNode.addAttribute(new Attribute("min", "" + min));
-        }
         if (status == Status.OUTSIDE)
         {
             thisNode.addAttribute(new Attribute("min", "" + min));
@@ -816,16 +807,16 @@ public class QuadTreeNode
         }
     }
     
-//    /**
-//     * ensures the existence of the children array but not its content
-//     */
-//    public void ensureChildrenArray()
-//    {
-//        if (children == null)
-//        {
-//            children = new QuadTreeNode[4];
-//        }
-//    }
+    // /**
+    // * ensures the existence of the children array but not its content
+    // */
+    // public void ensureChildrenArray()
+    // {
+    // if (children == null)
+    // {
+    // children = new QuadTreeNode[4];
+    // }
+    // }
     
     /**
      * Returns the nodes having a {@link Status} in <code>status</code> and puts it in <code>nodesList</code>
@@ -1177,9 +1168,24 @@ public class QuadTreeNode
             }
         }
         
-        if (this.minX == other.minX && this.maxX == other.maxX && this.minY == other.minY && this.maxY == other.maxY && this.min == other.min
-        && this.max == other.max && this.depth == other.depth && this.positionInParent == other.positionInParent && this.status == other.status)
+        if (this.minX == other.minX && this.maxX == other.maxX && this.minY == other.minY && this.maxY == other.maxY && this.depth == other.depth
+        && this.positionInParent == other.positionInParent && this.status == other.status)
         {
+            if (this.status == Status.OUTSIDE)
+            {
+                if (!(this.min == other.min && this.max == other.max))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!(this.getMin() == other.getMin() && this.getMax() == other.getMax()))
+                {
+                    return false;
+                }
+            }
+            
             if (this.children == null)
             {
                 if (other.children == null)
@@ -1305,4 +1311,39 @@ public class QuadTreeNode
     {
         return maxY;
     }
+    
+    public int getMin()
+    {
+        if (this.status == Status.OUTSIDE)
+        {
+            return min;
+        }
+        else
+        {
+            if (children != null)
+            {
+                return Math.min(Math.min(children[0].getMin(), children[1].getMin()), Math.min(children[2].getMin(), children[3].getMin()));
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+    
+    public void setMin(int min)
+    {
+        this.min = min;
+    }
+    
+    public int getMax()
+    {
+        return max;
+    }
+    
+    public void setMax(int max)
+    {
+        this.max = max;
+    }
+    
 }
