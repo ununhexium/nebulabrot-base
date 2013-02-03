@@ -1,9 +1,9 @@
-
 package net.lab0.nebula.core;
 
+import javax.swing.event.EventListenerList;
 
 import net.lab0.nebula.data.SynchronizedCounter;
-
+import net.lab0.nebula.listener.QuadTreeComputeListener;
 
 public abstract class AbstractQuadTreeComputeThread
 extends Thread
@@ -18,18 +18,26 @@ extends Thread
      * The {@link QuadTreeManager} to work with
      */
     protected QuadTreeManager     quadTreeManager;
+    
     /**
      * the counter for the maximum number nodes to computes before stopping this thread
      */
     protected SynchronizedCounter maxNodesToCompute;
+    
     /**
      * the count of nodes computes so far
      */
     protected SynchronizedCounter computedNodes;
+    
     /**
      * the amount of nodes to retrieve per call to QuadTreeManager.getNextNodeToCompute
      */
     protected int                 computeBlockSize;
+    
+    /**
+     * Listeners
+     */
+    private EventListenerList     eventListenerList = new EventListenerList();
     
     /**
      * Builds a computing threqds with the folowwing parameters
@@ -51,6 +59,35 @@ extends Thread
         this.maxNodesToCompute = maxNodesToCompute;
         this.computedNodes = computedNodes;
         this.computeBlockSize = computeBlockSize;
+    }
+    
+    public void addQuadTreeComputeListener(QuadTreeComputeListener listener)
+    {
+        eventListenerList.add(QuadTreeComputeListener.class, listener);
+    }
+    
+    protected void fireNodesLeftToCompute(long value)
+    {
+        for (QuadTreeComputeListener listener : eventListenerList.getListeners(QuadTreeComputeListener.class))
+        {
+            listener.nodesLeftToCompute(value);
+        }
+    }
+    
+    protected void fireNodesGroupComputeTime(long time)
+    {
+        for (QuadTreeComputeListener listener : eventListenerList.getListeners(QuadTreeComputeListener.class))
+        {
+            listener.nodesGroupComputeTime(time);
+        }
+    }
+    
+    protected void fireThreadFinished(String name)
+    {
+        for (QuadTreeComputeListener listener : eventListenerList.getListeners(QuadTreeComputeListener.class))
+        {
+            listener.threadFinished(name);
+        }
     }
     
     @Override

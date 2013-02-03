@@ -366,11 +366,11 @@ public class TestQuadTreeNode
         String reference = "R0123211";
         assertEquals(node, deep10QuadTreeNode.getNodeByAbsolutePath(reference));
         
-        deep10QuadTreeNode.getNodeByAbsolutePath("R");
-        deep10QuadTreeNode.getNodeByAbsolutePath("R0");
-        deep10QuadTreeNode.getNodeByAbsolutePath("R00");
-        deep10QuadTreeNode.getNodeByAbsolutePath("R000");
-        deep10QuadTreeNode.getNodeByAbsolutePath("R00001000020000100002");
+        assertNotNull(deep10QuadTreeNode.getNodeByAbsolutePath("R"));
+        assertNotNull(deep10QuadTreeNode.getNodeByAbsolutePath("R0"));
+        assertNotNull(deep10QuadTreeNode.getNodeByAbsolutePath("R00"));
+        assertNotNull(deep10QuadTreeNode.getNodeByAbsolutePath("R0000100002"));
+        assertNull(deep10QuadTreeNode.getNodeByAbsolutePath("R00001000023"));
         
         try
         {

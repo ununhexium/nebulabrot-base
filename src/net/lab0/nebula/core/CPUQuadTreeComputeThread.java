@@ -35,7 +35,7 @@ extends AbstractQuadTreeComputeThread
         {
             try
             {
-                // retirves the next 16 nodes to compute from the quad tree manager
+                // retirves the next "computeBlockSize" nodes to compute from the quad tree manager
                 List<QuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), computeBlockSize);
                 
                 if (!nodes.isEmpty())
@@ -69,7 +69,8 @@ extends AbstractQuadTreeComputeThread
                     // {
                     // total += l;
                     // }
-                    System.out.println("Total time = " + (end - start) + ". Still " + maxNodesToCompute.getValue() + " nodes to compute");
+                    fireNodesGroupComputeTime((end - start));
+                    fireNodesLeftToCompute(maxNodesToCompute.getValue());
                 }
                 else
                 // if there is nothing to compute : active wait
@@ -88,12 +89,12 @@ extends AbstractQuadTreeComputeThread
             }
             catch (NoMoreNodesToCompute e)
             {
-                System.out.println("Mo more nodes to compute");
+                fireThreadFinished(this.getName());
                 break;
             }
         }
     }
-    
+
     public int getComputeBlockSize()
     {
         return computeBlockSize;

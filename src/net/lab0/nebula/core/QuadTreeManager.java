@@ -1078,7 +1078,6 @@ public class QuadTreeManager
         }
         catch (NoMoreNodesToCompute e)
         {
-            System.out.println("No node left");
             fireComputationFinished(false);
             return false;
         }
