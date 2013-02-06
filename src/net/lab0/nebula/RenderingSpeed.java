@@ -13,6 +13,7 @@ import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.QuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
+import net.lab0.nebula.listener.ConsoleMandelbrotRendererListener;
 import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
@@ -29,20 +30,20 @@ public class RenderingSpeed
     {
         System.out.println("Start main");
         
-         QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "bck", "p256i65536d5D16binNoIndex"),
-         new ConsoleQuadTreeManagerListener());
+        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "bck", "p256i65536d5D16binNoIndex"),
+        new ConsoleQuadTreeManagerListener());
         
-//        QuadTreeManager manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 65536, 5, 0);
-//        manager.addQuadTreeManagerListener(new ConsoleQuadTreeManagerListener());
-//        manager.addQuadTreeComputeListener(new ConsoleQuadTreeComputeListener());
-//        manager.setThreads(Runtime.getRuntime().availableProcessors());
+//         QuadTreeManager manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 65536, 5, 0);
+//         manager.addQuadTreeManagerListener(new ConsoleQuadTreeManagerListener());
+//         manager.addQuadTreeComputeListener(new ConsoleQuadTreeComputeListener());
+//         manager.setThreads(Runtime.getRuntime().availableProcessors());
         
-        List<Integer> quadTreeMaxDepthList = Arrays.asList(12,10,8);
+        List<Integer> quadTreeMaxDepthList = Arrays.asList(15);
         
-        int xRes = 512;
+        int xRes = 8192*2;
         int minIter = 256;
-        int maxIter = 4096;
-        long pointsCount = xRes * xRes * 256;
+        int maxIter = 65539;
+        long pointsCount = 100_000_000_000L;
         
         List<RectangleInterface> viewports = new ArrayList<>();
         viewports.add(new Rectangle(new Point(2.0, 2.0), new Point(-2.0, -2.0)));
@@ -51,6 +52,10 @@ public class RenderingSpeed
         
         for (RectangleInterface viewport : viewports)
         {
+//            Path linSavePath = FileSystems.getDefault().getPath("F:", "dev", "nebula", "render", "x" + xRes, "p" + pointsCount + "m" + minIter + "M" + maxIter,
+//            "lin");
+//            RawMandelbrotData linRaw = testLinearRenderingSpeed(xRes, viewports.get(0), pointsCount, minIter, maxIter, linSavePath);
+            
             for (Integer quadTreeMaxDepth : quadTreeMaxDepthList)
             {
                 root.strip(quadTreeMaxDepth);
@@ -59,9 +64,6 @@ public class RenderingSpeed
                 testQuadTreeRenderingSpeed(manager.getQuadTreeRoot(), xRes, viewport, pointsCount, minIter, maxIter, quadTreeSavePath);
                 manager.saveToXML(FileSystems.getDefault().getPath(quadTreeSavePath.toString(), "tree"));
             }
-            Path linSavePath = FileSystems.getDefault().getPath("F:", "dev", "nebula", "render", "x" + xRes, "p" + pointsCount + "m" + minIter + "M" + maxIter,
-            "lin");
-            testLinearRenderingSpeed(xRes, viewports.get(0), pointsCount, minIter, maxIter, linSavePath);
         }
         
         System.out.println("End main");
@@ -75,7 +77,7 @@ public class RenderingSpeed
         int yRes = (int) (xRes / viewport.getWidth() * viewport.getHeight());
         
         NebulabrotRenderer renderer = new NebulabrotRenderer(xRes, yRes, viewport);
-        // renderer.addMandelbrotRendererListener(new ConsoleMandelbrotRendererListener());
+         renderer.addMandelbrotRendererListener(new ConsoleMandelbrotRendererListener());
         
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -96,7 +98,7 @@ public class RenderingSpeed
         int yRes = (int) (xRes / viewport.getWidth() * viewport.getHeight());
         
         NebulabrotRenderer renderer = new NebulabrotRenderer(xRes, yRes, viewport);
-//        renderer.addMandelbrotRendererListener(new ConsoleMandelbrotRendererListener());
+        // renderer.addMandelbrotRendererListener(new ConsoleMandelbrotRendererListener());
         
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

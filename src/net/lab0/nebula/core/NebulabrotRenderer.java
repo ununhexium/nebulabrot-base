@@ -175,7 +175,7 @@ public class NebulabrotRenderer
         double img1 = img;
         double real2, img2;
         
-//        System.out.println("Compute : " + real + "+j" + img);
+        // System.out.println("Compute : " + real + "+j" + img);
         
         // reach the minimum iteration count without rendering anything
         int iter = 0;
@@ -273,6 +273,11 @@ public class NebulabrotRenderer
                 current++;
                 fireProgress(current, nodesList.size());
                 
+                // if the node is outside and the number of iterations match the requirements
+                if (node.status == Status.OUTSIDE && (node.getMax() < minIter))
+                {
+                    continue;
+                }
                 if (node.getMin() <= maxIter || node.getMax() >= minIter)
                 {
                     // find the first point inside the node
@@ -280,7 +285,7 @@ public class NebulabrotRenderer
                     double xStart = node.minX + Math.IEEEremainder(node.minX, stepX) - stepX;
                     double yStart = node.minY + Math.IEEEremainder(node.minY, stepY) - stepY;
                     
-//                    System.out.println("start1 (" + xStart + ";" + yStart + ")");
+                    // System.out.println("start1 (" + xStart + ";" + yStart + ")");
                     
                     double real = xStart;
                     
@@ -289,10 +294,8 @@ public class NebulabrotRenderer
                         double img = yStart;
                         while (img < node.maxY)
                         {
-                            // if the node is outside and the number of iterations match the requirements
-                            if ((node.status == Status.OUTSIDE && (node.getMin() < maxIter || node.getMax() > minIter))
-                            // or if the point is outside
-                            || isOutsideMandelbrotSet(real, img, maxIter))
+                            // if the point is outside
+                            if (isOutsideMandelbrotSet(real, img, maxIter))
                             {
                                 if (stopAndExit)
                                 {
