@@ -14,5 +14,6 @@ public enum PositionInParent
     TopRight,
     BottomLeft,
     BottomRight,
-    Root, ;
+    Root,
+    ;
 }

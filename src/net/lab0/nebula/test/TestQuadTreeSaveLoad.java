@@ -9,7 +9,8 @@ import java.security.NoSuchAlgorithmException;
 
 import junit.framework.Assert;
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.AbstractQuadTreeNode;
+import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
@@ -49,7 +50,7 @@ public class TestQuadTreeSaveLoad
         }
         
         // init a basic tree to have something to save and compare with
-        quadTreeManager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 64, 256, 3, 10);
+        quadTreeManager = new QuadTreeManager(new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0), 64, 256, 3, 10);
         quadTreeManager.setThreads(Runtime.getRuntime().availableProcessors());
         quadTreeManager.compute(99999);
     }
@@ -72,7 +73,7 @@ public class TestQuadTreeSaveLoad
     {
         quadTreeManager.saveToXML(savePath);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
     }
     
@@ -82,7 +83,7 @@ public class TestQuadTreeSaveLoad
     {
         quadTreeManager.saveToBinaryFile(savePath, true);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
     }
     
@@ -92,7 +93,7 @@ public class TestQuadTreeSaveLoad
     {
         quadTreeManager.saveToBinaryFile(savePath, false);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
     }
     
@@ -103,7 +104,7 @@ public class TestQuadTreeSaveLoad
         quadTreeManager.saveToXML(savePath);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         Assert.assertEquals(maxDepth, root.getMaxNodeDepth());
     }
     
@@ -114,8 +115,8 @@ public class TestQuadTreeSaveLoad
         quadTreeManager.saveToBinaryFile(savePath, false);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
-        QuadTreeNode root = manager.getQuadTreeRoot();
-        Assert.assertEquals(root.getMaxNodeDepth(), maxDepth);
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
+        Assert.assertEquals(maxDepth, root.getMaxNodeDepth());
     }
     
     @Test
@@ -125,8 +126,8 @@ public class TestQuadTreeSaveLoad
         quadTreeManager.saveToBinaryFile(savePath, true);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
-        QuadTreeNode root = manager.getQuadTreeRoot();
-        Assert.assertEquals(root.getMaxNodeDepth(), maxDepth);
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
+        Assert.assertEquals(maxDepth, root.getMaxNodeDepth());
     }
     
     // TODO : file corruption tests

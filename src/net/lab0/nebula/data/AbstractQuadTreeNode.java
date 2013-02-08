@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
+import net.lab0.nebula.exception.InconsistentTreeStructure;
 import nu.xom.Attribute;
 import nu.xom.Element;
 import nu.xom.Elements;
@@ -19,80 +20,52 @@ import nu.xom.Elements;
  * @author 116
  * 
  */
-public class QuadTreeNode
+public class AbstractQuadTreeNode
 {
     /**
      * the link to the parent node. If the parent is null, then this is a quad tree root
      */
-    public QuadTreeNode     parent;
+    public AbstractQuadTreeNode   parent;
     
     /**
      * if children is not null, children must be QuadTreeNode[4]
      */
-    public QuadTreeNode[]   children;
+    public AbstractQuadTreeNode[] children;
     
     /**
-     * bounds of this node
+     * the status of this node. Must not be null.
      */
-    public double           minX, maxX, minY, maxY;
-    
-    /**
-     * depth of this node
-     */
-    public int              depth;
-    
-    /**
-     * the position of this node in the parent node.
-     * 
-     * TopLeft = 0, TopRight = 1, BottomLeft = 2, BottomRight = 3, Root = undef
-     */
-    public PositionInParent positionInParent;
-    
-    /**
-     * the status of this node. Must not be null
-     */
-    public Status           status;
+    public Status                 status;
     
     /**
      * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status).
      */
-    private int             min               = -1;
+    private int                   min               = -1;
     
     /**
      * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the iteration limit
      */
-    private int             max               = -1;
+    private int                   max               = -1;
     
-    private boolean         flagedForComputing;
+    private boolean               flagedForComputing;
     
     /**
      * The absolute path regex
      */
-    private static Pattern  absolutePathRegex = Pattern.compile("R[0-3]*");
+    private static Pattern        absolutePathRegex = Pattern.compile("R[0-3]*");
     /**
      * The relative path regex
      */
-    private static Pattern  relativePathRegex = Pattern.compile("[0-3]+");
+    private static Pattern        relativePathRegex = Pattern.compile("[0-3]+");
     
     /**
      * Creates an empty quad tree node
      */
-    public QuadTreeNode()
+    protected AbstractQuadTreeNode()
     {
-        
-    }
-    
-    /**
-     * Creates a node with the given coordinates. The position in parent will be Root. Therefore this will be a root node.
-     * 
-     * @param minX
-     * @param maxX
-     * @param minY
-     * @param maxY
-     */
-    public QuadTreeNode(double minX, double maxX, double minY, double maxY)
-    {
-        this(minX, maxX, minY, maxY, null, PositionInParent.Root);
+        //this would be a root node
+        this.parent = null;
+        this.status = Status.VOID;
     }
     
     /**
@@ -107,36 +80,10 @@ public class QuadTreeNode
      * @param positionInParent
      *            only used if parent is not null
      */
-    private QuadTreeNode(double minX, double maxX, double minY, double maxY, QuadTreeNode parent, PositionInParent positionInParent)
+    public AbstractQuadTreeNode(AbstractQuadTreeNode parent)
     {
-        if (parent != null)
-        {
-            // if (parent.children == null)
-            // {
-            // throw new IllegalArgumentException("There is no child in the parent node.");
-            // }
-            // if (parent.children != null && parent.children[positionInParent.ordinal()] != this) // check that the place is free
-            // {
-            // throw new IllegalArgumentException("There is already another node at the given location. The tree would be inconsistent.");
-            // }
-            this.positionInParent = positionInParent;
-            this.parent = parent;
-            this.depth = parent.depth + 1;
-        }
-        else
-        {
-            this.positionInParent = PositionInParent.Root;
-            this.depth = 0;
-            this.parent = null;
-        }
-        
-        this.maxX = maxX;
-        this.maxY = maxY;
-        this.minX = minX;
-        this.minY = minY;
-        
+        this.parent = parent;
         this.children = null;
-        
         this.status = Status.VOID;
     }
     
@@ -148,21 +95,9 @@ public class QuadTreeNode
      * @param parent
      *            the parent node
      */
-    public QuadTreeNode(Element nodeElement, QuadTreeNode parent)
+    public AbstractQuadTreeNode(Element nodeElement, AbstractQuadTreeNode parent)
     {
         this.parent = parent;
-        if (parent == null)
-        {
-            this.positionInParent = PositionInParent.Root;
-        }
-        
-        this.minX = Double.parseDouble(nodeElement.getAttributeValue("minX"));
-        this.maxX = Double.parseDouble(nodeElement.getAttributeValue("maxX"));
-        this.minY = Double.parseDouble(nodeElement.getAttributeValue("minY"));
-        this.maxY = Double.parseDouble(nodeElement.getAttributeValue("maxY"));
-        
-        String positionInParentString = nodeElement.getAttributeValue("pos");
-        this.positionInParent = PositionInParent.valueOf(positionInParentString);
         
         String statusString = nodeElement.getAttributeValue("status");
         this.status = Status.valueOf(statusString);
@@ -179,78 +114,14 @@ public class QuadTreeNode
             this.splitNode();
             for (int i = 0; i < childNodes.size(); ++i)
             {
-                QuadTreeNode childNode = new QuadTreeNode(childNodes.get(i), this);
-                if (isChildNode(childNode.positionInParent))
+                AbstractQuadTreeNode childNode = new AbstractQuadTreeNode(childNodes.get(i), this);
+                String positionInParentString = childNodes.get(i).getAttributeValue("pos");
+                PositionInParent positionInParent = PositionInParent.valueOf(positionInParentString);
+                if (isChildNode(positionInParent))
                 {
-                    this.children[childNode.positionInParent.ordinal()] = childNode;
+                    this.children[positionInParent.ordinal()] = childNode;
                 }
             }
-        }
-    }
-    
-    /**
-     * Updates the field 'depth' of this node and the tree below the node. Useful when adding a tree to another one.
-     */
-    public void updateDepth()
-    {
-        this.depth = this.computeDepth();
-        
-        if (children != null)
-        {
-            for (int i = 0; i < 4; ++i)
-            {
-                children[i].updateDepth();
-            }
-        }
-    }
-    
-    /**
-     * updates the transient fields. Should be use at loading by the QuadTreeManager.
-     */
-    public void updateFields()
-    {
-        // will be set by the parent
-        // this.parent;
-        
-        if (this.children != null)
-        {
-            for (int i = 0; i < 4; ++i)
-            {
-                this.children[i].parent = this;
-                
-                this.children[i].positionInParent = PositionInParent.values()[i];
-                List<Double> values = getBoundsValuesForChildNode(this.children[i].positionInParent);
-                
-                this.children[i].minX = values.get(0);
-                this.children[i].maxX = values.get(1);
-                this.children[i].minY = values.get(2);
-                this.children[i].maxY = values.get(3);
-                
-                this.children[i].updateFields();
-            }
-        }
-        
-        this.depth = this.computeDepth();
-        
-        // useless to set value
-        // this.flagedForComputing = false;
-    }
-    
-    /**
-     * This method is marked private because it consumes a lot of computation time. It is preferable to compute the depth for all the nodes and then use the
-     * 'depth' field.
-     * 
-     * @return the depth of this node.
-     */
-    private int computeDepth()
-    {
-        if (parent == null)
-        {
-            return 0;
-        }
-        else
-        {
-            return 1 + parent.computeDepth();
         }
     }
     
@@ -262,75 +133,13 @@ public class QuadTreeNode
         // split only if it's not already split
         if (this.children == null)
         {
-            this.children = new QuadTreeNode[4];
+            this.children = new AbstractQuadTreeNode[4];
             
-            QuadTreeNode[] children = this.children;
-            
-            for (PositionInParent position : PositionInParent.values())
+            for (int i = 0; i < 4; ++i)
             {
-                if (isChildNode(position))
-                {
-                    List<Double> values = getBoundsValuesForChildNode(position);
-                    double minX = values.get(0);
-                    double maxX = values.get(1);
-                    double minY = values.get(2);
-                    double maxY = values.get(3);
-                    
-                    children[position.ordinal()] = new QuadTreeNode(minX, maxX, minY, maxY, this, position);
-                }
+                children[i] = new AbstractQuadTreeNode(this);
             }
         }
-    }
-    
-    /**
-     * computes the minX maxX minY and maxY values
-     * 
-     * @param position
-     *            the position of the child in this node
-     * 
-     * @return a List<Double> containing [minX, maxX, minY, maxY] in this order
-     */
-    private List<Double> getBoundsValuesForChildNode(PositionInParent position)
-    {
-        List<Double> ret = new ArrayList<>();
-        
-        switch (position)
-        {
-            case TopLeft:
-                ret.add(this.minX);
-                ret.add(this.getCenterX());
-                ret.add(this.getCenterY());
-                ret.add(this.maxY);
-                break;
-            
-            case TopRight:
-                
-                ret.add(this.getCenterX());
-                ret.add(this.maxX);
-                ret.add(this.getCenterY());
-                ret.add(this.maxY);
-                break;
-            
-            case BottomLeft:
-                ret.add(this.minX);
-                ret.add(this.getCenterX());
-                ret.add(this.minY);
-                ret.add(this.getCenterY());
-                break;
-            
-            case BottomRight:
-                
-                ret.add(this.getCenterX());
-                ret.add(this.maxX);
-                ret.add(this.minY);
-                ret.add(this.getCenterY());
-                break;
-            
-            default:
-                break;
-        }
-        
-        return ret;
     }
     
     /**
@@ -347,12 +156,12 @@ public class QuadTreeNode
     
     private double getCenterY()
     {
-        return (minY + maxY) / 2.0d;
+        return getMinY() / 2.0d + getMaxY() / 2.0d;
     }
     
     private double getCenterX()
     {
-        return (minX + maxX) / 2.0d;
+        return getMinX() / 2.0d + getMaxX() / 2.0d;
     }
     
     /**
@@ -363,10 +172,10 @@ public class QuadTreeNode
      */
     private void testInsideMandelbrotSet(int pointsPerSide, int maxIter)
     {
-        double minX = this.minX;
-        double maxX = this.maxX;
-        double minY = this.minY;
-        double maxY = this.maxY;
+        double minX = this.getMinX();
+        double maxX = this.getMaxX();
+        double minY = this.getMinY();
+        double maxY = this.getMaxY();
         
         double step = (maxX - minX) / (double) (pointsPerSide - 1);
         
@@ -525,12 +334,10 @@ public class QuadTreeNode
      */
     private void testOutsideMandelbrotSet(int pointsPerSide, int maxIter, int diffIterLimit)
     {
-        // double[] array = innerPointsAsDouble(pointsPerSide);
-        
-        double minX = this.minX;
-        double maxX = this.maxX;
-        double minY = this.minY;
-        double maxY = this.maxY;
+        double minX = this.getMinX();
+        double maxX = this.getMaxX();
+        double minY = this.getMinY();
+        double maxY = this.getMaxY();
         
         int min, max;
         // init min and max iter
@@ -646,7 +453,7 @@ public class QuadTreeNode
     
     /**
      * 
-     * @return the path of this node. For instance : R0123
+     * @return the path of this node if the path in the tree to this node is valid. For instance : R0123.
      */
     public String getPath()
     {
@@ -656,7 +463,7 @@ public class QuadTreeNode
         }
         else
         {
-            return parent.getPath() + this.positionInParent.ordinal();
+            return parent.getPath() + this.getPositionInParent().ordinal();
         }
     }
     
@@ -666,16 +473,20 @@ public class QuadTreeNode
      * @param recursive
      *            if <code>true</code>, converts recursively all children
      * @return the xml {@link Element}
+     * @throws InconsistentTreeStructure
+     *             if there is an error in the quad tree
      */
+    // TODO : check tree structure validity
     public Element asXML(boolean recursive)
+    throws InconsistentTreeStructure
     {
         Element thisNode = new Element("node");
-        thisNode.addAttribute(new Attribute("minX", "" + minX));
-        thisNode.addAttribute(new Attribute("maxX", "" + maxX));
-        thisNode.addAttribute(new Attribute("minY", "" + minY));
-        thisNode.addAttribute(new Attribute("maxY", "" + maxY));
+        thisNode.addAttribute(new Attribute("minX", "" + getMinX()));
+        thisNode.addAttribute(new Attribute("maxX", "" + getMaxX()));
+        thisNode.addAttribute(new Attribute("minY", "" + getMinY()));
+        thisNode.addAttribute(new Attribute("maxY", "" + getMaxY()));
         
-        thisNode.addAttribute(new Attribute("pos", positionInParent.toString()));
+        thisNode.addAttribute(new Attribute("pos", getPositionInParent().toString()));
         thisNode.addAttribute(new Attribute("status", status.toString()));
         
         if (status == Status.OUTSIDE)
@@ -686,7 +497,7 @@ public class QuadTreeNode
         
         if (recursive && children != null)
         {
-            for (QuadTreeNode node : children)
+            for (AbstractQuadTreeNode node : children)
             {
                 thisNode.appendChild(node.asXML(recursive));
             }
@@ -702,8 +513,8 @@ public class QuadTreeNode
      */
     public double getSurface()
     {
-        double xDiff = maxX - minX;
-        double yDiff = maxY - minY;
+        double xDiff = getMaxX() - getMinX();
+        double yDiff = getMaxY() - getMinY();
         return xDiff * yDiff;
     }
     
@@ -713,11 +524,11 @@ public class QuadTreeNode
      * 
      * @param path
      *            The path of the node to get.
-     * @return a {@link QuadTreeNode} is any is found. <code>null</code> otherwise.
+     * @return a {@link AbstractQuadTreeNode} is any is found. <code>null</code> otherwise.
      * @throws IllegalArgumentException
      *             if the path is invalid
      */
-    public QuadTreeNode getNodeByAbsolutePath(String path)
+    public AbstractQuadTreeNode getNodeByAbsolutePath(String path)
     {
         if (!absolutePathRegex.matcher(path).matches())
         {
@@ -736,16 +547,16 @@ public class QuadTreeNode
      * @throws IllegalArgumentException
      *             if the path is invalid
      */
-    public QuadTreeNode getSubnodeByRelativePath(String path)
+    public AbstractQuadTreeNode getSubnodeByRelativePath(String path)
     {
         if (!relativePathRegex.matcher(path).matches())
         {
             throw new IllegalArgumentException("Invalid path " + path);
         }
-        return getNodeByPathRecursively(Integer.toString(this.positionInParent.ordinal()) + path);
+        return getNodeByPathRecursively(Integer.toString(this.getPositionInParent().ordinal()) + path);
     }
     
-    private QuadTreeNode getNodeByPathRecursively(String path)
+    private AbstractQuadTreeNode getNodeByPathRecursively(String path)
     {
         if (path.length() == 0)
         {
@@ -795,7 +606,7 @@ public class QuadTreeNode
      * 
      * @return the root of the tree containing this node
      */
-    private QuadTreeNode getRootNode()
+    private AbstractQuadTreeNode getRootNode()
     {
         if (parent == null)
         {
@@ -826,7 +637,7 @@ public class QuadTreeNode
      * @param status
      *            the status the nodes must have to be returned
      */
-    public void getNodesByStatus(List<QuadTreeNode> nodesList, List<Status> status)
+    public void getNodesByStatus(List<AbstractQuadTreeNode> nodesList, List<Status> status)
     {
         if (status.contains(this.status))
         {
@@ -835,7 +646,7 @@ public class QuadTreeNode
         
         if (this.children != null)
         {
-            for (QuadTreeNode child : children)
+            for (AbstractQuadTreeNode child : children)
             {
                 child.getNodesByStatus(nodesList, status);
             }
@@ -852,7 +663,7 @@ public class QuadTreeNode
      * @param maxQuantity
      *            the method stops when the list has at least <code>maxQuantity</code> elements in it.
      */
-    public void getNodesByStatus(List<QuadTreeNode> nodesList, List<Status> status, int maxQuantity)
+    public void getNodesByStatus(List<AbstractQuadTreeNode> nodesList, List<Status> status, int maxQuantity)
     {
         if (status.contains(this.status))
         {
@@ -866,7 +677,7 @@ public class QuadTreeNode
         
         if (this.children != null)
         {
-            for (QuadTreeNode child : children)
+            for (AbstractQuadTreeNode child : children)
             {
                 child.getNodesByStatus(nodesList, status, maxQuantity);
             }
@@ -889,7 +700,7 @@ public class QuadTreeNode
             return false;
         }
         
-        for (QuadTreeNode child : children)
+        for (AbstractQuadTreeNode child : children)
         {
             if (child.status != Status.VOID)
             {
@@ -933,7 +744,7 @@ public class QuadTreeNode
      * @param leafNodes
      *            a list which will contain the leaf nodes.
      */
-    public void getLeafNodes(List<QuadTreeNode> leafNodes)
+    public void getLeafNodes(List<AbstractQuadTreeNode> leafNodes)
     {
         if (this.children == null)
         {
@@ -941,7 +752,7 @@ public class QuadTreeNode
         }
         else
         {
-            for (QuadTreeNode child : children)
+            for (AbstractQuadTreeNode child : children)
             {
                 child.getLeafNodes(leafNodes);
             }
@@ -956,7 +767,7 @@ public class QuadTreeNode
      * @param status
      *            the node must have one of the given status to be retrieved
      */
-    public void getLeafNodes(List<QuadTreeNode> leafNodes, List<Status> status)
+    public void getLeafNodes(List<AbstractQuadTreeNode> leafNodes, List<Status> status)
     {
         if (this.children == null)
         {
@@ -967,7 +778,7 @@ public class QuadTreeNode
         }
         else
         {
-            for (QuadTreeNode child : children)
+            for (AbstractQuadTreeNode child : children)
             {
                 child.getLeafNodes(leafNodes, status);
             }
@@ -982,7 +793,7 @@ public class QuadTreeNode
     {
         if (children == null)
         {
-            return this.depth;
+            return this.getDepth();
         }
         else
         {
@@ -997,9 +808,9 @@ public class QuadTreeNode
      * @param p2
      * @return The nodes overlapping the given closed rectangle.
      */
-    public Collection<QuadTreeNode> getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2)
+    public Collection<AbstractQuadTreeNode> getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2)
     {
-        ArrayList<QuadTreeNode> c = new ArrayList<QuadTreeNode>();
+        ArrayList<AbstractQuadTreeNode> c = new ArrayList<AbstractQuadTreeNode>();
         getNodesOverlappingRectangle(p1, p2, c);
         return c;
     }
@@ -1014,7 +825,7 @@ public class QuadTreeNode
      * @param collection
      *            la collection contenant le rﾃｩsultat
      */
-    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<QuadTreeNode> collection)
+    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<AbstractQuadTreeNode> collection)
     {
         double rectMaxX = Math.max(p1.getX(), p2.getX());
         double rectMaxY = Math.max(p1.getY(), p2.getY());
@@ -1034,17 +845,17 @@ public class QuadTreeNode
      * @param collection
      *            la collection contenant le rﾃｩsultat
      */
-    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<QuadTreeNode> collection)
+    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<AbstractQuadTreeNode> collection)
     {
         // si la zone de cette node est entiﾃｨrement contenue dans le rectangle
-        if (this.minX >= rectMinX && this.maxX <= rectMaxX && this.maxY <= rectMaxY && this.minY >= rectMinY)
+        if (this.getMinX() >= rectMinX && this.getMaxX() <= rectMaxX && this.getMaxY() <= rectMaxY && this.getMinY() >= rectMinY)
         {
             this.getAllNodes(collection);
         }
         else
         {
             // si la zone de cette node est partiellement contenue dans le rectangle
-            if ((this.minX <= maxX || this.maxX >= minX) && (this.minY <= maxY || this.maxY >= minY))
+            if ((this.getMinX() <= rectMaxX || this.getMaxX() >= rectMinX) && (this.getMinY() <= rectMaxY || this.getMaxY() >= rectMinY))
             {
                 collection.add(this);
             }
@@ -1059,12 +870,12 @@ public class QuadTreeNode
         }
     }
     
-    public void getAllNodes(Collection<QuadTreeNode> collection)
+    public void getAllNodes(Collection<AbstractQuadTreeNode> collection)
     {
         collection.add(this);
         if (children != null)
         {
-            for (QuadTreeNode n : children)
+            for (AbstractQuadTreeNode n : children)
             {
                 n.getAllNodes(collection);
             }
@@ -1149,7 +960,7 @@ public class QuadTreeNode
     @Override
     public String toString()
     {
-        return "QuadTreeNode [minX=" + minX + ", maxX=" + maxX + ", minY=" + minY + ", maxY=" + maxY + ", status=" + status + "]";
+        return "AbstractQuadTreeNode [minX=" + getMinX() + ", maxX=" + getMaxX() + ", minY=" + getMinY() + ", maxY=" + getMaxY() + ", status=" + status + "]";
     }
     
     /**
@@ -1158,76 +969,121 @@ public class QuadTreeNode
      * @param other
      * @return
      */
-    public boolean testIsExactlyTheSameAs(QuadTreeNode other, boolean testFlag)
+    public boolean testIsExactlyTheSameAs(AbstractQuadTreeNode other, boolean testFlag)
     {
         if (testFlag)
         {
             if (!this.flagedForComputing == other.flagedForComputing)
             {
+                System.out.println("flag mismatch");
+                System.out.println("this" + this.completeToString());
+                System.out.println("other" + other.completeToString());
                 return false;
             }
         }
         
-        if (this.minX == other.minX && this.maxX == other.maxX && this.minY == other.minY && this.maxY == other.maxY && this.depth == other.depth
-        && this.positionInParent == other.positionInParent && this.status == other.status)
+        if (this.getMinX() != other.getMinX())
         {
-            if (this.status == Status.OUTSIDE)
-            {
-                if (!(this.min == other.min && this.max == other.max))
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                if (!(this.getMin() == other.getMin() && this.getMax() == other.getMax()))
-                {
-                    return false;
-                }
-            }
-            
-            if (this.children == null)
-            {
-                if (other.children == null)
-                {
-                    return true;
-                }
-                else
-                {
-                    System.out.println("children : null / not null");
-                    System.out.println(this.completeToString());
-                    System.out.println(other.completeToString());
-                    return false;
-                }
-            }
-            else
-            {
-                boolean same = true;
-                for (int i = 0; i < 4; ++i)
-                {
-                    same &= this.children[i].testIsExactlyTheSameAs(other.children[i], testFlag);
-                    
-                    // stop as soon as there is a difference
-                    if (!same)
-                    {
-                        return false;
-                    }
-                }
-                return same;
-            }
+            System.out.println("minX mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
         }
         
-        System.out.println("node difference at " + getPath());
-        System.out.println(this.completeToString());
-        System.out.println(other.completeToString());
-        return false;
+        if (this.getMaxX() != other.getMaxX())
+        {
+            System.out.println("maxX mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        
+        if (this.getMinY() != other.getMinY())
+        {
+            System.out.println("minY mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        
+        if (this.getMaxY() != other.getMaxY())
+        {
+            System.out.println("maxY mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        if (this.getDepth() != other.getDepth())
+        {
+            System.out.println("depth mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        
+        if (this.getPositionInParent() != other.getPositionInParent())
+        {
+            System.out.println("position in parent mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        
+        if (this.status != other.status)
+        {
+            System.out.println("status mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        
+        if (!(this.getMin() == other.getMin() && this.getMax() == other.getMax()))
+        {
+            System.out.println("min/max mismatch");
+            System.out.println("this" + this.completeToString());
+            System.out.println("other" + other.completeToString());
+            return false;
+        }
+        
+        if (this.children == null)
+        {
+            if (other.children == null)
+            {
+                return true;
+            }
+            else
+            {
+                System.out.println("children : null / not null");
+                System.out.println("this" + this.completeToString());
+                System.out.println("other" + other.completeToString());
+                return false;
+            }
+        }
+        else
+        {
+            boolean same = true;
+            for (int i = 0; i < 4; ++i)
+            {
+                same &= this.children[i].testIsExactlyTheSameAs(other.children[i], testFlag);
+                
+                // stop as soon as there is a difference
+                if (!same)
+                {
+                    System.out.println("children mismatch");
+                    System.out.println("this" + this.completeToString());
+                    System.out.println("other" + other.completeToString());
+                    return false;
+                }
+            }
+            return same;
+        }
     }
     
     public String completeToString()
     {
-        return "QuadTreeNode [parent=" + parent + ", children=" + Arrays.toString(children) + ", minX=" + minX + ", maxX=" + maxX + ", minY=" + minY
-        + ", maxY=" + maxY + ", depth=" + depth + ", positionInParent=" + positionInParent + ", status=" + status + ", min=" + min + ", max=" + max
-        + ", flagedForComputing=" + flagedForComputing + "]";
+        return "QuadTreeNode [parent=" + parent + ", children=" + Arrays.toString(children) + ", minX=" + getMinX() + ", maxX=" + getMaxX() + ", minY="
+        + getMinY() + ", maxY=" + getMaxY() + ", depth=" + getDepth() + ", positionInParent=" + getPositionInParent() + ", status=" + status + ", min=" + min
+        + ", max=" + max + ", flagedForComputing=" + flagedForComputing + "]";
     }
     
     /**
@@ -1243,7 +1099,7 @@ public class QuadTreeNode
         }
         else
         {
-            for (QuadTreeNode child : children)
+            for (AbstractQuadTreeNode child : children)
             {
                 total += child.getTotalNodesCount();
             }
@@ -1258,17 +1114,17 @@ public class QuadTreeNode
      */
     public void strip(int maxDepth)
     {
-        if (this.depth > maxDepth)
+        if (this.getDepth() > maxDepth)
         {
             throw new IllegalArgumentException("Trying to strip from a node af depth > maxDepth. Impossible operation.");
         }
-        else if (this.depth == maxDepth)
+        else if (this.getDepth() == maxDepth)
         {
             this.children = null;
         }
         else if (children != null)
         {
-            for (QuadTreeNode node : children)
+            for (AbstractQuadTreeNode node : children)
             {
                 node.strip(maxDepth);
             }
@@ -1278,11 +1134,13 @@ public class QuadTreeNode
     /**
      * Recursively computes this node depth. The depth of a root node is 0.
      * 
-     * @return the depth of this node
+     * This method was marked private because it consumes a lot of computation time. Use as few as possible.
+     * 
+     * @return the depth of this node.
      */
     public int getDepth()
     {
-        if (this.parent == null)
+        if (parent == null)
         {
             return 0;
         }
@@ -1294,22 +1152,70 @@ public class QuadTreeNode
     
     public double getMinX()
     {
-        return minX;
+        switch (this.getPositionInParent())
+        {
+            case TopLeft:
+            case BottomLeft:
+                return this.parent.getMinX();
+                
+            case BottomRight:
+            case TopRight:
+                return this.parent.getCenterX();
+                
+            default:
+                throw new InconsistentTreeStructure("The node has a parent but the position in parent is not defined.");
+        }
     }
     
     public double getMaxX()
     {
-        return maxX;
+        switch (this.getPositionInParent())
+        {
+            case TopLeft:
+            case BottomLeft:
+                return this.parent.getCenterX();
+                
+            case BottomRight:
+            case TopRight:
+                return this.parent.getMaxX();
+                
+            default:
+                throw new InconsistentTreeStructure("The node has a parent but the position in parent is not defined.");
+        }
     }
     
     public double getMinY()
     {
-        return minY;
+        switch (this.getPositionInParent())
+        {
+            case TopLeft:
+            case TopRight:
+                return this.parent.getCenterY();
+                
+            case BottomLeft:
+            case BottomRight:
+                return this.parent.getMinY();
+                
+            default:
+                throw new InconsistentTreeStructure("The node has a parent but the position in parent is not defined.");
+        }
     }
     
     public double getMaxY()
     {
-        return maxY;
+        switch (this.getPositionInParent())
+        {
+            case TopLeft:
+            case TopRight:
+                return this.parent.getMaxY();
+                
+            case BottomLeft:
+            case BottomRight:
+                return this.parent.getCenterY();
+                
+            default:
+                throw new InconsistentTreeStructure("The node has a parent but the position in parent is not defined.");
+        }
     }
     
     public int getMin()
@@ -1344,6 +1250,55 @@ public class QuadTreeNode
     public void setMax(int max)
     {
         this.max = max;
+    }
+    
+    /**
+     * TopLeft = 0, TopRight = 1, BottomLeft = 2, BottomRight = 3, Root = undef
+     * 
+     * @return the position of this node in the parent node.
+     * 
+     */
+    public PositionInParent getPositionInParent()
+    throws InconsistentTreeStructure
+    {
+        if (parent == null)
+        {
+            return PositionInParent.Root;
+        }
+        else
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (parent.children[i] == this)
+                {
+                    return PositionInParent.values()[i];
+                }
+            }
+        }
+        
+        throw new InconsistentTreeStructure("The node has a parent but the parent doesn't contain this node (" + this + ")");
+    }
+    
+    /**
+     * updates the transient fields. Should be use at loading by the QuadTreeManager.
+     */
+    public void updateFields()
+    {
+        // will be set by the parent
+        // this.parent;
+        
+        if (this.children != null)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                this.children[i].parent = this;
+                
+                this.children[i].updateFields();
+            }
+        }
+        
+        // useless to set value
+        // this.flagedForComputing = false;
     }
     
 }

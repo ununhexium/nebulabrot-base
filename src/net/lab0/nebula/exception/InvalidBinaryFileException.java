@@ -4,6 +4,11 @@ public class InvalidBinaryFileException
 extends Exception
 {
     
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public InvalidBinaryFileException()
     {
         super();

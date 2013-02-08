@@ -4,14 +4,15 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.AbstractQuadTreeNode;
+import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.data.Statistics;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
 public class Main
 {
-    private static QuadTreeNode root;
+    private static RootQuadTreeNode root;
     
     public static void main(String[] args)
     throws IOException, ValidityException, ParsingException, InterruptedException
@@ -22,7 +23,9 @@ public class Main
         // f2();
         // createSaveLoadSave();
         
-        root = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
+        root = new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0);
+        root.splitNode();
+        AbstractQuadTreeNode node = root.getNodeByAbsolutePath("R0");
         
         int maxDepth = 12;
         int pointsPerSide = 256;
@@ -40,28 +43,13 @@ public class Main
         QuadTreeManager manager = new QuadTreeManager(root, pointsPerSide, maxIter, diffIterLimit, maxDepth);
         manager.setThreads(threads);
         
-        // System.out.println("start " + new Date());
-        // System.out.println("end after " + stop);
-        
-        long computedNodes = 0;
-        int nodesPerCycle = 1000;
-        while (computedNodes < nodesPerCycle * 1)
-        {
-            manager.compute(nodesPerCycle);
-            computedNodes += (long) nodesPerCycle;
-            System.out.println("Nodes computed so far : " + computedNodes);
-            
-            Statistics statistics = manager.computeStatistics();
-            System.out.println(statistics);
-        }
-        manager.saveToXML(FileSystems.getDefault().getPath(".", "out", "p" + pointsPerSide + "i" + maxIter + "d" + diffIterLimit + "D" + maxDepth + "v" + 1));
-        
+        manager.compute(99999);
         long endTimer = System.currentTimeMillis();
         
         // Statistics statistics = manager.computeStatistics();
         // System.out.println(statistics);
         
-//        System.out.println("Searched for " + manager.getSearchTime() + "ms and " + manager.getSearchCounter() + " times");
+        // System.out.println("Searched for " + manager.getSearchTime() + "ms and " + manager.getSearchCounter() + " times");
         System.out.println("Computing time = " + (endTimer - startTimer));
         
         // QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("M:\\p256i65536d5D12v5"));

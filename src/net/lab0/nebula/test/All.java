@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses(value = { TestRawMandelbrotDataSave.class, TestQuadTreeSaveLoad.class, TestQuadTreeNode.class })
+@SuiteClasses(value = { TestRawMandelbrotDataSave.class, TestQuadTreeNode.class, TestQuadTreeSaveLoad.class, })
 public class All
 {
     

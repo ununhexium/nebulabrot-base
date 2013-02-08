@@ -1,17 +1,14 @@
-
 package net.lab0.nebula.core;
-
 
 import java.util.List;
 
-import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.AbstractQuadTreeNode;
 import net.lab0.nebula.data.SynchronizedCounter;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
 
-
 /**
  * 
- * Thread to compute the {@link QuadTreeNode}s' status of the given {@link QuadTreeManager}
+ * Thread to compute the {@link AbstractQuadTreeNode}s' status of the given {@link QuadTreeManager}
  * 
  * @author 116
  * 
@@ -36,7 +33,7 @@ extends AbstractQuadTreeComputeThread
             try
             {
                 // retirves the next "computeBlockSize" nodes to compute from the quad tree manager
-                List<QuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), computeBlockSize);
+                List<AbstractQuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), computeBlockSize);
                 
                 if (!nodes.isEmpty())
                 {
@@ -47,7 +44,7 @@ extends AbstractQuadTreeComputeThread
                     int diffIterLimit = quadTreeManager.getDiffIterLimit();
                     
                     long start = System.currentTimeMillis();
-                    for (QuadTreeNode node : nodes)
+                    for (AbstractQuadTreeNode node : nodes)
                     {
                         node.computeStatus(pointsPerSide, maxIter, diffIterLimit);
                         computed++;
@@ -94,7 +91,7 @@ extends AbstractQuadTreeComputeThread
             }
         }
     }
-
+    
     public int getComputeBlockSize()
     {
         return computeBlockSize;

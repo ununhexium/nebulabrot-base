@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.AbstractQuadTreeNode;
+import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
 import nu.xom.Element;
@@ -25,7 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * The class <code>QuadTreeNodeTest</code> contains tests for the class <code>{@link QuadTreeNode}</code>.
+ * The class <code>QuadTreeNodeTest</code> contains tests for the class <code>{@link AbstractQuadTreeNode}</code>.
  * 
  * @author 116@lab0.net
  */
@@ -35,15 +36,15 @@ public class TestQuadTreeNode
     private static final String    outsideNodePath = "R00";
     private static final String    insideNodePath  = "R033";
     private static final String    browsedNodePath = "R";
-    private QuadTreeNode           emptyQuadTreeNode;
-    private QuadTreeNode           standardRootQuadTreeNode;
-    private QuadTreeNode           deep10QuadTreeNode;
+    private AbstractQuadTreeNode   emptyQuadTreeNode;
+    private AbstractQuadTreeNode   standardRootQuadTreeNode;
+    private AbstractQuadTreeNode   deep10QuadTreeNode;
     
     @BeforeClass
     public static void setUpBeforeClass()
     throws InterruptedException
     {
-        manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 512, 5, 4);
+        manager = new QuadTreeManager(new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 512, 5, 4);
         manager.compute(99999);
     }
     
@@ -53,13 +54,13 @@ public class TestQuadTreeNode
     @Before
     public void setUp()
     {
-        emptyQuadTreeNode = new QuadTreeNode();
-        standardRootQuadTreeNode = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
-        deep10QuadTreeNode = new QuadTreeNode(-2.0, 2.0, -2.0, 2.0);
+        emptyQuadTreeNode = new RootQuadTreeNode(0, 0, 0, 0);
+        standardRootQuadTreeNode = new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0);
+        deep10QuadTreeNode = new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         createDeepTree(deep10QuadTreeNode, 10);
     }
     
-    private void createDeepTree(QuadTreeNode node, int depth)
+    private void createDeepTree(AbstractQuadTreeNode node, int depth)
     {
         if (depth == 0)
         {
@@ -68,7 +69,7 @@ public class TestQuadTreeNode
         else
         {
             node.splitNode();
-            for (QuadTreeNode child : node.children)
+            for (AbstractQuadTreeNode child : node.children)
             {
                 createDeepTree(child, depth - 1);
             }
@@ -99,7 +100,7 @@ public class TestQuadTreeNode
         assertEquals(1, emptyQuadTreeNode.getTotalNodesCount());
         assertEquals(false, emptyQuadTreeNode.hasComputedChildren());
         assertEquals(
-        "QuadTreeNode [parent=null, children=null, minX=0.0, maxX=0.0, minY=0.0, maxY=0.0, depth=0, positionInParent=null, status=null, min=-1, max=-1, flagedForComputing=false]",
+        "QuadTreeNode [parent=null, children=null, minX=0.0, maxX=0.0, minY=0.0, maxY=0.0, depth=0, positionInParent=Root, status=VOID, min=-1, max=-1, flagedForComputing=false]",
         emptyQuadTreeNode.completeToString());
         assertEquals(0, emptyQuadTreeNode.getMaxNodeDepth());
     }
@@ -119,7 +120,7 @@ public class TestQuadTreeNode
         assertEquals(-2.0, standardRootQuadTreeNode.getMinY(), 0.0);
         assertEquals(2.0, standardRootQuadTreeNode.getMaxY(), 0.0);
         assertNull(standardRootQuadTreeNode.parent);
-        assertEquals(PositionInParent.Root, standardRootQuadTreeNode.positionInParent);
+        assertEquals(PositionInParent.Root, standardRootQuadTreeNode.getPositionInParent());
         assertEquals(Status.VOID, standardRootQuadTreeNode.status);
     }
     
@@ -138,10 +139,10 @@ public class TestQuadTreeNode
         assertEquals(-2.0, standardRootQuadTreeNode.getMinY(), 0.0);
         assertEquals(2.0, standardRootQuadTreeNode.getMaxY(), 0.0);
         assertNull(standardRootQuadTreeNode.parent);
-        assertEquals(PositionInParent.Root, standardRootQuadTreeNode.positionInParent);
+        assertEquals(PositionInParent.Root, standardRootQuadTreeNode.getPositionInParent());
         assertEquals(Status.VOID, standardRootQuadTreeNode.status);
         
-        QuadTreeNode topLeftChild = standardRootQuadTreeNode.children[PositionInParent.TopLeft.ordinal()];
+        AbstractQuadTreeNode topLeftChild = standardRootQuadTreeNode.children[PositionInParent.TopLeft.ordinal()];
         assertEquals(1, topLeftChild.getDepth());
         assertEquals(-1, topLeftChild.getMax());
         assertEquals(-1, topLeftChild.getMin());
@@ -150,10 +151,10 @@ public class TestQuadTreeNode
         assertEquals(0.0, topLeftChild.getMinY(), 0.0);
         assertEquals(2.0, topLeftChild.getMaxY(), 0.0);
         assertTrue(topLeftChild.parent == standardRootQuadTreeNode);
-        assertEquals(PositionInParent.TopLeft, topLeftChild.positionInParent);
+        assertEquals(PositionInParent.TopLeft, topLeftChild.getPositionInParent());
         assertEquals(Status.VOID, topLeftChild.status);
         
-        QuadTreeNode topRightChild = standardRootQuadTreeNode.children[PositionInParent.TopRight.ordinal()];
+        AbstractQuadTreeNode topRightChild = standardRootQuadTreeNode.children[PositionInParent.TopRight.ordinal()];
         assertEquals(1, topRightChild.getDepth());
         assertEquals(-1, topRightChild.getMax());
         assertEquals(-1, topRightChild.getMin());
@@ -162,10 +163,10 @@ public class TestQuadTreeNode
         assertEquals(0.0, topRightChild.getMinY(), 0.0);
         assertEquals(2.0, topRightChild.getMaxY(), 0.0);
         assertTrue(topRightChild.parent == standardRootQuadTreeNode);
-        assertEquals(PositionInParent.TopRight, topRightChild.positionInParent);
+        assertEquals(PositionInParent.TopRight, topRightChild.getPositionInParent());
         assertEquals(Status.VOID, topRightChild.status);
         
-        QuadTreeNode bottomLeftChild = standardRootQuadTreeNode.children[PositionInParent.BottomLeft.ordinal()];
+        AbstractQuadTreeNode bottomLeftChild = standardRootQuadTreeNode.children[PositionInParent.BottomLeft.ordinal()];
         assertEquals(1, bottomLeftChild.getDepth());
         assertEquals(-1, bottomLeftChild.getMax());
         assertEquals(-1, bottomLeftChild.getMin());
@@ -174,10 +175,10 @@ public class TestQuadTreeNode
         assertEquals(-2.0, bottomLeftChild.getMinY(), 0.0);
         assertEquals(0.0, bottomLeftChild.getMaxY(), 0.0);
         assertTrue(bottomLeftChild.parent == standardRootQuadTreeNode);
-        assertEquals(PositionInParent.BottomLeft, bottomLeftChild.positionInParent);
+        assertEquals(PositionInParent.BottomLeft, bottomLeftChild.getPositionInParent());
         assertEquals(Status.VOID, bottomLeftChild.status);
         
-        QuadTreeNode bottomRightChild = standardRootQuadTreeNode.children[PositionInParent.BottomRight.ordinal()];
+        AbstractQuadTreeNode bottomRightChild = standardRootQuadTreeNode.children[PositionInParent.BottomRight.ordinal()];
         assertEquals(1, bottomRightChild.getDepth());
         assertEquals(-1, bottomRightChild.getMax());
         assertEquals(-1, bottomRightChild.getMin());
@@ -186,7 +187,7 @@ public class TestQuadTreeNode
         assertEquals(-2.0, bottomRightChild.getMinY(), 0.0);
         assertEquals(0.0, bottomRightChild.getMaxY(), 0.0);
         assertTrue(bottomRightChild.parent == standardRootQuadTreeNode);
-        assertEquals(PositionInParent.BottomRight, bottomRightChild.positionInParent);
+        assertEquals(PositionInParent.BottomRight, bottomRightChild.getPositionInParent());
         assertEquals(Status.VOID, bottomRightChild.status);
     }
     
@@ -194,7 +195,7 @@ public class TestQuadTreeNode
     public void testComputeStatus()
     throws InterruptedException
     {
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         assertEquals(Status.BROWSED, root.getNodeByAbsolutePath(browsedNodePath).status);
         assertEquals(Status.INSIDE, root.getNodeByAbsolutePath(insideNodePath).status);
         assertEquals(Status.OUTSIDE, root.getNodeByAbsolutePath(outsideNodePath).status);
@@ -250,7 +251,7 @@ public class TestQuadTreeNode
     @Test
     public void testGetLeafNodes()
     {
-        List<QuadTreeNode> list = new ArrayList<>(1 << 20);
+        List<AbstractQuadTreeNode> list = new ArrayList<>(1 << 20);
         deep10QuadTreeNode.getLeafNodes(list);
         assertEquals(1 << 20, list.size());
     }
@@ -262,8 +263,8 @@ public class TestQuadTreeNode
         // 50 outside
         // 6 inside
         
-        List<QuadTreeNode> list = new ArrayList<>();
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        List<AbstractQuadTreeNode> list = new ArrayList<>();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         list.clear();
         root.getLeafNodes(list, Arrays.asList(Status.BROWSED));
         assertEquals(44, list.size());
@@ -300,8 +301,8 @@ public class TestQuadTreeNode
         // 50 outside
         // 6 inside
         
-        List<QuadTreeNode> list = new ArrayList<>();
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        List<AbstractQuadTreeNode> list = new ArrayList<>();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         list.clear();
         root.getNodesByStatus(list, Arrays.asList(Status.BROWSED));
         assertEquals(77, list.size());
@@ -330,18 +331,18 @@ public class TestQuadTreeNode
     @Test
     public void testGetNodesOverlappingRectangle()
     {
-        List<QuadTreeNode> list = new ArrayList<>();
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        List<AbstractQuadTreeNode> list = new ArrayList<>();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         
-        Collection<QuadTreeNode> collection = root.getNodesOverlappingRectangle(new Point2D.Double(-2.0, -2.0), new Point2D.Double(-0.00001, -0.00001));
+        Collection<AbstractQuadTreeNode> collection = root.getNodesOverlappingRectangle(new Point2D.Double(-2.0, -2.0), new Point2D.Double(-0.00001, -0.00001));
         root.getNodeByAbsolutePath("R2").getAllNodes(list);
         list.add(root);
         
-        Set<QuadTreeNode> set1 = new HashSet<>(collection);
-        Set<QuadTreeNode> set2 = new HashSet<>(list);
+        Set<AbstractQuadTreeNode> set1 = new HashSet<>(collection);
+        Set<AbstractQuadTreeNode> set2 = new HashSet<>(list);
         assertEquals(collection.size(), set1.size());
         assertEquals(list.size(), set2.size());
-        for (QuadTreeNode q1 : set1)
+        for (AbstractQuadTreeNode q1 : set1)
         {
             if (!set2.contains(q1))
             {
@@ -350,7 +351,7 @@ public class TestQuadTreeNode
             }
         }
         
-        for (QuadTreeNode q2 : set2)
+        for (AbstractQuadTreeNode q2 : set2)
         {
             if (!set1.contains(q2))
             {
@@ -362,7 +363,7 @@ public class TestQuadTreeNode
     @Test
     public void testGetNodeByAbsolutePath()
     {
-        QuadTreeNode node = deep10QuadTreeNode.children[0].children[1].children[2].children[3].children[2].children[1].children[1];
+        AbstractQuadTreeNode node = deep10QuadTreeNode.children[0].children[1].children[2].children[3].children[2].children[1].children[1];
         String reference = "R0123211";
         assertEquals(node, deep10QuadTreeNode.getNodeByAbsolutePath(reference));
         
@@ -397,9 +398,9 @@ public class TestQuadTreeNode
     @Test
     public void testGetSubnodeByRelativePath()
     {
-        QuadTreeNode node = deep10QuadTreeNode.children[0].children[1].children[2].children[3].children[2].children[1].children[1];
-        QuadTreeNode node1 = deep10QuadTreeNode.children[0].children[1].children[2];
-        QuadTreeNode node2 = node1.getSubnodeByRelativePath("3211");
+        AbstractQuadTreeNode node = deep10QuadTreeNode.children[0].children[1].children[2].children[3].children[2].children[1].children[1];
+        AbstractQuadTreeNode node1 = deep10QuadTreeNode.children[0].children[1].children[2];
+        AbstractQuadTreeNode node2 = node1.getSubnodeByRelativePath("3211");
         
         assertEquals(node, node2);
     }

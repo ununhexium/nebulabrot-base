@@ -6,9 +6,7 @@ import java.util.List;
 
 import javax.swing.event.EventListenerList;
 
-import org.lwjgl.Sys;
-
-import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.AbstractQuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.listener.MandelbrotRendererListener;
@@ -233,10 +231,10 @@ public class NebulabrotRenderer
      * @param maxIter
      *            the maximum number of iterations the points on the grid need to have to be utilized
      * @param root
-     *            the root, a {@link QuadTreeNode} to the root of the tree which must be utilized to render the fractal
+     *            the root, a {@link AbstractQuadTreeNode} to the root of the tree which must be utilized to render the fractal
      * @return a {@link RawMandelbrotData} of the computed points
      */
-    public RawMandelbrotData quadTreeRender(long pointsCount, int minIter, int maxIter, QuadTreeNode root)
+    public RawMandelbrotData quadTreeRender(long pointsCount, int minIter, int maxIter, AbstractQuadTreeNode root)
     {
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, minIter, maxIter, pointsCount);
         int[][] data = raw.getData();
@@ -247,12 +245,12 @@ public class NebulabrotRenderer
         double stepY = viewPort.getHeight() / side;
         
         // get the appropriate nodes
-        List<QuadTreeNode> nodesList = new ArrayList<>();
+        List<AbstractQuadTreeNode> nodesList = new ArrayList<>();
         root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID));
         
         double workSurface = 0;
         double browsedSurface = 0;
-        for (QuadTreeNode n : nodesList)
+        for (AbstractQuadTreeNode n : nodesList)
         {
             workSurface += n.getSurface();
             if (n.status == Status.BROWSED)
@@ -268,7 +266,7 @@ public class NebulabrotRenderer
         // label set here to exit the main loop is case of stop request
         exit:
         {
-            for (QuadTreeNode node : nodesList)
+            for (AbstractQuadTreeNode node : nodesList)
             {
                 current++;
                 fireProgress(current, nodesList.size());
@@ -282,17 +280,19 @@ public class NebulabrotRenderer
                 {
                     // find the first point inside the node
                     
-                    double xStart = node.minX + Math.IEEEremainder(node.minX, stepX) - stepX;
-                    double yStart = node.minY + Math.IEEEremainder(node.minY, stepY) - stepY;
+                    double xStart = node.getMinX() + Math.IEEEremainder(node.getMinX(), stepX) - stepX;
+                    double yStart = node.getMinY() + Math.IEEEremainder(node.getMinY(), stepY) - stepY;
                     
                     // System.out.println("start1 (" + xStart + ";" + yStart + ")");
                     
                     double real = xStart;
+                    double maxX = node.getMaxX();
+                    double maxY = node.getMaxY();
                     
-                    while (real < node.maxX)
+                    while (real < maxX)
                     {
                         double img = yStart;
-                        while (img < node.maxY)
+                        while (img < maxY)
                         {
                             // if the point is outside
                             if (isOutsideMandelbrotSet(real, img, maxIter))

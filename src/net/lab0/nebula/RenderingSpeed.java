@@ -10,7 +10,7 @@ import java.util.List;
 
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.QuadTreeNode;
+import net.lab0.nebula.data.AbstractQuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.listener.ConsoleMandelbrotRendererListener;
@@ -48,7 +48,7 @@ public class RenderingSpeed
         List<RectangleInterface> viewports = new ArrayList<>();
         viewports.add(new Rectangle(new Point(2.0, 2.0), new Point(-2.0, -2.0)));
         
-        QuadTreeNode root = manager.getQuadTreeRoot();
+        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
         
         for (RectangleInterface viewport : viewports)
         {
@@ -69,7 +69,7 @@ public class RenderingSpeed
         System.out.println("End main");
     }
     
-    private static RawMandelbrotData testQuadTreeRenderingSpeed(QuadTreeNode quadTreeRoot, int xRes, RectangleInterface viewport, long pointsCount,
+    private static RawMandelbrotData testQuadTreeRenderingSpeed(AbstractQuadTreeNode quadTreeRoot, int xRes, RectangleInterface viewport, long pointsCount,
     int minIter, int maxIter, Path savePath)
     throws IOException
     {
