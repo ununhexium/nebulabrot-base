@@ -24,7 +24,6 @@ import java.util.Map.Entry;
 import javax.imageio.ImageIO;
 
 import net.lab0.nebula.color.ColorationModel;
-import net.lab0.nebula.color.GrayScaleColorModel;
 import net.lab0.nebula.color.PointValues;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.tools.MyString;
@@ -164,7 +163,7 @@ public class RawMandelbrotData
      * @throws IOException
      * 
      */
-    public void save(Path outputDirectoryPath, boolean saveImagePreview)
+    public void save(Path outputDirectoryPath)
     throws IOException
     {
         String algorithm = "SHA-512";
@@ -188,7 +187,7 @@ public class RawMandelbrotData
         
         File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
         File dataFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "rawData.dat").toFile();
-        File previewFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "preview.png").toFile();
+        File previewFileFolder = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "preview.png").toFile();
         
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(dataFile);
@@ -232,16 +231,6 @@ public class RawMandelbrotData
             information.appendChild(additionnalNode);
             indexRoot.appendChild(information);
             
-            if (saveImagePreview)
-            {
-                BufferedImage bufferedImage = this.computeBufferedImage(new GrayScaleColorModel());
-                ImageIO.write(bufferedImage, "PNG", previewFile);
-                
-                Element previewFileNode = new Element("previewFile");
-                previewFileNode.addAttribute(new Attribute("path", "./preview.png"));
-                indexRoot.appendChild(previewFileNode);
-            }
-            
             String digest = MyString.getHexString(digestOutputStream.getMessageDigest().digest());
             Element checksum = new Element("checksum");
             checksum.addAttribute(new Attribute("algorithm", algorithm));
@@ -254,6 +243,128 @@ public class RawMandelbrotData
             indexSerializer.setMaxLength(0);
             indexSerializer.write(indexDocument);
         }
+    }
+    
+    public void saveAsTiles(ColorationModel colorationModel, File tilesFolder, int tilesSize)
+    throws IOException
+    {
+        // find the number of zoom levels required
+        int zoomLevels = 0;
+        while (this.pixelHeight / Math.pow(2.0, zoomLevels) > tilesSize || this.pixelWidth / Math.pow(2.0, zoomLevels) > tilesSize)
+        {
+            zoomLevels++;
+        }
+        
+        for (int zoom = zoomLevels; zoom >= 0; --zoom)
+        {
+            System.out.println("Tiles for zoom " + zoom);
+            computeTileForZoom(colorationModel, new File(tilesFolder, Integer.toString(zoomLevels - zoom)), tilesSize, zoom);
+        }
+    }
+    
+    private void computeTileForZoom(ColorationModel colorationModel, File tilesFolder, int tilesSize, int zoom)
+    throws IOException
+    {
+        int zoomFactor = (1 << zoom);
+        int xTilesCount = data.length / (tilesSize * zoomFactor);
+        int yTilesCount = data[0].length / (tilesSize * zoomFactor);
+        
+        if (!tilesFolder.exists())
+        {
+            tilesFolder.mkdirs();
+        }
+        
+        // if it requires a non integer amount of tiles
+        if (data.length % (tilesSize * zoomFactor) != 0)
+        {
+            xTilesCount++;
+        }
+        if (data[0].length % (tilesSize * zoomFactor) != 0)
+        {
+            yTilesCount++;
+        }
+        
+        long min = data[0][0];
+        long max = data[0][0];
+        for (int x = 0; x < pixelWidth; x += zoomFactor)
+        {
+            for (int y = 0; y < pixelHeight; y += zoomFactor)
+            {
+                long value = 0;
+                
+                int xLimit2 = Math.min(x + zoomFactor, pixelWidth);
+                int yLimit2 = Math.min(y + zoomFactor, pixelHeight);
+                for (int x2 = x; x2 < xLimit2; ++x2)
+                {
+                    for (int y2 = y; y2 < yLimit2; ++y2)
+                    {
+                        value += data[x2][y2];
+                    }
+                }
+                
+                if (value > max)
+                {
+                    max = value;
+                }
+                if (value < min)
+                {
+                    min = value;
+                }
+            }
+        }
+        
+        for (int xTile = 0; xTile < xTilesCount; ++xTile)
+        {
+            for (int yTile = 0; yTile < yTilesCount; ++yTile)
+            {
+                System.out.println("Tile " + (xTile * yTilesCount + yTile) + "/" + (xTilesCount * yTilesCount));
+                computeTile(colorationModel, tilesFolder, tilesSize, min, max, xTile, yTile, zoom);
+            }
+        }
+    }
+    
+    private void computeTile(ColorationModel colorationModel, File tilesFolder, int tilesSize, long min, long max, int xTile, int yTile, int zoom)
+    throws IOException
+    {
+        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        final BufferedImage bufferedImage = gc.createCompatibleImage(tilesSize, tilesSize, BufferedImage.TYPE_INT_RGB);
+        
+        int zoomFactor = (1 << zoom);
+        WritableRaster raster = bufferedImage.getRaster();
+        float[] fArray = new float[3];
+        PointValues value = new PointValues();
+        value.minIter = min;
+        value.maxIter = max;
+        int xOrigin = xTile * tilesSize * zoomFactor;
+        int yOrigin = yTile * tilesSize * zoomFactor;
+        
+        int xLimit1 = Math.min((xTile + 1) * tilesSize * zoomFactor, pixelWidth);
+        int yLimit1 = Math.min((yTile + 1) * tilesSize * zoomFactor, pixelHeight);
+        
+        System.out.println("tileCoords " + xOrigin + "/" + yOrigin);
+        for (int x = xOrigin; x < xLimit1; x += (zoomFactor))
+        {
+            for (int y = yOrigin; y < yLimit1; y += (zoomFactor))
+            {
+                value.value = 0;
+                
+                int xLimit2 = Math.min(x + zoomFactor, pixelWidth);
+                int yLimit2 = Math.min(y + zoomFactor, pixelHeight);
+                for (int subX = x; subX < xLimit2; subX++)
+                {
+                    for (int subY = y; subY < yLimit2; subY++)
+                    {
+                        value.value += data[subX][subY];
+                    }
+                }
+                
+                colorationModel.computeColorForPoint(fArray, value);
+//                System.out.println("set " + (x - xOrigin)/ zoomFactor + "/" + (y- yOrigin)/zoomFactor);
+                raster.setPixel((x - xOrigin)/ zoomFactor, (y- yOrigin)/zoomFactor, fArray);
+            }
+        }
+        
+        ImageIO.write(bufferedImage, "PNG", new File(tilesFolder, "tile-" + xTile + "-" + yTile + ".png"));
     }
     
     /**

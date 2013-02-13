@@ -10,8 +10,8 @@ import java.util.List;
 
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.AbstractQuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
+import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.listener.ConsoleMandelbrotRendererListener;
 import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
@@ -30,31 +30,37 @@ public class RenderingSpeed
     {
         System.out.println("Start main");
         
-        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "bck", "p256i65536d5D16binNoIndex"),
-        new ConsoleQuadTreeManagerListener());
-        
-//         QuadTreeManager manager = new QuadTreeManager(new QuadTreeNode(-2.0, 2.0, -2.0, 2.0), 256, 65536, 5, 0);
-//         manager.addQuadTreeManagerListener(new ConsoleQuadTreeManagerListener());
-//         manager.addQuadTreeComputeListener(new ConsoleQuadTreeComputeListener());
-//         manager.setThreads(Runtime.getRuntime().availableProcessors());
-        
-        List<Integer> quadTreeMaxDepthList = Arrays.asList(15);
-        
-        int xRes = 8192*2;
+        int xRes = 8192 * 4;
         int minIter = 256;
-        int maxIter = 65539;
+        int maxIter = 65535;
         long pointsCount = 100_000_000_000L;
+        
+        // find an appropriate max depth
+        int minPointsCountPerNode = 256;
+        int maxDepth = 0;
+        while (pointsCount / Math.pow(4, maxDepth) >= minPointsCountPerNode)
+        {
+            maxDepth++;
+        }
+        maxDepth--;
+        System.out.println("Max depth : " + maxDepth);
+        
+        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "bck",
+        "p256i65536d5D" + maxDepth + "binNoIndex"), new ConsoleQuadTreeManagerListener());
+        
+        List<Integer> quadTreeMaxDepthList = Arrays.asList(maxDepth);
         
         List<RectangleInterface> viewports = new ArrayList<>();
         viewports.add(new Rectangle(new Point(2.0, 2.0), new Point(-2.0, -2.0)));
         
-        AbstractQuadTreeNode root = manager.getQuadTreeRoot();
+        StatusQuadTreeNode root = manager.getQuadTreeRoot();
         
         for (RectangleInterface viewport : viewports)
         {
-//            Path linSavePath = FileSystems.getDefault().getPath("F:", "dev", "nebula", "render", "x" + xRes, "p" + pointsCount + "m" + minIter + "M" + maxIter,
-//            "lin");
-//            RawMandelbrotData linRaw = testLinearRenderingSpeed(xRes, viewports.get(0), pointsCount, minIter, maxIter, linSavePath);
+            // Path linSavePath = FileSystems.getDefault().getPath("F:", "dev", "nebula", "render", "x" + xRes, "p" + pointsCount + "m" + minIter + "M" +
+            // maxIter,
+            // "lin");
+            // RawMandelbrotData linRaw = testLinearRenderingSpeed(xRes, viewports.get(0), pointsCount, minIter, maxIter, linSavePath);
             
             for (Integer quadTreeMaxDepth : quadTreeMaxDepthList)
             {
@@ -62,14 +68,15 @@ public class RenderingSpeed
                 Path quadTreeSavePath = FileSystems.getDefault().getPath("F:", "dev", "nebula", "render", "x" + xRes,
                 "p" + pointsCount + "m" + minIter + "M" + maxIter, "quad" + quadTreeMaxDepth);
                 testQuadTreeRenderingSpeed(manager.getQuadTreeRoot(), xRes, viewport, pointsCount, minIter, maxIter, quadTreeSavePath);
-                manager.saveToXML(FileSystems.getDefault().getPath(quadTreeSavePath.toString(), "tree"));
+                System.out.println("Saved to: " + quadTreeSavePath);
+                manager.saveToBinaryFile(FileSystems.getDefault().getPath(quadTreeSavePath.toString(), "tree"), false);
             }
         }
         
         System.out.println("End main");
     }
     
-    private static RawMandelbrotData testQuadTreeRenderingSpeed(AbstractQuadTreeNode quadTreeRoot, int xRes, RectangleInterface viewport, long pointsCount,
+    private static RawMandelbrotData testQuadTreeRenderingSpeed(StatusQuadTreeNode quadTreeRoot, int xRes, RectangleInterface viewport, long pointsCount,
     int minIter, int maxIter, Path savePath)
     throws IOException
     {
@@ -77,7 +84,7 @@ public class RenderingSpeed
         int yRes = (int) (xRes / viewport.getWidth() * viewport.getHeight());
         
         NebulabrotRenderer renderer = new NebulabrotRenderer(xRes, yRes, viewport);
-         renderer.addMandelbrotRendererListener(new ConsoleMandelbrotRendererListener());
+        renderer.addMandelbrotRendererListener(new ConsoleMandelbrotRendererListener());
         
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -86,7 +93,7 @@ public class RenderingSpeed
         
         rawMandelbrotData.addAdditionnalInformation("rendering.method", "quadTree");
         rawMandelbrotData.addAdditionnalInformation("rendering.time", Double.toString(stopWatch.getNanoTime() / 1_000_000_000.0d));
-        rawMandelbrotData.save(savePath, true);
+        rawMandelbrotData.save(savePath);
         
         return rawMandelbrotData;
     }
@@ -107,7 +114,7 @@ public class RenderingSpeed
         
         rawMandelbrotData.addAdditionnalInformation("rendering.method", "linear");
         rawMandelbrotData.addAdditionnalInformation("rendering.time", Double.toString(stopWatch.getNanoTime() / 1_000_000_000.0d));
-        rawMandelbrotData.save(savePath, true);
+        rawMandelbrotData.save(savePath);
         
         return rawMandelbrotData;
     }

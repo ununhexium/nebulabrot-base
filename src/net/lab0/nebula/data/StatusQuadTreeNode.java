@@ -20,17 +20,17 @@ import nu.xom.Elements;
  * @author 116
  * 
  */
-public class AbstractQuadTreeNode
+public class StatusQuadTreeNode
 {
     /**
      * the link to the parent node. If the parent is null, then this is a quad tree root
      */
-    public AbstractQuadTreeNode   parent;
+    public StatusQuadTreeNode   parent;
     
     /**
      * if children is not null, children must be QuadTreeNode[4]
      */
-    public AbstractQuadTreeNode[] children;
+    public StatusQuadTreeNode[] children;
     
     /**
      * the status of this node. Must not be null.
@@ -61,7 +61,7 @@ public class AbstractQuadTreeNode
     /**
      * Creates an empty quad tree node
      */
-    protected AbstractQuadTreeNode()
+    protected StatusQuadTreeNode()
     {
         //this would be a root node
         this.parent = null;
@@ -80,7 +80,7 @@ public class AbstractQuadTreeNode
      * @param positionInParent
      *            only used if parent is not null
      */
-    public AbstractQuadTreeNode(AbstractQuadTreeNode parent)
+    public StatusQuadTreeNode(StatusQuadTreeNode parent)
     {
         this.parent = parent;
         this.children = null;
@@ -95,7 +95,7 @@ public class AbstractQuadTreeNode
      * @param parent
      *            the parent node
      */
-    public AbstractQuadTreeNode(Element nodeElement, AbstractQuadTreeNode parent)
+    public StatusQuadTreeNode(Element nodeElement, StatusQuadTreeNode parent)
     {
         this.parent = parent;
         
@@ -114,7 +114,7 @@ public class AbstractQuadTreeNode
             this.splitNode();
             for (int i = 0; i < childNodes.size(); ++i)
             {
-                AbstractQuadTreeNode childNode = new AbstractQuadTreeNode(childNodes.get(i), this);
+                StatusQuadTreeNode childNode = new StatusQuadTreeNode(childNodes.get(i), this);
                 String positionInParentString = childNodes.get(i).getAttributeValue("pos");
                 PositionInParent positionInParent = PositionInParent.valueOf(positionInParentString);
                 if (isChildNode(positionInParent))
@@ -133,11 +133,11 @@ public class AbstractQuadTreeNode
         // split only if it's not already split
         if (this.children == null)
         {
-            this.children = new AbstractQuadTreeNode[4];
+            this.children = new StatusQuadTreeNode[4];
             
             for (int i = 0; i < 4; ++i)
             {
-                children[i] = new AbstractQuadTreeNode(this);
+                children[i] = new StatusQuadTreeNode(this);
             }
         }
     }
@@ -497,7 +497,7 @@ public class AbstractQuadTreeNode
         
         if (recursive && children != null)
         {
-            for (AbstractQuadTreeNode node : children)
+            for (StatusQuadTreeNode node : children)
             {
                 thisNode.appendChild(node.asXML(recursive));
             }
@@ -524,11 +524,11 @@ public class AbstractQuadTreeNode
      * 
      * @param path
      *            The path of the node to get.
-     * @return a {@link AbstractQuadTreeNode} is any is found. <code>null</code> otherwise.
+     * @return a {@link StatusQuadTreeNode} is any is found. <code>null</code> otherwise.
      * @throws IllegalArgumentException
      *             if the path is invalid
      */
-    public AbstractQuadTreeNode getNodeByAbsolutePath(String path)
+    public StatusQuadTreeNode getNodeByAbsolutePath(String path)
     {
         if (!absolutePathRegex.matcher(path).matches())
         {
@@ -547,7 +547,7 @@ public class AbstractQuadTreeNode
      * @throws IllegalArgumentException
      *             if the path is invalid
      */
-    public AbstractQuadTreeNode getSubnodeByRelativePath(String path)
+    public StatusQuadTreeNode getSubnodeByRelativePath(String path)
     {
         if (!relativePathRegex.matcher(path).matches())
         {
@@ -556,7 +556,7 @@ public class AbstractQuadTreeNode
         return getNodeByPathRecursively(Integer.toString(this.getPositionInParent().ordinal()) + path);
     }
     
-    private AbstractQuadTreeNode getNodeByPathRecursively(String path)
+    private StatusQuadTreeNode getNodeByPathRecursively(String path)
     {
         if (path.length() == 0)
         {
@@ -606,7 +606,7 @@ public class AbstractQuadTreeNode
      * 
      * @return the root of the tree containing this node
      */
-    private AbstractQuadTreeNode getRootNode()
+    private StatusQuadTreeNode getRootNode()
     {
         if (parent == null)
         {
@@ -637,7 +637,7 @@ public class AbstractQuadTreeNode
      * @param status
      *            the status the nodes must have to be returned
      */
-    public void getNodesByStatus(List<AbstractQuadTreeNode> nodesList, List<Status> status)
+    public void getNodesByStatus(List<StatusQuadTreeNode> nodesList, List<Status> status)
     {
         if (status.contains(this.status))
         {
@@ -646,7 +646,7 @@ public class AbstractQuadTreeNode
         
         if (this.children != null)
         {
-            for (AbstractQuadTreeNode child : children)
+            for (StatusQuadTreeNode child : children)
             {
                 child.getNodesByStatus(nodesList, status);
             }
@@ -663,7 +663,7 @@ public class AbstractQuadTreeNode
      * @param maxQuantity
      *            the method stops when the list has at least <code>maxQuantity</code> elements in it.
      */
-    public void getNodesByStatus(List<AbstractQuadTreeNode> nodesList, List<Status> status, int maxQuantity)
+    public void getNodesByStatus(List<StatusQuadTreeNode> nodesList, List<Status> status, int maxQuantity)
     {
         if (status.contains(this.status))
         {
@@ -677,7 +677,7 @@ public class AbstractQuadTreeNode
         
         if (this.children != null)
         {
-            for (AbstractQuadTreeNode child : children)
+            for (StatusQuadTreeNode child : children)
             {
                 child.getNodesByStatus(nodesList, status, maxQuantity);
             }
@@ -700,7 +700,7 @@ public class AbstractQuadTreeNode
             return false;
         }
         
-        for (AbstractQuadTreeNode child : children)
+        for (StatusQuadTreeNode child : children)
         {
             if (child.status != Status.VOID)
             {
@@ -744,7 +744,7 @@ public class AbstractQuadTreeNode
      * @param leafNodes
      *            a list which will contain the leaf nodes.
      */
-    public void getLeafNodes(List<AbstractQuadTreeNode> leafNodes)
+    public void getLeafNodes(List<StatusQuadTreeNode> leafNodes)
     {
         if (this.children == null)
         {
@@ -752,7 +752,7 @@ public class AbstractQuadTreeNode
         }
         else
         {
-            for (AbstractQuadTreeNode child : children)
+            for (StatusQuadTreeNode child : children)
             {
                 child.getLeafNodes(leafNodes);
             }
@@ -767,7 +767,7 @@ public class AbstractQuadTreeNode
      * @param status
      *            the node must have one of the given status to be retrieved
      */
-    public void getLeafNodes(List<AbstractQuadTreeNode> leafNodes, List<Status> status)
+    public void getLeafNodes(List<StatusQuadTreeNode> leafNodes, List<Status> status)
     {
         if (this.children == null)
         {
@@ -778,7 +778,7 @@ public class AbstractQuadTreeNode
         }
         else
         {
-            for (AbstractQuadTreeNode child : children)
+            for (StatusQuadTreeNode child : children)
             {
                 child.getLeafNodes(leafNodes, status);
             }
@@ -808,9 +808,9 @@ public class AbstractQuadTreeNode
      * @param p2
      * @return The nodes overlapping the given closed rectangle.
      */
-    public Collection<AbstractQuadTreeNode> getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2)
+    public Collection<StatusQuadTreeNode> getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2)
     {
-        ArrayList<AbstractQuadTreeNode> c = new ArrayList<AbstractQuadTreeNode>();
+        ArrayList<StatusQuadTreeNode> c = new ArrayList<StatusQuadTreeNode>();
         getNodesOverlappingRectangle(p1, p2, c);
         return c;
     }
@@ -825,7 +825,7 @@ public class AbstractQuadTreeNode
      * @param collection
      *            la collection contenant le rﾃｩsultat
      */
-    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<AbstractQuadTreeNode> collection)
+    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<StatusQuadTreeNode> collection)
     {
         double rectMaxX = Math.max(p1.getX(), p2.getX());
         double rectMaxY = Math.max(p1.getY(), p2.getY());
@@ -845,7 +845,7 @@ public class AbstractQuadTreeNode
      * @param collection
      *            la collection contenant le rﾃｩsultat
      */
-    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<AbstractQuadTreeNode> collection)
+    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<StatusQuadTreeNode> collection)
     {
         // si la zone de cette node est entiﾃｨrement contenue dans le rectangle
         if (this.getMinX() >= rectMinX && this.getMaxX() <= rectMaxX && this.getMaxY() <= rectMaxY && this.getMinY() >= rectMinY)
@@ -870,12 +870,12 @@ public class AbstractQuadTreeNode
         }
     }
     
-    public void getAllNodes(Collection<AbstractQuadTreeNode> collection)
+    public void getAllNodes(Collection<StatusQuadTreeNode> collection)
     {
         collection.add(this);
         if (children != null)
         {
-            for (AbstractQuadTreeNode n : children)
+            for (StatusQuadTreeNode n : children)
             {
                 n.getAllNodes(collection);
             }
@@ -969,7 +969,7 @@ public class AbstractQuadTreeNode
      * @param other
      * @return
      */
-    public boolean testIsExactlyTheSameAs(AbstractQuadTreeNode other, boolean testFlag)
+    public boolean testIsExactlyTheSameAs(StatusQuadTreeNode other, boolean testFlag)
     {
         if (testFlag)
         {
@@ -1099,7 +1099,7 @@ public class AbstractQuadTreeNode
         }
         else
         {
-            for (AbstractQuadTreeNode child : children)
+            for (StatusQuadTreeNode child : children)
             {
                 total += child.getTotalNodesCount();
             }
@@ -1124,7 +1124,7 @@ public class AbstractQuadTreeNode
         }
         else if (children != null)
         {
-            for (AbstractQuadTreeNode node : children)
+            for (StatusQuadTreeNode node : children)
             {
                 node.strip(maxDepth);
             }

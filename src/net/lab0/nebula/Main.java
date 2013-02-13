@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.AbstractQuadTreeNode;
+import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.data.Statistics;
 import nu.xom.ParsingException;
@@ -25,7 +25,7 @@ public class Main
         
         root = new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         root.splitNode();
-        AbstractQuadTreeNode node = root.getNodeByAbsolutePath("R0");
+        StatusQuadTreeNode node = root.getNodeByAbsolutePath("R0");
         
         int maxDepth = 12;
         int pointsPerSide = 256;

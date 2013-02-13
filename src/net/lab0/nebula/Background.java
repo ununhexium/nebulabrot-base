@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.AbstractQuadTreeNode;
+import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
@@ -21,7 +21,7 @@ public class Background
     public static void main(String[] args)
     throws InterruptedException, IOException, ValidityException, ParsingException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
-        AbstractQuadTreeNode root = new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0);
+        StatusQuadTreeNode root = new RootQuadTreeNode(-2.0, 2.0, -2.0, 2.0);
         
         int maxDepth = 8;
         int pointsPerSide = 256;

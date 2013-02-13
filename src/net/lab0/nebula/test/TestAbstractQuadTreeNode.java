@@ -30,7 +30,7 @@ import org.junit.Test;
  * 
  * @author 116@lab0.net
  */
-public class TestQuadTreeNode
+public class TestAbstractQuadTreeNode
 {
     private static QuadTreeManager manager;
     private static final String    outsideNodePath = "R00";
@@ -98,7 +98,6 @@ public class TestQuadTreeNode
         assertEquals(0.0, emptyQuadTreeNode.getSurface(), 0.0);
         assertEquals(false, emptyQuadTreeNode.isFlagedForComputing());
         assertEquals(1, emptyQuadTreeNode.getTotalNodesCount());
-        assertEquals(false, emptyQuadTreeNode.hasComputedChildren());
         assertEquals(
         "QuadTreeNode [parent=null, children=null, minX=0.0, maxX=0.0, minY=0.0, maxY=0.0, depth=0, positionInParent=Root, status=VOID, min=-1, max=-1, flagedForComputing=false]",
         emptyQuadTreeNode.completeToString());

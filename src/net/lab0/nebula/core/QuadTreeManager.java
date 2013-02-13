@@ -23,7 +23,7 @@ import java.util.Queue;
 
 import javax.swing.event.EventListenerList;
 
-import net.lab0.nebula.data.AbstractQuadTreeNode;
+import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.data.Statistics;
 import net.lab0.nebula.data.StatisticsData;
@@ -88,7 +88,7 @@ public class QuadTreeManager
     /**
      * the queue of computation blocks
      */
-    private Queue<List<AbstractQuadTreeNode>> nodesList          = new LinkedList<>();
+    private Queue<List<StatusQuadTreeNode>> nodesList          = new LinkedList<>();
     /**
      * this value is set in order not to have too long queues
      */
@@ -157,7 +157,7 @@ public class QuadTreeManager
      * Build a new {@link QuadTreeManager}
      * 
      * @param root
-     *            the {@link AbstractQuadTreeNode} to use as root
+     *            the {@link StatusQuadTreeNode} to use as root
      * @param pointsPerSide
      *            the number of points for each node side
      * @param maxIter
@@ -273,7 +273,7 @@ public class QuadTreeManager
         bytesRead = 0;
         previousBytesRead = 0;
         currentReadFileSize = inputFile.length();
-        AbstractQuadTreeNode temporaryRoot = null;
+        StatusQuadTreeNode temporaryRoot = null;
         if (indexed)
         {
             temporaryRoot = recursivelyConvertToQuadTreeWithIndexes(digestInputStream);
@@ -300,7 +300,7 @@ public class QuadTreeManager
         fileInputStream.close();
     }
     
-    private AbstractQuadTreeNode recursivelyConvertToQuadTreeWithIndexes(InputStream inputStream)
+    private StatusQuadTreeNode recursivelyConvertToQuadTreeWithIndexes(InputStream inputStream)
     throws IOException, InvalidBinaryFileException
     {
         
@@ -320,7 +320,7 @@ public class QuadTreeManager
             byte statusValue = byteBuffer.get();
             Status status = Status.values()[statusValue];
             
-            AbstractQuadTreeNode node = new AbstractQuadTreeNode(null);
+            StatusQuadTreeNode node = new StatusQuadTreeNode(null);
             node.status = status;
             node.setMin(byteBuffer.getInt());
             node.setMax(byteBuffer.getInt());
@@ -336,7 +336,7 @@ public class QuadTreeManager
             
             if (childrenValue != 0) // has children
             {
-                node.children = new AbstractQuadTreeNode[4];
+                node.children = new StatusQuadTreeNode[4];
                 for (int i = 0; i < 4; ++i)
                 {
                     node.children[i] = recursivelyConvertToQuadTreeWithIndexes(inputStream);
@@ -358,7 +358,7 @@ public class QuadTreeManager
      * @throws IOException
      * @throws InvalidBinaryFileException
      */
-    private AbstractQuadTreeNode recursivelyConvertToQuadTreeWithoutIndexes(InputStream inputStream)
+    private StatusQuadTreeNode recursivelyConvertToQuadTreeWithoutIndexes(InputStream inputStream)
     throws IOException, InvalidBinaryFileException
     {
         byte[] bytes = new byte[26];
@@ -371,7 +371,7 @@ public class QuadTreeManager
         if (inputStream.read(bytes, 0, 1) > 0)
         {
             bytesRead += 1;
-            AbstractQuadTreeNode node = new AbstractQuadTreeNode(null);
+            StatusQuadTreeNode node = new StatusQuadTreeNode(null);
             ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
             
             byte statusByte = byteBuffer.get(0);
@@ -399,7 +399,7 @@ public class QuadTreeManager
                 
                 if (hasChildren)
                 {
-                    node.children = new AbstractQuadTreeNode[4];
+                    node.children = new StatusQuadTreeNode[4];
                     for (int i = 0; i < 4; ++i)
                     {
                         node.children[i] = recursivelyConvertToQuadTreeWithoutIndexes(inputStream);
@@ -585,7 +585,7 @@ public class QuadTreeManager
         int dataIndex = 0;
         
         // list containing the nodes which are splitting the tree for a given depth
-        List<AbstractQuadTreeNode> splittingNodes = new LinkedList<>();
+        List<StatusQuadTreeNode> splittingNodes = new LinkedList<>();
         splittingNodes.add(this.root);
         
         /*
@@ -595,7 +595,7 @@ public class QuadTreeManager
          */
         while (!splittingNodes.isEmpty())
         {
-            AbstractQuadTreeNode currentNode = splittingNodes.remove(0);
+            StatusQuadTreeNode currentNode = splittingNodes.remove(0);
             
             Element docRoot = new Element("mandelbrotQuadTree");
             docRoot.addAttribute(new Attribute("path", currentNode.getPath()));
@@ -782,7 +782,7 @@ public class QuadTreeManager
      * @param messageDigest
      * @throws IOException
      */
-    private void recursivelyConvertToBinaryFileWithIndexes(OutputStream outputStream, AbstractQuadTreeNode node, int nodesCount)
+    private void recursivelyConvertToBinaryFileWithIndexes(OutputStream outputStream, StatusQuadTreeNode node, int nodesCount)
     throws IOException
     {
         byte[] bytes = new byte[26];
@@ -848,7 +848,7 @@ public class QuadTreeManager
      *            the amount of nodes already written in the file
      * @throws IOException
      */
-    private void recursivelyConvertToBinaryFileWithoutIndexes(OutputStream outputStream, AbstractQuadTreeNode node)
+    private void recursivelyConvertToBinaryFileWithoutIndexes(OutputStream outputStream, StatusQuadTreeNode node)
     throws IOException
     {
         byte[] bytes = new byte[10];
@@ -887,8 +887,8 @@ public class QuadTreeManager
     }
     
     /**
-     * Recursively appends the given {@link AbstractQuadTreeNode} and its children to the <code>containingXmlNode</code>. Adds systematically children which depth is
-     * inferior to <code>minSplitDepth</code>. If the {@link AbstractQuadTreeNode} has a maximum depth inferior to <code>maxSplitDepth</code>, the nodes at a depths
+     * Recursively appends the given {@link StatusQuadTreeNode} and its children to the <code>containingXmlNode</code>. Adds systematically children which depth is
+     * inferior to <code>minSplitDepth</code>. If the {@link StatusQuadTreeNode} has a maximum depth inferior to <code>maxSplitDepth</code>, the nodes at a depths
      * between <code>minSplitDepth</code> and strictly inferior to <code>maxSplitDepth</code> are also added. If the maximum depth of the node is equal to, or
      * over <code>maxSplitDepth</code>, the nodes at depth <code>minSplitDepth</code> are added to the splitting nodes.
      * 
@@ -903,8 +903,8 @@ public class QuadTreeManager
      * @param splittingNodes
      *            a list of node to store the splitting nodes
      */
-    private void recursiveAppendChildren(Element containingXmlNode, AbstractQuadTreeNode quadTreeNode, int minSplitDepth, int maxSplitDepth,
-    List<AbstractQuadTreeNode> splittingNodes)
+    private void recursiveAppendChildren(Element containingXmlNode, StatusQuadTreeNode quadTreeNode, int minSplitDepth, int maxSplitDepth,
+    List<StatusQuadTreeNode> splittingNodes)
     {
         // if the node can be saved in 1 file
         if (quadTreeNode.getDepth() < minSplitDepth || quadTreeNode.getMaxNodeDepth() < maxSplitDepth)
@@ -914,7 +914,7 @@ public class QuadTreeManager
             
             if (quadTreeNode.children != null)
             {
-                for (AbstractQuadTreeNode childQuadTreeNode : quadTreeNode.children)
+                for (StatusQuadTreeNode childQuadTreeNode : quadTreeNode.children)
                 {
                     recursiveAppendChildren(childNode, childQuadTreeNode, minSplitDepth, maxSplitDepth, splittingNodes);
                 }
@@ -933,20 +933,20 @@ public class QuadTreeManager
      *            the maximum computation depth
      * @param blockSize
      *            the size of the block to retrieve
-     * @return a list of {@link AbstractQuadTreeNode}s, which may contains between 0 and <code>blockSize</code> elements. Never returns null.
+     * @return a list of {@link StatusQuadTreeNode}s, which may contains between 0 and <code>blockSize</code> elements. Never returns null.
      * @throws NoMoreNodesToCompute
      */
-    public synchronized List<AbstractQuadTreeNode> getNextNodeToCompute(int maxComputationDepth, int blockSize)
+    public synchronized List<StatusQuadTreeNode> getNextNodeToCompute(int maxComputationDepth, int blockSize)
     throws NoMoreNodesToCompute
     {
         // if there is no list of nodes left : refill it
         if (nodesList.isEmpty())
         {
-            List<AbstractQuadTreeNode> tmpList = new ArrayList<>();
+            List<StatusQuadTreeNode> tmpList = new ArrayList<>();
             root.getNodesByStatus(tmpList, Arrays.asList(Status.BROWSED));
             
             // split all the browsed node which depth is strictly inferior to maxComputationDepth
-            for (AbstractQuadTreeNode node : tmpList)
+            for (StatusQuadTreeNode node : tmpList)
             {
                 if (node.getDepth() < maxComputationDepth)
                 {
@@ -960,8 +960,8 @@ public class QuadTreeManager
             
             int currentSize = 0;
             int remaining = (int) (remainingNodesToCompute.getValue() > (long) maxCapacity ? maxCapacity : remainingNodesToCompute.getValue());
-            List<AbstractQuadTreeNode> nodes = new ArrayList<>(blockSize);
-            for (AbstractQuadTreeNode n : tmpList)
+            List<StatusQuadTreeNode> nodes = new ArrayList<>(blockSize);
+            for (StatusQuadTreeNode n : tmpList)
             {
                 if (n.getDepth() <= maxComputationDepth)
                 {
@@ -992,10 +992,10 @@ public class QuadTreeManager
             nodesList.add(nodes);
         }
         
-        List<AbstractQuadTreeNode> nodes = nodesList.poll();
+        List<StatusQuadTreeNode> nodes = nodesList.poll();
         if (nodes != null)
         {
-            for (AbstractQuadTreeNode node : nodes)
+            for (StatusQuadTreeNode node : nodes)
             {
                 if (node != null)
                 {
@@ -1073,7 +1073,7 @@ public class QuadTreeManager
         
         try
         {
-            List<AbstractQuadTreeNode> list = getNextNodeToCompute(getMaxDepth(), 1);
+            List<StatusQuadTreeNode> list = getNextNodeToCompute(getMaxDepth(), 1);
             if (!list.isEmpty())
             {
                 list.get(0).unFlagForComputing();
@@ -1105,14 +1105,14 @@ public class QuadTreeManager
      *            to compute statistics on
      * @return {@link Statistics}
      */
-    public static Statistics computeStatistics(AbstractQuadTreeNode node)
+    public static Statistics computeStatistics(StatusQuadTreeNode node)
     {
         Statistics statistics = new Statistics();
         recursiveComputeStatistics(node, statistics);
         return statistics;
     }
     
-    private static void recursiveComputeStatistics(AbstractQuadTreeNode node, Statistics statistics)
+    private static void recursiveComputeStatistics(StatusQuadTreeNode node, Statistics statistics)
     {
         // System.out.println(node.getPath());
         StatisticsData data = statistics.getStatisticsDataForDepth(node.getDepth());
@@ -1126,7 +1126,7 @@ public class QuadTreeManager
         
         if (node.children != null)
         {
-            for (AbstractQuadTreeNode child : node.children)
+            for (StatusQuadTreeNode child : node.children)
             {
                 recursiveComputeStatistics(child, statistics);
             }
@@ -1167,7 +1167,7 @@ public class QuadTreeManager
         return totalComputingTime;
     }
     
-    public AbstractQuadTreeNode getQuadTreeRoot()
+    public StatusQuadTreeNode getQuadTreeRoot()
     {
         return root;
     }

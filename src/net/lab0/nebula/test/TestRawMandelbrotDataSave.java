@@ -39,7 +39,7 @@ public class TestRawMandelbrotDataSave
     throws IOException
     {
         originalData.addAdditionnalInformation("aKey", "aValue");
-        originalData.save(path, true);
+        originalData.save(path);
     }
     
     @Test

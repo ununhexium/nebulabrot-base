@@ -7,7 +7,7 @@ package net.lab0.nebula.data;
  * 
  */
 public class RootQuadTreeNode
-extends AbstractQuadTreeNode
+extends StatusQuadTreeNode
 {
     /**
      * bounds of this node
@@ -23,7 +23,7 @@ extends AbstractQuadTreeNode
      * @param minY
      * @param maxY
      */
-    public RootQuadTreeNode(AbstractQuadTreeNode abstractQuadTreeNode, double minX, double maxX, double minY, double maxY)
+    public RootQuadTreeNode(StatusQuadTreeNode abstractQuadTreeNode, double minX, double maxX, double minY, double maxY)
     {
         super(null);
         this.minX = minX;
