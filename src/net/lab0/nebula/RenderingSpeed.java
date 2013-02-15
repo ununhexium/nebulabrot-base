@@ -28,12 +28,13 @@ public class RenderingSpeed
     public static void main(String[] args)
     throws ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException, IOException, InvalidBinaryFileException, InterruptedException
     {
+        Thread.sleep(10000);
         System.out.println("Start main");
         
-        int xRes = 8192 * 4;
+        int xRes = 8192;
         int minIter = 256;
-        int maxIter = 65535;
-        long pointsCount = 100_000_000_000L;
+        int maxIter = 8192;
+        long pointsCount = 100_000_000L;
         
         // find an appropriate max depth
         int minPointsCountPerNode = 256;

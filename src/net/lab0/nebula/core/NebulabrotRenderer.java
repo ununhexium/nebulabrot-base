@@ -116,7 +116,7 @@ public class NebulabrotRenderer
         // wouldn't make sens otherwise (no point computed)
         assert (minIter < maxIter);
         
-        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, minIter, maxIter, pointsCount);
+        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
         int[][] data = raw.getData();
         
         int side = (int) Math.sqrt(pointsCount);
@@ -194,7 +194,7 @@ public class NebulabrotRenderer
         }
         
         // starts the rendering
-        while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+         while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
         {
             int X = getXValue(real1);
             int Y = getYValue(img1);
@@ -236,7 +236,7 @@ public class NebulabrotRenderer
      */
     public RawMandelbrotData quadTreeRender(long pointsCount, int minIter, int maxIter, StatusQuadTreeNode root)
     {
-        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, minIter, maxIter, pointsCount);
+        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
         int[][] data = raw.getData();
         
         long side = Math.round(Math.sqrt(pointsCount));

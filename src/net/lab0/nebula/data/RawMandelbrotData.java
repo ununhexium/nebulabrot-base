@@ -51,12 +51,19 @@ public class RawMandelbrotData
     private int                   pixelHeight;
     private int[/* X */][/* Y */] data;
     
-    private int                   minIter;
-    private int                   maxIter;
     private long                  pointsCount;
     private Map<String, String>   additional = new HashMap<>();
     
-    public RawMandelbrotData(int pixelWidth, int pixelHeight, int minIter, int maxIter, long pointsCount)
+    /**
+     * Creates a raw mandelbrot data store with the given parameters
+     * 
+     * @param pixelWidth
+     * @param pixelHeight
+     * @param minIter
+     * @param maxIter
+     * @param pointsCount
+     */
+    public RawMandelbrotData(int pixelWidth, int pixelHeight, long pointsCount)
     {
         super();
         this.pixelWidth = pixelWidth;
@@ -64,12 +71,6 @@ public class RawMandelbrotData
         if (this.pixelWidth < 1 || this.pixelHeight < 1)
         {
             throw new IllegalArgumentException("The minimum allowed for pixel width / height is 1.");
-        }
-        this.minIter = minIter;
-        this.maxIter = maxIter;
-        if (this.minIter > this.maxIter)
-        {
-            throw new IllegalArgumentException("The minimum quantity of iterations can't be greater than the maximum quantity of iterations");
         }
         this.pointsCount = pointsCount;
         data = new int[pixelWidth][pixelHeight];
@@ -104,12 +105,6 @@ public class RawMandelbrotData
         
         // loading infos
         Element informationNode = indexRoot.getFirstChildElement("information");
-        this.minIter = Integer.parseInt(informationNode.getAttributeValue("minIter"));
-        this.maxIter = Integer.parseInt(informationNode.getAttributeValue("maxIter"));
-        if (this.minIter > this.maxIter)
-        {
-            throw new IllegalArgumentException("The minimum quantity of iterations can't be greater than the maximum quantity of iterations");
-        }
         this.pointsCount = Long.parseLong(informationNode.getAttributeValue("pointsCount"));
         
         // loading misc infos
@@ -215,8 +210,6 @@ public class RawMandelbrotData
             indexRoot.appendChild(serializedFileNode);
             
             Element information = new Element("information");
-            information.addAttribute(new Attribute("minIter", Integer.toString(minIter)));
-            information.addAttribute(new Attribute("maxIter", Integer.toString(maxIter)));
             information.addAttribute(new Attribute("pointsCount", Long.toString(pointsCount)));
             
             Element additionnalNode = new Element("additional");
@@ -359,8 +352,8 @@ public class RawMandelbrotData
                 }
                 
                 colorationModel.computeColorForPoint(fArray, value);
-//                System.out.println("set " + (x - xOrigin)/ zoomFactor + "/" + (y- yOrigin)/zoomFactor);
-                raster.setPixel((x - xOrigin)/ zoomFactor, (y- yOrigin)/zoomFactor, fArray);
+                // System.out.println("set " + (x - xOrigin)/ zoomFactor + "/" + (y- yOrigin)/zoomFactor);
+                raster.setPixel((x - xOrigin) / zoomFactor, (y - yOrigin) / zoomFactor, fArray);
             }
         }
         
@@ -446,11 +439,33 @@ public class RawMandelbrotData
     
     public int getMinIter()
     {
+        int minIter = Integer.MAX_VALUE;
+        for (int x = 0; x < this.pixelWidth; ++x)
+        {
+            for (int y = 0; y < this.pixelHeight; ++y)
+            {
+                if (data[x][y] < minIter)
+                {
+                    minIter = data[x][y];
+                }
+            }
+        }
         return minIter;
     }
     
     public int getMaxIter()
     {
+        int maxIter = Integer.MIN_VALUE;
+        for (int x = 0; x < this.pixelWidth; ++x)
+        {
+            for (int y = 0; y < this.pixelHeight; ++y)
+            {
+                if (data[x][y] > maxIter)
+                {
+                    maxIter = data[x][y];
+                }
+            }
+        }
         return maxIter;
     }
     
