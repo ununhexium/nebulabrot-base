@@ -413,14 +413,16 @@ public class RawMandelbrotData
         {
             throw new IllegalArgumentException("zoomOut must be positive.");
         }
+        int zoomFactor = (1 << (zoomOut - 1));
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
-        final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomOut, pixelHeight / zoomOut, BufferedImage.TYPE_INT_RGB);
+        final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomFactor, pixelHeight / zoomFactor, BufferedImage.TYPE_INT_RGB);
         
+        System.out.println("img size " + pixelWidth / zoomFactor + "/" + pixelHeight / zoomFactor);
+        System.out.println("zoom factor " + zoomFactor + " zoomOut " + zoomOut);
         // System.out.println("" + raw.getPixelWidth() + " * " + raw.getPixelHeight());
         long min = Long.MAX_VALUE;
         long max = Long.MIN_VALUE;
         
-        int zoomFactor = (1 << zoomOut);
         for (int x = 0; x < pixelWidth; x += (zoomFactor))
         {
             for (int y = 0; y < pixelHeight; y += (zoomFactor))
@@ -453,7 +455,7 @@ public class RawMandelbrotData
         PointValues value = new PointValues();
         value.minIter = min;
         value.maxIter = max;
-
+        
         for (int x = 0; x < pixelWidth; x += (zoomFactor))
         {
             for (int y = 0; y < pixelHeight; y += (zoomFactor))

@@ -30,7 +30,7 @@ import org.junit.Test;
  * 
  * @author 116@lab0.net
  */
-public class TestAbstractQuadTreeNode
+public class TestStatusQuadTreeNode
 {
     private static QuadTreeManager manager;
     private static final String    outsideNodePath = "R00";

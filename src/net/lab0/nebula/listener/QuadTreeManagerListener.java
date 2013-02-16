@@ -16,7 +16,7 @@ extends EventListener
     
     public void threadResumed(long threadId);
     
-    public void threadStarted(long threadId);
+    public void threadStarted(long threadId, String name);
     
     public void loadingFile(int current, int total);
     

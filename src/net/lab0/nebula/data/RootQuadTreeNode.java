@@ -15,7 +15,7 @@ extends StatusQuadTreeNode
     public double minX, maxX, minY, maxY;
     
     /**
-     * Wraps the given quad tree node as a root node.
+     * Wraps the given <code>abstractQuadTreeNode</code> as a root node.
      * 
      * @param abstractQuadTreeNode
      * @param minX
@@ -39,6 +39,13 @@ extends StatusQuadTreeNode
         }
     }
     
+    /**
+     * Creates a new RootQuadTreeNode
+     * @param minX
+     * @param maxX
+     * @param minY
+     * @param maxY
+     */
     public RootQuadTreeNode(double minX, double maxX, double minY, double maxY)
     {
         super();

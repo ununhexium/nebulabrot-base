@@ -9,9 +9,9 @@ public class ConsoleQuadTreeManagerListener
 implements QuadTreeManagerListener
 {
     @Override
-    public void threadStarted(long threadId)
+    public void threadStarted(long threadId, String name)
     {
-        System.out.println("Thread " + threadId + " started");
+        System.out.println("Thread " + threadId + " (" + name + ") started");
     }
     
     @Override

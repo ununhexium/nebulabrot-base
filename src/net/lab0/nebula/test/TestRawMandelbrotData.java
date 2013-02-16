@@ -1,11 +1,13 @@
 package net.lab0.nebula.test;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
 import junit.framework.Assert;
+import net.lab0.nebula.color.ColorationModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
@@ -17,7 +19,7 @@ import nu.xom.ValidityException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestRawMandelbrotDataSave
+public class TestRawMandelbrotData
 {
     private static NebulabrotRenderer nebulabrotRenderer;
     private static int                resolution  = 128;
@@ -25,13 +27,14 @@ public class TestRawMandelbrotDataSave
     private static int                maxIter     = 128;
     private static long               pointsCount = resolution * resolution * maxIter;
     private static Path               path        = FileSystems.getDefault().getPath(".", "test_folder", "rawRendering");
-    private static RawMandelbrotData         originalData;
+    private static RawMandelbrotData  originalData;
     
     @BeforeClass
     public static void generateRawData()
     {
         nebulabrotRenderer = new NebulabrotRenderer(resolution, resolution, new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0)));
-        originalData = nebulabrotRenderer.linearRender(pointsCount, minIter, maxIter);
+        // compute on a least 1 and at most N-1 CPUs to let other application run smoothly
+        originalData = nebulabrotRenderer.linearRender(pointsCount, minIter, maxIter, Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
     }
     
     @Test
