@@ -189,6 +189,7 @@ public class RawMandelbrotData
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
             DigestOutputStream digestOutputStream = new DigestOutputStream(bufferedOutputStream, messageDigest);)
         {
+            // stream all the data
             byte[] buffer = new byte[this.pixelHeight * 4];
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
             for (int x = 0; x < this.pixelWidth; ++x)
@@ -201,6 +202,7 @@ public class RawMandelbrotData
                 digestOutputStream.write(byteBuffer.array(), 0, byteBuffer.capacity());
             }
             
+            // creation of the index file
             Element indexRoot = new Element("index");
             Element serializedFileNode = new Element("serializedFile");
             serializedFileNode.addAttribute(new Attribute("path", "./rawData.dat"));
@@ -209,9 +211,11 @@ public class RawMandelbrotData
             serializedFileNode.addAttribute(new Attribute("arrayType", "int"));
             indexRoot.appendChild(serializedFileNode);
             
+            // information in the index
             Element information = new Element("information");
             information.addAttribute(new Attribute("pointsCount", Long.toString(pointsCount)));
             
+            // additional information in the index
             Element additionnalNode = new Element("additional");
             for (Entry<String, String> e : this.additional.entrySet())
             {
@@ -224,12 +228,14 @@ public class RawMandelbrotData
             information.appendChild(additionnalNode);
             indexRoot.appendChild(information);
             
+            // creation of the digest in the index
             String digest = MyString.getHexString(digestOutputStream.getMessageDigest().digest());
             Element checksum = new Element("checksum");
             checksum.addAttribute(new Attribute("algorithm", algorithm));
             checksum.addAttribute(new Attribute("value", digest));
             serializedFileNode.appendChild(checksum);
             
+            // saving the index
             Document indexDocument = new Document(indexRoot);
             Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf-8");
             indexSerializer.setIndent(2);
@@ -238,6 +244,18 @@ public class RawMandelbrotData
         }
     }
     
+    /**
+     * Saves the <code>data</code> of this RawMandelbrotData to a folder hierarchy. These data will be saved as tiles to use in google maps API for instance.
+     * 
+     * @param colorationModel
+     *            The coloration model to use in the conversion.
+     * @param tilesFolder
+     *            The folder to save the tiles to.
+     * @param tilesSize
+     *            The size of the tiles.
+     * 
+     * @throws IOException
+     */
     public void saveAsTiles(ColorationModel colorationModel, File tilesFolder, int tilesSize)
     throws IOException
     {
@@ -255,6 +273,15 @@ public class RawMandelbrotData
         }
     }
     
+    /**
+     * Submethod for tiles computation.
+     * 
+     * @param colorationModel
+     * @param tilesFolder
+     * @param tilesSize
+     * @param zoom
+     * @throws IOException
+     */
     private void computeTileForZoom(ColorationModel colorationModel, File tilesFolder, int tilesSize, int zoom)
     throws IOException
     {
@@ -316,6 +343,19 @@ public class RawMandelbrotData
         }
     }
     
+    /**
+     * Sub sub methd for tiles computaion.
+     * 
+     * @param colorationModel
+     * @param tilesFolder
+     * @param tilesSize
+     * @param min
+     * @param max
+     * @param xTile
+     * @param yTile
+     * @param zoom
+     * @throws IOException
+     */
     private void computeTile(ColorationModel colorationModel, File tilesFolder, int tilesSize, long min, long max, int xTile, int yTile, int zoom)
     throws IOException
     {
@@ -352,7 +392,6 @@ public class RawMandelbrotData
                 }
                 
                 colorationModel.computeColorForPoint(fArray, value);
-                // System.out.println("set " + (x - xOrigin)/ zoomFactor + "/" + (y- yOrigin)/zoomFactor);
                 raster.setPixel((x - xOrigin) / zoomFactor, (y - yOrigin) / zoomFactor, fArray);
             }
         }
@@ -361,29 +400,50 @@ public class RawMandelbrotData
     }
     
     /**
+     * Computes a {@link BufferedImage} from this RawMandelbrotData.
      * 
      * @param colorationModel
-     * @return a BufferedImage
+     *            The coloration model to use in the conversion.
+     * 
+     * @return a BufferedImage The data converted into a BufferedImage
      */
-    public BufferedImage computeBufferedImage(ColorationModel colorationModel)
+    public BufferedImage computeBufferedImage(ColorationModel colorationModel, int zoomOut)
     {
+        if (zoomOut < 1)
+        {
+            throw new IllegalArgumentException("zoomOut must be positive.");
+        }
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
-        final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth, pixelHeight, BufferedImage.TYPE_INT_RGB);
+        final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomOut, pixelHeight / zoomOut, BufferedImage.TYPE_INT_RGB);
         
         // System.out.println("" + raw.getPixelWidth() + " * " + raw.getPixelHeight());
-        int min = data[0][0];
-        int max = data[0][0];
-        for (int x = 0; x < pixelWidth; ++x)
+        long min = Long.MAX_VALUE;
+        long max = Long.MIN_VALUE;
+        
+        int zoomFactor = (1 << zoomOut);
+        for (int x = 0; x < pixelWidth; x += (zoomFactor))
         {
-            for (int y = 0; y < pixelHeight; ++y)
+            for (int y = 0; y < pixelHeight; y += (zoomFactor))
             {
-                if (data[x][y] > max)
+                long total = 0;
+                
+                int xLimit2 = Math.min(x + zoomFactor, pixelWidth);
+                int yLimit2 = Math.min(y + zoomFactor, pixelHeight);
+                for (int subX = x; subX < xLimit2; subX++)
                 {
-                    max = data[x][y];
+                    for (int subY = y; subY < yLimit2; subY++)
+                    {
+                        total += data[subX][subY];
+                    }
                 }
-                if (data[x][y] < min)
+                
+                if (total > max)
                 {
-                    min = data[x][y];
+                    max = total;
+                }
+                else if (total < min)
+                {
+                    min = total;
                 }
             }
         }
@@ -393,13 +453,25 @@ public class RawMandelbrotData
         PointValues value = new PointValues();
         value.minIter = min;
         value.maxIter = max;
-        for (int x = 0; x < pixelWidth; ++x)
+
+        for (int x = 0; x < pixelWidth; x += (zoomFactor))
         {
-            for (int y = 0; y < pixelHeight; ++y)
+            for (int y = 0; y < pixelHeight; y += (zoomFactor))
             {
-                value.value = data[x][y];
+                value.value = 0;
+                
+                int xLimit2 = Math.min(x + zoomFactor, pixelWidth);
+                int yLimit2 = Math.min(y + zoomFactor, pixelHeight);
+                for (int subX = x; subX < xLimit2; subX++)
+                {
+                    for (int subY = y; subY < yLimit2; subY++)
+                    {
+                        value.value += data[subX][subY];
+                    }
+                }
+                
                 colorationModel.computeColorForPoint(fArray, value);
-                raster.setPixel(x, y, fArray);
+                raster.setPixel(x / zoomFactor, y / zoomFactor, fArray);
             }
         }
         
@@ -477,5 +549,41 @@ public class RawMandelbrotData
     public Map<String, String> getComments()
     {
         return additional;
+    }
+    
+    public DiffReport diff(RawMandelbrotData raw2)
+    {
+        if (this.getPixelHeight() != raw2.getPixelHeight() || this.getPixelWidth() != raw2.getPixelWidth())
+        {
+            throw new IllegalArgumentException("The two raws must have the same size");
+        }
+        
+        long total = 0;
+        long total2 = 0;
+        int maxDifference = 0;
+        long totalDifference = 0;
+        long differences = 0;
+        int[][] data = this.getData();
+        int[][] data2 = raw2.getData();
+        for (int x = 0; x < this.getPixelWidth(); ++x)
+        {
+            for (int y = 0; y < this.getPixelHeight(); ++y)
+            {
+                total += data[x][y];
+                total2 += data2[x][y];
+                if (data[x][y] != data2[x][y])
+                {
+                    int diff = Math.abs(data[x][y] - data2[x][y]);
+                    totalDifference += diff;
+                    differences++;
+                    if (diff > maxDifference)
+                    {
+                        maxDifference = diff;
+                    }
+                }
+            }
+        }
+        
+        return new DiffReport(total, total2, maxDifference, totalDifference, differences);
     }
 }
