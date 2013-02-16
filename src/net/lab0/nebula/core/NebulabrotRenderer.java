@@ -3,11 +3,15 @@ package net.lab0.nebula.core;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.event.EventListenerList;
 
-import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.RawMandelbrotData;
+import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.listener.MandelbrotRendererListener;
 import net.lab0.tools.geom.RectangleInterface;
@@ -22,34 +26,38 @@ import net.lab0.tools.geom.RectangleInterface;
 public class NebulabrotRenderer
 {
     /**
-     * the width of the rendering
+     * The width of the rendering.
      */
     private int                pixelWidth;
+    
     /**
-     * the height of the rendering
+     * The height of the rendering.
      */
     private int                pixelHeight;
+    
     /**
-     * the viewport of the rendering
+     * The viewport of the rendering.
      */
     private RectangleInterface viewPort;
+    
     /**
-     * the event listeners
+     * The event listeners.
      */
     private EventListenerList  eventListenerList = new EventListenerList();
+    
     /**
-     * utilized to force the exit of a rendering loop
+     * Utilized to force the exit of a rendering loop.
      */
     private boolean            stopAndExit;
     
     /**
      * 
      * @param pixelWidth
-     *            the width of the rendering
+     *            The width of the rendering.
      * @param pixelHeight
-     *            the height of the rendering
+     *            The height of the rendering.
      * @param viewPort
-     *            the viewport of the rendering
+     *            The viewport of the rendering.
      */
     public NebulabrotRenderer(int pixelWidth, int pixelHeight, RectangleInterface viewPort)
     {
@@ -59,12 +67,25 @@ public class NebulabrotRenderer
         this.viewPort = viewPort;
     }
     
+    /**
+     * 
+     * @param listener
+     *            The listener to add to <code>this</code>.
+     */
     public void addMandelbrotRendererListener(MandelbrotRendererListener listener)
     {
         eventListenerList.add(MandelbrotRendererListener.class, listener);
     }
     
-    private void fireProgress(long current, long total)
+    /**
+     * Fires a <code>rendererProgress</code> event to all the registered {@link MandelbrotRendererListener}.
+     * 
+     * @param current
+     *            The current advancement in the rendering.
+     * @param total
+     *            The advancement to reach.
+     */
+    public void fireProgress(long current, long total)
     {
         for (MandelbrotRendererListener listener : eventListenerList.getListeners(MandelbrotRendererListener.class))
         {
@@ -72,6 +93,12 @@ public class NebulabrotRenderer
         }
     }
     
+    /**
+     * Fires a <code>rendererFinished</code> event to all the registered {@link MandelbrotRendererListener}.
+     * 
+     * @param data
+     *            The resulting {@link RawMandelbrotData}.
+     */
     private void fireFinished(RawMandelbrotData data)
     {
         for (MandelbrotRendererListener listener : eventListenerList.getListeners(MandelbrotRendererListener.class))
@@ -80,6 +107,12 @@ public class NebulabrotRenderer
         }
     }
     
+    /**
+     * Fires a <code>rendererStopped</code> event to all the registered {@link MandelbrotRendererListener}.
+     * 
+     * @param data
+     *            The resulting {@link RawMandelbrotData} computed do far.
+     */
     private void fireStopped(RawMandelbrotData data)
     {
         for (MandelbrotRendererListener listener : eventListenerList.getListeners(MandelbrotRendererListener.class))
@@ -88,6 +121,12 @@ public class NebulabrotRenderer
         }
     }
     
+    /**
+     * Fires a <code>rendererStopped</code> or <code>rendererFinished</code> to event to all the registered {@link MandelbrotRendererListener}, depending on the
+     * terminating action.
+     * 
+     * @param raw
+     */
     private void fireFinishedOrStop(RawMandelbrotData raw)
     {
         if (stopAndExit)
@@ -104,48 +143,123 @@ public class NebulabrotRenderer
      * Basic and naive method to render the nebulabrot. Does a rendering of the nebulabrot using start points dispatched on a grid.
      * 
      * @param pointsCount
-     *            the number of points on the grid
+     *            The number of points on the grid.
      * @param minIter
-     *            the minimum number of iterations the points on the grid need to have to be utilized
+     *            The minimum number of iterations the points on the grid need to have to be utilized.
      * @param maxIter
-     *            the maximum number of iterations the points on the grid need to have to be utilized
+     *            The maximum number of iterations the points on the grid need to have to be utilized.
+     * @param thread
+     *            The maximum number of threads to use for this computation.
+     * 
      * @return a {@link RawMandelbrotData} of the computed points
+     * 
+     * @throws IllegalArgumentException
+     *             if <code>minIter >= maxIter</code> is true
      */
-    public RawMandelbrotData linearRender(long pointsCount, int minIter, int maxIter)
+    
+    public RawMandelbrotData linearRender(long pointsCount, final int minIter, final int maxIter, int threads)
     {
         // wouldn't make sens otherwise (no point computed)
-        assert (minIter < maxIter);
+        if (minIter >= maxIter)
+        {
+            throw new IllegalArgumentException("minIter must be strictly inferior to maxIter");
+        }
         
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
-        int[][] data = raw.getData();
+        final int[][] data = raw.getData();
         
-        int side = (int) Math.sqrt(pointsCount);
-        double stepX = viewPort.getWidth() / side;
-        double stepY = viewPort.getHeight() / side;
+        // TODO : fins a better way to compute side parameter, based of the view port ratio
+        final int side = (int) Math.sqrt(pointsCount);
+        final double stepX = viewPort.getWidth() / side;
+        final double stepY = viewPort.getHeight() / side;
         
-        // label set here to exit the main loop is case of stop request
-        exit:
+        final int queueLimit = 1024;
+        final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(queueLimit);
+        final ThreadPoolExecutor executor = new ThreadPoolExecutor(threads, threads, 500, TimeUnit.MILLISECONDS, queue);
+        
+        // filler thread
+        Thread thread = new Thread("Filler thread")
         {
-            for (int x = 0; x <= side; ++x)
+            @Override
+            public void run()
             {
-                fireProgress(x, side);
-                for (int y = 0; y <= side; ++y)
+                for (int x = 0; x <= side; ++x)
                 {
-                    double real = viewPort.getCenter().getX() - viewPort.getWidth() / 2 + x * stepX;
-                    double img = viewPort.getCenter().getY() - viewPort.getHeight() / 2 + y * stepY;
-                    
-                    // we only want to use points outside the mandelbrot set
-                    if (isOutsideMandelbrotSet(real, img, maxIter))
+                    final int finalX = x;
+                    Runnable runnable = new Runnable()
                     {
-                        if (stopAndExit)
+                        @Override
+                        public void run()
                         {
-                            break exit;
+                            if (stopAndExit)
+                            {
+                                return;
+                            }
+                            
+                            for (int y = 0; y <= side; ++y)
+                            {
+                                double real = viewPort.getCenter().getX() - viewPort.getWidth() / 2 + finalX * stepX;
+                                double img = viewPort.getCenter().getY() - viewPort.getHeight() / 2 + y * stepY;
+                                
+                                // we only want to use points outside the mandelbrot set
+                                if (MandelbrotComputeRoutines.isOutsideMandelbrotSetOptim2(real, img, maxIter))
+                                {
+                                    if (stopAndExit)
+                                    {
+                                        break;
+                                    }
+                                    
+                                    computePoint(minIter, maxIter, data, real, img);
+                                }
+                            }
+                            
+                            fireProgress(finalX, side);
                         }
-                        
-                        computePoint(minIter, maxIter, data, real, img);
+                    };
+                    
+                    while (executor.getQueue().size() >= queueLimit)
+                    {
+                        try
+                        {
+                            Thread.sleep(250);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                    executor.execute(runnable);
+                }
+                
+                executor.shutdown();
+                boolean done = false;
+                while (!done)
+                {
+                    try
+                    {
+                        done = executor.awaitTermination(250, TimeUnit.MILLISECONDS);
+                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
+                        fireProgress(queue.size(), side);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
                     }
                 }
             }
+        };
+        
+        thread.start();
+        try
+        {
+            thread.join();
+        }
+        catch (InterruptedException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
         
         fireFinishedOrStop(raw);
@@ -171,7 +285,8 @@ public class NebulabrotRenderer
         
         double real1 = real;
         double img1 = img;
-        double real2, img2;
+        double real2 = real;
+        double img2 = img;
         
         // System.out.println("Compute : " + real + "+j" + img);
         
@@ -193,22 +308,27 @@ public class NebulabrotRenderer
             iter += 2;
         }
         
+        double pxlHeight = (double) pixelHeight;
+        double pxlWidth = (double) pixelWidth;
+        double originY = viewPort.getCenter().getY(); // origin
+        double originX = viewPort.getCenter().getX(); // origin
+        double viewportHeight = viewPort.getHeight();
+        double viewportWidth = viewPort.getWidth();
+        
         // starts the rendering
-         while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
+        while ((iter < maxIter) && ((real2 * real2 + img2 * img2) < 4))
         {
-            int X = getXValue(real1);
-            int Y = getYValue(img1);
+            int X = (int) ((real1 - originX + viewportWidth / 2) * pxlWidth / viewportWidth);
+            int Y = (int) ((img1 - originY + viewportHeight / 2) * pxlHeight / viewportHeight);
             // check if inside the rendering area
             if (X >= 0 && X < pixelWidth && Y >= 0 && Y < pixelHeight)
             {
-                data[X][Y]++;// TODO : optimize awful increment if possible
+                data[X][Y]++;
             }
             
             real2 = real1 * real1 - img1 * img1 + real;
             img2 = 2 * real1 * img1 + img;
             
-            realsqr = real2 * real2;
-            imgsqr = img2 * img2;
             real1 = real2;
             img1 = img2;
             
@@ -232,20 +352,32 @@ public class NebulabrotRenderer
      *            the maximum number of iterations the points on the grid need to have to be utilized
      * @param root
      *            the root, a {@link StatusQuadTreeNode} to the root of the tree which must be utilized to render the fractal
+     * @param threads
+     *            The maximum number of threads to use for this computation.
+     * 
      * @return a {@link RawMandelbrotData} of the computed points
+     * 
+     * @throws IllegalArgumentException
+     *             if <code>minIter >= maxIter</code> is true
      */
-    public RawMandelbrotData quadTreeRender(long pointsCount, int minIter, int maxIter, StatusQuadTreeNode root)
+    public RawMandelbrotData quadTreeRender(long pointsCount, final int minIter, final int maxIter, StatusQuadTreeNode root, int threads)
     {
-        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
-        int[][] data = raw.getData();
+        // wouldn't make sens otherwise (no point computed)
+        if (minIter >= maxIter)
+        {
+            throw new IllegalArgumentException("minIter must be strictly inferior to maxIter");
+        }
         
-        long side = Math.round(Math.sqrt(pointsCount));
+        RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
+        final int[][] data = raw.getData();
+        
+        final long side = Math.round(Math.sqrt(pointsCount));
         // TODO : better method to dispatch points between X and Y
-        double stepX = viewPort.getWidth() / side;
-        double stepY = viewPort.getHeight() / side;
+        final double stepX = viewPort.getWidth() / side;
+        final double stepY = viewPort.getHeight() / side;
         
         // get the appropriate nodes
-        List<StatusQuadTreeNode> nodesList = new ArrayList<>();
+        final List<StatusQuadTreeNode> nodesList = new ArrayList<>();
         root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID));
         
         double workSurface = 0;
@@ -261,57 +393,115 @@ public class NebulabrotRenderer
         System.out.println("work surface = " + workSurface);
         System.out.println("browsed surface = " + browsedSurface);
         
-        // double discardedSurface = 0;
-        long current = 0;
-        // label set here to exit the main loop is case of stop request
-        exit:
+        final int queueLimit = 1024;
+        final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(queueLimit);
+        final ThreadPoolExecutor executor = new ThreadPoolExecutor(threads, threads, 500, TimeUnit.MILLISECONDS, queue);
+        
+        // filler thread
+        Thread thread = new Thread("Filler thread")
         {
-            for (StatusQuadTreeNode node : nodesList)
+            @Override
+            public void run()
             {
-                current++;
-                fireProgress(current, nodesList.size());
-                
-                // if the node is outside and the number of iterations match the requirements
-                if (node.status == Status.OUTSIDE && (node.getMax() < minIter))
+                for (StatusQuadTreeNode node : nodesList)
                 {
-                    continue;
-                }
-                if (node.getMin() <= maxIter || node.getMax() >= minIter)
-                {
-                    // find the first point inside the node
+                    final StatusQuadTreeNode finalNode = node;
                     
-                    double xStart = Math.ceil(node.getMinX() / stepX) * stepX;
-                    double yStart = Math.ceil(node.getMinY() / stepY) * stepY;
-                    
-                    // System.out.println("start1 (" + xStart + ";" + yStart + ")");
-                    
-                    double real = xStart;
-                    double maxX = node.getMaxX();
-                    double maxY = node.getMaxY();
-                    
-                    while (real < maxX)
+                    Runnable runnable = new Runnable()
                     {
-                        double img = yStart;
-                        while (img < maxY)
-                        {
-                            // if the point is outside
-                            if (isOutsideMandelbrotSet(real, img, maxIter))
-                            {
-                                if (stopAndExit)
-                                {
-                                    break exit;
-                                }
-                                
-                                computePoint(minIter, maxIter, data, real, img);
-                            }
-                            
-                            img += stepY;
-                        }
                         
-                        real += stepX;
+                        @Override
+                        public void run()
+                        {
+                            if (stopAndExit)
+                            {
+                                return;
+                            }
+                            // if the node is outside and the number of iterations match the requirements
+                            if (finalNode.status == Status.OUTSIDE && (finalNode.getMax() < minIter))
+                            {
+                                return;
+                            }
+                            if (finalNode.getMin() <= maxIter || finalNode.getMax() >= minIter)
+                            {
+                                // find the first point inside the node
+                                
+                                double xStart = Math.ceil(finalNode.getMinX() / stepX) * stepX;
+                                double yStart = Math.ceil(finalNode.getMinY() / stepY) * stepY;
+                                
+                                // System.out.println("start1 (" + xStart + ";" + yStart + ")");
+                                
+                                double real = xStart;
+                                double maxX = finalNode.getMaxX();
+                                double maxY = finalNode.getMaxY();
+                                
+                                while (real < maxX)
+                                {
+                                    double img = yStart;
+                                    while (img < maxY)
+                                    {
+                                        // if the point is outside
+                                        if (MandelbrotComputeRoutines.isOutsideMandelbrotSetOptim2(real, img, maxIter))
+                                        {
+                                            if (stopAndExit)
+                                            {
+                                                return;
+                                            }
+                                            
+                                            computePoint(minIter, maxIter, data, real, img);
+                                        }
+                                        
+                                        img += stepY;
+                                    }
+                                    
+                                    real += stepX;
+                                }
+                            }
+                        }
+                    };
+                    while (executor.getQueue().size() >= queueLimit)
+                    {
+                        try
+                        {
+                            Thread.sleep(250);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                    executor.execute(runnable);
+                    
+                }
+                
+                executor.shutdown();
+                boolean done = false;
+                while (!done)
+                {
+                    try
+                    {
+                        done = executor.awaitTermination(250, TimeUnit.MILLISECONDS);
+                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
+                        fireProgress(queue.size(), side);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
                     }
                 }
             }
+        };
+        
+        thread.start();
+        try
+        {
+            thread.join();
+        }
+        catch (InterruptedException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
         
         fireFinishedOrStop(raw);
@@ -319,63 +509,19 @@ public class NebulabrotRenderer
     }
     
     /**
-     * 
-     * @param real
-     * @param img
-     * @param maxIter
-     * @return <code>true</code> if the point is inside the mandelbrot set, <code>false</code> otherwise
+     * requests the computation to stop and return
      */
-    private boolean isOutsideMandelbrotSet(double real, double img, int maxIter)
-    {
-        double realsqr = real * real;
-        double imgsqr = img * img;
-        
-        double real1 = real;
-        double img1 = img;
-        double real2, img2;
-        
-        int iter = 0;
-        while ((iter < maxIter) && ((realsqr + imgsqr) < 4))
-        {
-            real2 = real1 * real1 - img1 * img1 + real;
-            img2 = 2 * real1 * img1 + img;
-            
-            real1 = real2 * real2 - img2 * img2 + real;
-            img1 = 2 * real2 * img2 + img;
-            
-            realsqr = real2 * real2;
-            imgsqr = img2 * img2;
-            real1 = realsqr - imgsqr + real;
-            img1 = 2 * real2 * img2 + img;
-            
-            iter += 2;
-        }
-        
-        return iter < maxIter;
-    }
-    
-    private int getYValue(double imaginary)
-    {
-        double pxlHeight = (double) pixelHeight;
-        
-        double originY = viewPort.getCenter().getY(); // origin
-        double viewportHeight = viewPort.getHeight();
-        
-        return (int) ((imaginary - originY + viewportHeight / 2) * pxlHeight / viewportHeight);
-    }
-    
-    private int getXValue(double real)
-    {
-        double pxlWidth = (double) pixelWidth;
-        
-        double originX = viewPort.getCenter().getX(); // origin
-        double viewportWidth = viewPort.getWidth();
-        
-        return (int) ((real - originX + viewportWidth / 2) * pxlWidth / viewportWidth);
-    }
-    
     public void stopAndExit()
     {
         stopAndExit = true;
+    }
+    
+    /**
+     * 
+     * @return <code>true</code> if it was requested to stop the computation, <code>false</code> otherwise.
+     */
+    public boolean isStopAndExit()
+    {
+        return stopAndExit;
     }
 }
