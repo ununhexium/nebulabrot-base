@@ -3,6 +3,7 @@ package net.lab0.nebula.color;
 /**
  * A class must implement this interface to be used as a coloration model.
  * 
+ * @since 1.0
  * @author 116
  * 
  */
@@ -14,15 +15,15 @@ public interface ColorationModel
      * max.
      * 
      * @param vector
-     *            the resulting RGB values of the computation
+     *            The resulting RGB values of the computation. The vector is a <code>float[3]</code>.
      * @param values
-     *            the values associated to a pixel of a given rendering set (iterations, min, max)
+     *            The values associated to a pixel of a given rendering set (iterations, min, max).
      */
-    public void computeColorForPoint(float[] vector, PointValues... values); // float[3]
+    public void computeColorForPoint(float[] vector, PointValues... values);
     
     /**
      * 
-     * @return the number of channels this coloration model needs to work
+     * @return The number of channels this coloration model requires to work. Should be at least 1.
      */
     public int getChannelsCount();
 }
