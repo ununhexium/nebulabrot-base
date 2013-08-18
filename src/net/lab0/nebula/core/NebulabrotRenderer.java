@@ -239,7 +239,7 @@ public class NebulabrotRenderer
                     try
                     {
                         done = executor.awaitTermination(250, TimeUnit.MILLISECONDS);
-                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
+//                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
                         fireProgress(queue.size(), side);
                     }
                     catch (InterruptedException e)
@@ -277,8 +277,10 @@ public class NebulabrotRenderer
      *            real part of the point
      * @param img
      *            imaginary part of the point
+     *            
+     *            @return the number of increment done when computing this point
      */
-    private void computePoint(int minIter, int maxIter, int[][] data, double real, double img)
+    private int computePoint(int minIter, int maxIter, int[][] data, double real, double img)
     {
         double realsqr = real * real;
         double imgsqr = img * img;
@@ -316,6 +318,7 @@ public class NebulabrotRenderer
         double viewportWidth = viewPort.getWidth();
         
         // starts the rendering
+        int increment = 0;
         while ((iter < maxIter) && ((real2 * real2 + img2 * img2) < 4))
         {
             int X = (int) ((real1 - originX + viewportWidth / 2) * pxlWidth / viewportWidth);
@@ -324,6 +327,7 @@ public class NebulabrotRenderer
             if (X >= 0 && X < pixelWidth && Y >= 0 && Y < pixelHeight)
             {
                 data[X][Y]++;
+                increment++;
             }
             
             real2 = real1 * real1 - img1 * img1 + real;
@@ -335,7 +339,7 @@ public class NebulabrotRenderer
             iter++;
         }
         
-        // System.out.println("Point ;" + iter + ";" + real + ";+i;" + img);
+        return increment;
     }
     
     /**
@@ -369,6 +373,7 @@ public class NebulabrotRenderer
         }
         
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
+        System.out.println("malloc");
         final int[][] data = raw.getData();
         
         final long side = Math.round(Math.sqrt(pointsCount));
@@ -376,22 +381,12 @@ public class NebulabrotRenderer
         final double stepX = viewPort.getWidth() / side;
         final double stepY = viewPort.getHeight() / side;
         
+        System.out.println("get nodes");
         // get the appropriate nodes
         final List<StatusQuadTreeNode> nodesList = new ArrayList<>();
-        root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID));
+        root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID), minIter, maxIter);
         
-        double workSurface = 0;
-        double browsedSurface = 0;
-        for (StatusQuadTreeNode n : nodesList)
-        {
-            workSurface += n.getSurface();
-            if (n.status == Status.BROWSED)
-            {
-                browsedSurface += n.getSurface();
-            }
-        }
-        System.out.println("work surface = " + workSurface);
-        System.out.println("browsed surface = " + browsedSurface);
+//        final List<Pair<StatusQuadTreeNode, Integer>> frequency = Collections.synchronizedList(new ArrayList<Pair<StatusQuadTreeNode, Integer>>());
         
         final int queueLimit = 1024;
         final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(queueLimit);
@@ -403,13 +398,15 @@ public class NebulabrotRenderer
             @Override
             public void run()
             {
+                int current = 0;
                 for (StatusQuadTreeNode node : nodesList)
                 {
+                    current++;
+                    final int currentFinal = current;
                     final StatusQuadTreeNode finalNode = node;
                     
                     Runnable runnable = new Runnable()
                     {
-                        
                         @Override
                         public void run()
                         {
@@ -417,46 +414,42 @@ public class NebulabrotRenderer
                             {
                                 return;
                             }
-                            // if the node is outside and the number of iterations match the requirements
-                            if (finalNode.status == Status.OUTSIDE && (finalNode.getMax() < minIter))
+                            
+                            // find the first point inside the node
+                            
+                            double xStart = Math.ceil(finalNode.getMinX() / stepX) * stepX;
+                            double yStart = Math.ceil(finalNode.getMinY() / stepY) * stepY;
+                            
+                            // System.out.println("start1 (" + xStart + ";" + yStart + ")");
+                            
+                            double real = xStart;
+                            double maxX = finalNode.getMaxX();
+                            double maxY = finalNode.getMaxY();
+                            
+                            while (real < maxX)
                             {
-                                return;
-                            }
-                            if (finalNode.getMin() <= maxIter || finalNode.getMax() >= minIter)
-                            {
-                                // find the first point inside the node
-                                
-                                double xStart = Math.ceil(finalNode.getMinX() / stepX) * stepX;
-                                double yStart = Math.ceil(finalNode.getMinY() / stepY) * stepY;
-                                
-                                // System.out.println("start1 (" + xStart + ";" + yStart + ")");
-                                
-                                double real = xStart;
-                                double maxX = finalNode.getMaxX();
-                                double maxY = finalNode.getMaxY();
-                                
-                                while (real < maxX)
+                                double img = yStart;
+                                while (img < maxY)
                                 {
-                                    double img = yStart;
-                                    while (img < maxY)
+                                    // if the point is outside
+                                    if (MandelbrotComputeRoutines.isOutsideMandelbrotSetOptim2(real, img, maxIter))
                                     {
-                                        // if the point is outside
-                                        if (MandelbrotComputeRoutines.isOutsideMandelbrotSetOptim2(real, img, maxIter))
+                                        if (stopAndExit)
                                         {
-                                            if (stopAndExit)
-                                            {
-                                                return;
-                                            }
-                                            
-                                            computePoint(minIter, maxIter, data, real, img);
+                                            return;
                                         }
                                         
-                                        img += stepY;
+                                        int increments = computePoint(minIter, maxIter, data, real, img);
+//                                        frequency.add(new Pair<StatusQuadTreeNode, Integer>(finalNode, increments));
                                     }
                                     
-                                    real += stepX;
+                                    img += stepY;
                                 }
+                                
+                                real += stepX;
                             }
+                            
+                            fireProgress(currentFinal, nodesList.size());
                         }
                     };
                     while (executor.getQueue().size() >= queueLimit)
@@ -481,7 +474,7 @@ public class NebulabrotRenderer
                     try
                     {
                         done = executor.awaitTermination(250, TimeUnit.MILLISECONDS);
-                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
+//                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
                         fireProgress(queue.size(), side);
                     }
                     catch (InterruptedException e)
@@ -503,6 +496,46 @@ public class NebulabrotRenderer
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
+//        Collections.sort(frequency, new Comparator<Pair<StatusQuadTreeNode, Integer>>()
+//        {
+//            @Override
+//            public int compare(Pair<StatusQuadTreeNode, Integer> o1, Pair<StatusQuadTreeNode, Integer> o2)
+//            {
+//                return o2.b - o1.b;
+//            }
+//        });
+        
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+        long total = 0;
+//        for (Pair<StatusQuadTreeNode, Integer> p : frequency)
+//        {
+//            total += p.b;
+//            if (p.b > max)
+//            {
+//                max = p.b;
+//            }
+//            if (p.b < min)
+//            {
+//                min = p.b;
+//            }
+//        }
+        
+        System.out.println("min=" + min + " max=" + max);
+        int dX = 1; // decile
+        int index = 0;
+        long cumul = 0;
+//        for (Pair<StatusQuadTreeNode, Integer> p : frequency)
+//        {
+//            cumul += p.b;
+//            index++;
+//            if (cumul >= (dX * total / 20.0d))
+//            {
+//                System.out.println("D" + dX + " @ " + index);
+//                dX++;
+//            }
+//        }
         
         fireFinishedOrStop(raw);
         return raw;
