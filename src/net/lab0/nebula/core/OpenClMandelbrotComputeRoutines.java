@@ -9,6 +9,8 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
+import net.lab0.tools.HumanReadable;
+
 import org.apache.commons.lang3.time.StopWatch;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -27,8 +29,6 @@ import org.lwjgl.opencl.Util;
 /**
  * This class computes Mandelbrot data using double precision floating point numbers on GPUs.
  * 
- * 
- * 
  * @author 116@lab0.net
  * 
  */
@@ -43,40 +43,29 @@ public class OpenClMandelbrotComputeRoutines
     private StopWatch     stopWatch;
     private CLProgram     mandelbrotProgram;
     private CLKernel      mandelbrotKernel;
-    private IntBuffer     errorBuff;
-    private DoubleBuffer  aBuff;
-    private DoubleBuffer  bBuff;
-    private CLMem         aMemory;
-    private CLMem         bMemory;
+    private DoubleBuffer  xBuff;
+    private DoubleBuffer  yBuff;
+    private CLMem         xMemory;
+    private CLMem         yMemory;
     private CLMem         resultMemory;
     private PointerBuffer globalWorkSize;
     
-    public class WorkBlock
-    {
-        public int     size;
-        public int     maximumIteration;
-        public float[] xCoordinates;
-        public float[] yCoordinates;
-        
-        public WorkBlock(int size, int maximumIteration, float[] xCoordinates, float[] yCoordinates)
-        {
-            super();
-            this.size = size;
-            this.maximumIteration = maximumIteration;
-            this.xCoordinates = xCoordinates;
-            this.yCoordinates = yCoordinates;
-        }        
-    }
-    
     // Used to determine how many units of work to do
-    private final int size       = 1024;
-    private final int points     = size * size;
-    private final int maxIter    = 65536;
-    private final int dimensions = 1;
+    private int           blockSize;
+    private final int     dimensions = 1;
     
-    public OpenClMandelbrotComputeRoutines()
+    /**
+     * Creates am OpenClMandelbrotComputeRoutines with a default kernel.
+     * 
+     * @param blockSize
+     *            The number of block to compute in each call to the <code>compute()</code> method.
+     * @throws LWJGLException
+     */
+    public OpenClMandelbrotComputeRoutines(int blockSize)
     throws LWJGLException
     {
+        this.blockSize = blockSize;
+        
         stopWatch = new StopWatch();
         
         initializeCL();
@@ -84,10 +73,12 @@ public class OpenClMandelbrotComputeRoutines
         createKernel();
     }
     
+    /**
+     * Initializes the OpenCL context
+     */
     private void initializeCL()
     throws LWJGLException
     {
-        // Create our OpenCL context to run commands
         stopWatch.start();
         
         IntBuffer errorBuf = BufferUtils.createIntBuffer(1);
@@ -99,6 +90,8 @@ public class OpenClMandelbrotComputeRoutines
         devices = platform.getDevices(CL10.CL_DEVICE_TYPE_GPU);
         // Create an OpenCL context, this is where we could create an OpenCL-OpenGL compatible context
         context = CLContext.create(platform, devices, errorBuf);
+        // Check for any errors
+        Util.checkCLError(errorBuf.get(0));
         // Create a command queue
         queue = CL10.clCreateCommandQueue(context, devices.get(0), CL10.CL_QUEUE_PROFILING_ENABLE, errorBuf);
         // Check for any errors
@@ -109,6 +102,9 @@ public class OpenClMandelbrotComputeRoutines
         stopWatch.reset();
     }
     
+    /**
+     * Creates the kernel.
+     */
     private void createKernel()
     {
         stopWatch.start();
@@ -122,89 +118,16 @@ public class OpenClMandelbrotComputeRoutines
         stopWatch.stop();
         System.out.println("Kernel creation: " + stopWatch.toString());
         stopWatch.reset();
+        
+        // Create the buffers needed for computation with the maximum allowed size
+        
+        xBuff = BufferUtils.createDoubleBuffer(blockSize);
+        yBuff = BufferUtils.createDoubleBuffer(blockSize);
     }
     
-    private void createAndFillBuffers()
-    {
-        errorBuff = BufferUtils.createIntBuffer(1);
-        
-        // Create our first array of numbers to add to a second array of numbers
-        
-        aBuff = BufferUtils.createDoubleBuffer(points);
-        bBuff = BufferUtils.createDoubleBuffer(points);
-        
-        double step = 4.0f / size;
-        double x = -2.0f;
-        for (int i = 0; i < size; ++i)
-        {
-            double y = -2.0f;
-            for (int j = 0; j < size; ++j)
-            {
-                aBuff.put(x);
-                bBuff.put(y);
-                y += step;
-            }
-            x += step;
-        }
-        
-        aBuff.rewind();
-        aMemory = CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_COPY_HOST_PTR, aBuff, errorBuff);
-        // Check if the error buffer now contains an error
-        Util.checkCLError(errorBuff.get(0));
-        
-        bBuff.rewind();
-        bMemory = CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_COPY_HOST_PTR, bBuff, errorBuff);
-        // Check if the error buffer now contains an error
-        Util.checkCLError(errorBuff.get(0));
-        
-        resultMemory = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_ONLY, points * 4, errorBuff);
-        // Check for any error creating the memory buffer
-        Util.checkCLError(errorBuff.get(0));
-        
-        // Set the kernel parameters
-        mandelbrotKernel.setArg(0, aMemory);
-        mandelbrotKernel.setArg(1, bMemory);
-        mandelbrotKernel.setArg(2, resultMemory);
-        mandelbrotKernel.setArg(3, points);
-        mandelbrotKernel.setArg(4, maxIter);
-        
-        // Create a buffer of pointers defining the multi-dimensional size of the number of work units to execute
-        globalWorkSize = BufferUtils.createPointerBuffer(dimensions);
-        globalWorkSize.put(0, points);
-    }
-    
-    private void compute()
-    {
-        // Run the specified number of work units using our OpenCL program kernel
-        CL10.clEnqueueNDRangeKernel(queue, mandelbrotKernel, dimensions, null, globalWorkSize, null, null, null);
-        CL10.clFinish(queue);
-    }
-    
-    private void readResult()
-    {
-        // This reads the result memory buffer
-        IntBuffer resultBuff = BufferUtils.createIntBuffer(points);
-        // We read the buffer in blocking mode so that when the method returns we know that the result buffer is full
-        CL10.clEnqueueReadBuffer(queue, resultMemory, CL10.CL_TRUE, 0, resultBuff, null, null);
-        
-        // Print the values in the result buffer
-        // for (int i = 0; i < resultBuff.capacity(); i++)
-        // {
-        // double real = aBuff.get(i);
-        // double img = bBuff.get(i);
-        // int result = resultBuff.get(i);
-        // int expected = MandelbrotComputeRoutines.computeIterationsCountOptim2(real, img, maxIter);
-        // if (result != expected)
-        // {
-        // System.out.println("result for(" + real + ";" + img + "): " + i + " = " + result + " (" + expected + ")");
-        // }
-        // }
-        // Destroy our memory objects
-        CL10.clReleaseMemObject(aMemory);
-        CL10.clReleaseMemObject(bMemory);
-        CL10.clReleaseMemObject(resultMemory);
-    }
-    
+    /**
+     * Finishes the openCL 
+     */
     private void teardown()
     {
         stopWatch.start();
@@ -226,18 +149,79 @@ public class OpenClMandelbrotComputeRoutines
         stopWatch.reset();
     }
     
+    /**
+     * Computes the number of iterations for the given list of points.
+     * 
+     * @param x The x points coordinates.
+     * @param y The y points coordinates.
+     * @param maximumIteration The maximum number of iterations to do while computing.
+     * @return An {@link IntBuffer} containing the number of iterations for each of the given points.
+     */
+    public synchronized IntBuffer compute(double[] x, double[] y, int maximumIteration)
+    {
+        xBuff.rewind();
+        xBuff.put(x);
+        xBuff.rewind();
+        
+        yBuff.rewind();
+        yBuff.put(y);
+        yBuff.rewind();
+        
+        IntBuffer errorBuff = BufferUtils.createIntBuffer(1);
+        
+        xMemory = CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_COPY_HOST_PTR, xBuff, errorBuff);
+        // Check if the error buffer now contains an error
+        Util.checkCLError(errorBuff.get(0));
+        yMemory = CL10.clCreateBuffer(context, CL10.CL_MEM_WRITE_ONLY | CL10.CL_MEM_COPY_HOST_PTR, yBuff, errorBuff);
+        
+        // Check if the error buffer now contains an error
+        Util.checkCLError(errorBuff.get(0));
+        
+        resultMemory = CL10.clCreateBuffer(context, CL10.CL_MEM_READ_ONLY, blockSize * 4, errorBuff);
+        // Check for any error creating the memory buffer
+        Util.checkCLError(errorBuff.get(0));
+        
+        // Set the kernel parameters
+        mandelbrotKernel.setArg(0, xMemory);
+        mandelbrotKernel.setArg(1, yMemory);
+        mandelbrotKernel.setArg(2, resultMemory);
+        mandelbrotKernel.setArg(3, blockSize);
+        mandelbrotKernel.setArg(4, maximumIteration);
+        
+        // Create a buffer of pointers defining the multi-dimensional size of the number of work units to execute
+        globalWorkSize = BufferUtils.createPointerBuffer(dimensions);
+        globalWorkSize.put(0, blockSize);
+        
+        // Run the specified number of work units using our OpenCL program kernel
+        CL10.clEnqueueNDRangeKernel(queue, mandelbrotKernel, dimensions, null, globalWorkSize, null, null, null);
+        CL10.clFinish(queue);
+        // This reads the result memory buffer
+        IntBuffer resultBuff = BufferUtils.createIntBuffer(blockSize);
+        // We read the buffer in blocking mode so that when the method returns we know that the result buffer is full
+        CL10.clEnqueueReadBuffer(queue, resultMemory, CL10.CL_TRUE, 0, resultBuff, null, null);
+        
+        // Destroy our memory objects
+        CL10.clReleaseMemObject(xMemory);
+        CL10.clReleaseMemObject(yMemory);
+        CL10.clReleaseMemObject(resultMemory);
+        
+        return resultBuff;
+    }
+    
+    /**
+     * Reads a file an converts it to a string.
+     * @param name
+     * @return The content of the file as a <code>String</code>.
+     */
     public String loadText(String name)
     {
-        if (!name.endsWith(".cl"))
-        {
-            name += ".cl";
-        }
         BufferedReader br = null;
         String resultString = null;
         try
         {
             // Get the file containing the OpenCL kernel source code
-            File clSourceFile = new File(OpenClMandelbrotComputeRoutines.class.getClassLoader().getResource(name).toURI());
+            File clSourceFile = new File(OpenClMandelbrotComputeRoutines.class.getClassLoader().getResource(name)
+            .toURI());
             // Create a buffered file reader for the source file
             br = new BufferedReader(new FileReader(clSourceFile));
             // Read the file's source code line by line and store it in a string builder
@@ -288,24 +272,87 @@ public class OpenClMandelbrotComputeRoutines
         return resultString;
     }
     
+    /**
+     * playground
+     * @param args
+     * @throws LWJGLException
+     * @throws URISyntaxException
+     */
     public static void main(String[] args)
     throws LWJGLException, URISyntaxException
     {
-        OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines();
+        int size = 4096;
+        int blockSize = 1024 * 1024;
+        
+        OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines(blockSize);
         
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         
-        for (int i = 0; i < 1000; ++i)
+        long totalIterations = 0;
+        double[] xCoordinates = new double[blockSize];
+        double[] yCoordinates = new double[blockSize];
+        double step = 1.0 / size;
+        double yCurrent = -2.0;
+        int index = 0;
+        int passes = 0;
+        int maxIter = 65536;
+        for (int y = 0; y < size; ++y)
         {
-            ocl.createAndFillBuffers();
-            ocl.compute();
-            ocl.readResult();
+            yCurrent = -0.5 + step * y;
+            for (int x = 0; x < size; ++x)
+            {
+                yCoordinates[index] = yCurrent;
+                xCoordinates[index] = -0.5 + step * x;
+                index++;
+                if (index == blockSize)
+                {
+                    System.out.println("Block" + passes);
+                    final double[] xCtmp = xCoordinates;
+                    final double[] yCtmp = yCoordinates;
+                    
+                    IntBuffer result = ocl.compute(xCtmp, yCtmp, maxIter);
+                    // System.out.println("Ended computation");
+                    result.rewind();
+                    long total = 0;
+                    for (int i = 0; i < result.capacity(); ++i)
+                    {
+                        total += result.get();
+                    }
+                    totalIterations += total;
+                    
+                    index = 0;
+                    passes++;
+                }
+            }
+        }
+        
+        System.out.println("Passes: " + passes);
+        
+        stopWatch.stop();
+        System.out.println("OpenCL computation: " + stopWatch.toString());
+        
+        long speed = totalIterations / stopWatch.getTime() * 1000; // iterations per second
+        System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
+        
+        stopWatch.reset();
+        stopWatch.start();
+        totalIterations = 0;
+        for (int y = 0; y < size; ++y)
+        {
+            yCurrent = -0.5 + step * y;
+            for (int x = 0; x < size; ++x)
+            {
+                totalIterations += MandelbrotComputeRoutines.computeIterationsCountOptim2(-0.5 + step * x, yCurrent,
+                maxIter);
+            }
         }
         
         stopWatch.stop();
-        System.out.println("Computation: " + stopWatch.toString());
-        stopWatch.reset();
+        System.out.println("CPU computation: " + stopWatch.toString());
+        
+        speed = totalIterations / stopWatch.getTime() * 1000; // points per second
+        System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CPU iteration per second");
         
         ocl.teardown(); // release the resources
     }
