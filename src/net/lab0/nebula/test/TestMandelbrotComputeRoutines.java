@@ -1,11 +1,13 @@
 package net.lab0.nebula.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
+import net.lab0.tools.Pair;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.AfterClass;
@@ -29,6 +31,10 @@ public class TestMandelbrotComputeRoutines
     public static void testIsOutsideMandelbrotSetReference()
     {
         // not much to test here as it is the reference function
+        
+        // test that the function terminates
+        MandelbrotComputeRoutines.isOutsideMandelbrotSetReference(0.0, 0.0, Integer.MAX_VALUE);
+        Assert.assertTrue(true);
     }
     
     @Test
@@ -44,6 +50,90 @@ public class TestMandelbrotComputeRoutines
                 MandelbrotComputeRoutines.isOutsideMandelbrotSet(real, img, maxIter));
             }
         }
+    }
+    
+    @Test
+    public void testComputeIterationsCountReference()
+    {
+        int result;
+        
+        result = MandelbrotComputeRoutines.computeIterationsCountReference(0.0d, 0.0d, maxIter);
+        assertEquals(maxIter, result);
+        
+        result = MandelbrotComputeRoutines.computeIterationsCountReference(0.0d, 0.0d, Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE, result);
+        
+        result = MandelbrotComputeRoutines.computeIterationsCountReference(0.0d, 0.0d, Integer.MIN_VALUE);
+        assertEquals(0, result);
+        
+        result = MandelbrotComputeRoutines.computeIterationsCountReference(2.0d, 2.0d, Integer.MAX_VALUE);
+        assertEquals(0, result);
+    }
+    
+    @Test
+    public void testComputeIterationsCountReferenceDebug()
+    {
+        List<Pair<Double, Double>> points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(0.0, 0.0, maxIter);
+        
+        assertEquals(maxIter, points.size());
+        for (Pair<Double, Double> p : points)
+        {
+            assertEquals(0.0d, p.a.doubleValue(), 0.0);
+            assertEquals(0.0d, p.b.doubleValue(), 0.0);
+        }
+        
+        points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(2.0, 2.0, maxIter);
+        assertEquals(0, points.size());
+
+        
+        points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(10.0, 10.0, maxIter);
+        assertTrue(Double.isNaN(points.get(points.size()-1).a) | Double.isNaN(points.get(points.size()-1).b));
+    }
+    
+    @Test
+    public void testComputeIterationsCountOptim2()
+    {
+        for (int x = 0; x < side; ++x)
+        {
+            for (int y = 0; y < side; ++y)
+            {
+                double real = -2.0 + x * step;
+                double img = -2.0 + y * step;
+                
+                int count = MandelbrotComputeRoutines.computeIterationsCountOptim2(real, img, maxIter);
+                List<Pair<Double, Double>> points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(real, img, maxIter);
+                
+                int target = 1;
+                for (Pair<Double, Double> p : points)
+                {
+                    if ((p.a * p.a + p.b * p.b) < 4.0)
+                    {
+                        target++;
+                    }
+                }
+                
+                while (target % 2 != 0)
+                {
+                    target++;
+                }
+                
+                try
+                {
+                    assertEquals(target, count);
+                }
+                catch (AssertionError e)
+                {
+                    target = 0;
+                    for (Pair<Double, Double> p : points)
+                    {
+                        System.out.println("" + target + ": " + (p.a * p.a + p.b * p.b));
+                        target++;
+                    }
+                    throw e;
+                }
+            }
+        }
+        
     }
     
     @Test
@@ -157,6 +247,6 @@ public class TestMandelbrotComputeRoutines
         }
         
         Assert.assertTrue(total1 > total2);
-        Assert.assertEquals((double) total2, (double) total4, total2 * 0.05);// these 2 must be about the same speed: 5% gape tolerance
+        Assert.assertEquals((double) total2, (double) total4, total2 * 0.10);// these 2 must be about the same speed: 10% tolerance
     }
 }
