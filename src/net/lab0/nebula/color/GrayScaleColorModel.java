@@ -3,6 +3,7 @@ package net.lab0.nebula.color;
 
 /**
  * A linear gray scale coloration.
+ * @see ColorationModel for details.
  * 
  * @since 1.0
  * @author 116

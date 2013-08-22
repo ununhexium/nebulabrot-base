@@ -1,7 +1,8 @@
 package net.lab0.nebula.color;
 
 /**
- * A class must implement this interface to be used as a coloration model.
+ * A class must implement this interface to be used as a coloration model. It is advised not to create new
+ * {@link PointValues} objects for each call to speed up performances.
  * 
  * @since 1.0
  * @author 116
@@ -10,9 +11,9 @@ package net.lab0.nebula.color;
 public interface ColorationModel
 {
     /**
-     * Computes the red, green and blue values for a given point. You may give more than 1 value for a point. i.e. give one value for the red, one value for the
-     * green and one value for the blue or more, depending on your creativity, to compute the resulting color. The values are a number of iterations, min and
-     * max.
+     * Computes the red, green and blue values for a given point. You may give more than 1 value for a point. i.e. give
+     * one value for the red, one value for the green and one value for the blue or more, depending on your creativity,
+     * to compute the resulting color. The values are a number of iterations, min and max.
      * 
      * @param vector
      *            The resulting RGB values of the computation. The vector is a <code>float[3]</code>.

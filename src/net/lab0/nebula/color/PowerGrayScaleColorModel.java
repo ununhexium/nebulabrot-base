@@ -3,6 +3,7 @@ package net.lab0.nebula.color;
 /**
  * 
  * Gray with exponentiated scale. Makes intermediates zones [1-254] brighter than the @See GrayScaleColorModel if the
+ * @see ColorationModel for details.
  * 
  * @author 116@lab0.net
  * 

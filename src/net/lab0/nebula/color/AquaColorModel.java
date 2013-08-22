@@ -4,6 +4,7 @@ package net.lab0.nebula.color;
 /**
  * 
  * Blue and turquoise coloration.
+ * @see ColorationModel for details.
  * 
  * @since 1.0
  * @author 116
