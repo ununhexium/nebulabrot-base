@@ -3,6 +3,8 @@ package net.lab0.nebula.example;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import net.lab0.nebula.core.QuadTreeManager;
+import net.lab0.nebula.enums.Indexation;
 import net.lab0.nebula.project.Project;
 
 import org.apache.commons.io.FileUtils;
@@ -40,8 +42,17 @@ public class Example2
         /*
          * Set some parameters
          */
-        // use OpenCL and multithreading because we like to live quickly
+        // use OpenCL and multithreading because we like to make it fast
         project.enableOpenCL();
         project.enableMultithreading();
+        
+        // add a new quadtree to this project
+        QuadTreeManager manager = project.newQuadTree(-2.0d, 2.0d, -2.0d, 2.0d, 256, 1024, 3, 5);
+        
+        // compute the tree
+        project.compute(manager, Integer.MAX_VALUE);
+        
+        // save it in the projet's folder
+        project.save(manager, Indexation.NO_INDEXATION);
     }
 }

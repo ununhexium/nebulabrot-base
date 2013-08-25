@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
 import net.lab0.nebula.core.QuadTreeManager;
+import net.lab0.nebula.enums.Indexation;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
 import nu.xom.ParsingException;
@@ -25,7 +26,7 @@ public class GenerateQuadTrees
             Path p = FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "bck",
             "p256i65536d5D" + i + "binNoIndex");
             manager.getQuadTreeRoot().strip(i);
-            manager.saveToBinaryFile(p, false);
+            manager.saveToBinaryFile(p, Indexation.NO_INDEXATION);
         }
     }
 }
