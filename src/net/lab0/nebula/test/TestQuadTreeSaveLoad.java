@@ -71,7 +71,7 @@ public class TestQuadTreeSaveLoad
     public void testXml()
     throws IOException, ValidityException, ClassNotFoundException, ParsingException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
-        quadTreeManager.saveToXML(savePath);
+        quadTreeManager.saveToBinaryFile(savePath, false);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
@@ -101,7 +101,7 @@ public class TestQuadTreeSaveLoad
     public void testXmlLoadDepthLimit()
     throws IOException, ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException, InvalidBinaryFileException
     {
-        quadTreeManager.saveToXML(savePath);
+        quadTreeManager.saveToBinaryFile(savePath, false);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();

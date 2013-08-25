@@ -116,7 +116,8 @@ public class RawMandelbrotData
             additional.put(entry.getAttributeValue("key"), entry.getAttributeValue("value"));
         }
         
-        File rawData = FileSystems.getDefault().getPath(inputDirectoryPath.toString(), serializedFileNode.getAttributeValue("path")).toFile();
+        File rawData = FileSystems.getDefault()
+        .getPath(inputDirectoryPath.toString(), serializedFileNode.getAttributeValue("path")).toFile();
         
         Element checksum = serializedFileNode.getFirstChildElement("checksum");
         String algorithm = checksum.getAttributeValue("algorithm");
@@ -144,7 +145,8 @@ public class RawMandelbrotData
             String digest = MyString.getHexString(digestInputStream.getMessageDigest().digest());
             if (!digest.equals(checksum.getAttributeValue("value")))
             {
-                System.out.println(digest + " VS " + MyString.getHexString(digestInputStream.getMessageDigest().digest()));
+                System.out.println(digest + " VS "
+                + MyString.getHexString(digestInputStream.getMessageDigest().digest()));
                 throw new InvalidBinaryFileException("The checksum is incorrect.");
             }
         }
@@ -158,7 +160,7 @@ public class RawMandelbrotData
      * @throws IOException
      * 
      */
-    public void save(Path outputDirectoryPath)
+    public synchronized void save(Path outputDirectoryPath)
     throws IOException
     {
         String algorithm = "SHA-512";
@@ -182,7 +184,8 @@ public class RawMandelbrotData
         
         File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
         File dataFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "rawData.dat").toFile();
-        File previewFileFolder = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "preview.png").toFile();
+        File previewFileFolder = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "preview.png")
+        .toFile();
         
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(dataFile);
@@ -237,7 +240,8 @@ public class RawMandelbrotData
             
             // saving the index
             Document indexDocument = new Document(indexRoot);
-            Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)), "utf-8");
+            Serializer indexSerializer = new Serializer(new BufferedOutputStream(new FileOutputStream(indexFile)),
+            "utf-8");
             indexSerializer.setIndent(2);
             indexSerializer.setMaxLength(0);
             indexSerializer.write(indexDocument);
@@ -245,7 +249,8 @@ public class RawMandelbrotData
     }
     
     /**
-     * Saves the <code>data</code> of this RawMandelbrotData to a folder hierarchy. These data will be saved as tiles to use in google maps API for instance.
+     * Saves the <code>data</code> of this RawMandelbrotData to a folder hierarchy. These data will be saved as tiles to
+     * use in google maps API for instance.
      * 
      * @param colorationModel
      *            The coloration model to use in the conversion.
@@ -261,7 +266,8 @@ public class RawMandelbrotData
     {
         // find the number of zoom levels required
         int zoomLevels = 0;
-        while (this.pixelHeight / Math.pow(2.0, zoomLevels) > tilesSize || this.pixelWidth / Math.pow(2.0, zoomLevels) > tilesSize)
+        while (this.pixelHeight / Math.pow(2.0, zoomLevels) > tilesSize
+        || this.pixelWidth / Math.pow(2.0, zoomLevels) > tilesSize)
         {
             zoomLevels++;
         }
@@ -269,7 +275,8 @@ public class RawMandelbrotData
         for (int zoom = zoomLevels; zoom >= 0; --zoom)
         {
             System.out.println("Tiles for zoom " + zoom);
-            computeTileForZoom(colorationModel, new File(tilesFolder, Integer.toString(zoomLevels - zoom)), tilesSize, zoom);
+            computeTileForZoom(colorationModel, new File(tilesFolder, Integer.toString(zoomLevels - zoom)), tilesSize,
+            zoom);
         }
     }
     
@@ -356,10 +363,12 @@ public class RawMandelbrotData
      * @param zoom
      * @throws IOException
      */
-    private void computeTile(ColorationModel colorationModel, File tilesFolder, int tilesSize, long min, long max, int xTile, int yTile, int zoom)
+    private void computeTile(ColorationModel colorationModel, File tilesFolder, int tilesSize, long min, long max,
+    int xTile, int yTile, int zoom)
     throws IOException
     {
-        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+        .getDefaultConfiguration();
         final BufferedImage bufferedImage = gc.createCompatibleImage(tilesSize, tilesSize, BufferedImage.TYPE_INT_RGB);
         
         int zoomFactor = (1 << zoom);
@@ -414,8 +423,10 @@ public class RawMandelbrotData
             throw new IllegalArgumentException("zoomOut must be positive.");
         }
         int zoomFactor = (1 << (zoomOut - 1));
-        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
-        final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomFactor, pixelHeight / zoomFactor, BufferedImage.TYPE_INT_RGB);
+        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+        .getDefaultConfiguration();
+        final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomFactor, pixelHeight / zoomFactor,
+        BufferedImage.TYPE_INT_RGB);
         
         System.out.println("img size " + pixelWidth / zoomFactor + "/" + pixelHeight / zoomFactor);
         System.out.println("zoom factor " + zoomFactor + " zoomOut " + zoomOut);

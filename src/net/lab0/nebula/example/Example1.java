@@ -5,6 +5,12 @@ import java.nio.file.Path;
 
 import net.lab0.nebula.project.Project;
 
+/**
+ * This class' source code explains how to load an existing project.
+ * 
+ * @author 116@lab0.net
+ * 
+ */
 public class Example1
 {
     public static void main(String[] args)
@@ -16,5 +22,10 @@ public class Example1
          * work on.
          */
         Project project = new Project(path);
+        
+        /*
+         * Now we want to load some precomputed quad tree
+         */
+        
     }
 }

@@ -1,13 +1,10 @@
 package net.lab0.nebula.test;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
-import junit.framework.Assert;
-import net.lab0.nebula.color.ColorationModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
@@ -16,6 +13,7 @@ import net.lab0.tools.geom.Rectangle;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -26,15 +24,20 @@ public class TestRawMandelbrotData
     private static int                minIter     = 64;
     private static int                maxIter     = 128;
     private static long               pointsCount = resolution * resolution * maxIter;
-    private static Path               path        = FileSystems.getDefault().getPath(".", "test_folder", "rawRendering");
+    private static Path               path        = FileSystems.getDefault()
+                                                  .getPath(".", "test_folder", "rawRendering");
     private static RawMandelbrotData  originalData;
     
     @BeforeClass
     public static void generateRawData()
+    throws IOException
     {
-        nebulabrotRenderer = new NebulabrotRenderer(resolution, resolution, new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0)));
-        // compute on a least 1 and at most N-1 CPUs to let other application run smoothly
-        originalData = nebulabrotRenderer.linearRender(pointsCount, minIter, maxIter, Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
+        nebulabrotRenderer = new NebulabrotRenderer(resolution, resolution, new Rectangle(new Point(-2.0, -2.0),
+        new Point(2.0, 2.0)));
+        // compute on a least 1 and at most N-1 CPUs to let other applications run smoothly
+        originalData = nebulabrotRenderer.linearRender(pointsCount, minIter, maxIter, 1);
+        originalData.addAdditionnalInformation("aKey", "aValue");
+        originalData.save(path);
     }
     
     @Test
@@ -51,12 +54,12 @@ public class TestRawMandelbrotData
     {
         Assert.assertTrue(true);
         RawMandelbrotData data = new RawMandelbrotData(path);
-        Assert.assertEquals(data.getPixelHeight(), originalData.getPixelHeight());
-        Assert.assertEquals(data.getPixelWidth(), originalData.getPixelWidth());
-        Assert.assertEquals(data.getMinIter(), originalData.getMinIter());
-        Assert.assertEquals(data.getMaxIter(), originalData.getMaxIter());
-        Assert.assertEquals(data.getPointsCount(), originalData.getPointsCount());
-        Assert.assertEquals(data.getAdditionnalInformation("aKey"), "aValue");
+        Assert.assertEquals(originalData.getPixelHeight(), data.getPixelHeight());
+        Assert.assertEquals(originalData.getPixelWidth(), data.getPixelWidth());
+        Assert.assertEquals(originalData.getMinIter(), data.getMinIter());
+        Assert.assertEquals(originalData.getMaxIter(), data.getMaxIter());
+        Assert.assertEquals(originalData.getPointsCount(), data.getPointsCount());
+        Assert.assertEquals("aValue", data.getAdditionnalInformation("aKey"));
         int[][] array = data.getData();
         int[][] originalArray = originalData.getData();
         
@@ -64,7 +67,7 @@ public class TestRawMandelbrotData
         {
             for (int y = 0; y < data.getPixelWidth(); ++y)
             {
-                Assert.assertEquals(array[x][y], originalArray[x][y]);
+                Assert.assertEquals("Missmatch@(" + x + ";" + y + ")", originalArray[x][y], array[x][y]);
             }
         }
     }

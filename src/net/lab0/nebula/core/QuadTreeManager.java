@@ -440,45 +440,13 @@ public class QuadTreeManager
     }
     
     /**
-     * Saves a copy of this root as XML.
-     * 
-     * @param prefix
-     *            prefix to add to the save folder location
-     * @param suffix
-     *            suffix to add to the save folder location
-     * @throws IOException
-     */
-    public void saveACopy(String prefix, String suffix)
-    throws IOException
-    {
-        File originalFile = originalPath.toFile();
-        if (prefix == null)
-        {
-            prefix = "";
-        }
-        if (suffix == null)
-        {
-            suffix = "";
-        }
-        File saveFile = new File(originalFile.getParentFile(), prefix + originalFile.getName() + suffix);
-        
-        saveToXML(saveFile.toPath());
-    }
-    
-    public void save()
-    throws IOException
-    {
-        saveToXML(originalPath);
-    }
-    
-    /**
      * Saves the quad tree to the given folder. This algorithm divides the main tree in several subtrees.
      * 
      * @param outputDirectoryPath
      *            a folder to save the quad tree to
      * @throws IOException
      */
-    public void saveToXML(Path outputDirectoryPath)
+    public void exportToXML(Path outputDirectoryPath)
     throws IOException
     {
         File outputDirectoryFile = outputDirectoryPath.toFile();

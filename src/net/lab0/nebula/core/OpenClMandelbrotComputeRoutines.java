@@ -35,37 +35,31 @@ import org.lwjgl.opencl.Util;
 public class OpenClMandelbrotComputeRoutines
 {
     // OpenCL variables
-    public CLContext      context;
-    public CLPlatform     platform;
-    public List<CLDevice> devices;
-    public CLCommandQueue queue;
+    private CLContext      context;
+    private CLPlatform     platform;
+    private List<CLDevice> devices;
+    private CLCommandQueue queue;
     
-    private StopWatch     stopWatch;
-    private CLProgram     mandelbrotProgram;
-    private CLKernel      mandelbrotKernel;
-    private DoubleBuffer  xBuff;
-    private DoubleBuffer  yBuff;
-    private CLMem         xMemory;
-    private CLMem         yMemory;
-    private CLMem         resultMemory;
-    private PointerBuffer globalWorkSize;
+    private StopWatch      stopWatch;
+    private CLProgram      mandelbrotProgram;
+    private CLKernel       mandelbrotKernel;
+    private CLMem          xMemory;
+    private CLMem          yMemory;
+    private CLMem          resultMemory;
+    private PointerBuffer  globalWorkSize;
     
     // Used to determine how many units of work to do
-    private int           blockSize;
-    private final int     dimensions = 1;
+    private final int      dimensions = 1;
     
     /**
      * Creates am OpenClMandelbrotComputeRoutines with a default kernel.
      * 
-     * @param blockSize
-     *            The number of block to compute in each call to the <code>compute()</code> method.
      * @throws LWJGLException
+     *             If there is an error during the OpenCL initialisation.
      */
-    public OpenClMandelbrotComputeRoutines(int blockSize)
+    public OpenClMandelbrotComputeRoutines()
     throws LWJGLException
     {
-        this.blockSize = blockSize;
-        
         stopWatch = new StopWatch();
         
         initializeCL();
@@ -118,15 +112,10 @@ public class OpenClMandelbrotComputeRoutines
         stopWatch.stop();
         System.out.println("Kernel creation: " + stopWatch.toString());
         stopWatch.reset();
-        
-        // Create the buffers needed for computation with the maximum allowed size
-        
-        xBuff = BufferUtils.createDoubleBuffer(blockSize);
-        yBuff = BufferUtils.createDoubleBuffer(blockSize);
     }
     
     /**
-     * Finishes the openCL 
+     * Finishes the openCL
      */
     private void teardown()
     {
@@ -152,13 +141,27 @@ public class OpenClMandelbrotComputeRoutines
     /**
      * Computes the number of iterations for the given list of points.
      * 
-     * @param x The x points coordinates.
-     * @param y The y points coordinates.
-     * @param maximumIteration The maximum number of iterations to do while computing.
+     * @param x
+     *            The x points coordinates. x and y must be the same size.
+     * @param y
+     *            The y points coordinates. x and y must be the same size.
+     * @param maximumIteration
+     *            The maximum number of iterations to do while computing.
      * @return An {@link IntBuffer} containing the number of iterations for each of the given points.
      */
     public synchronized IntBuffer compute(double[] x, double[] y, int maximumIteration)
     {
+        if (x.length != y.length)
+        {
+            throw new RuntimeException("Both x and y must have the same length.");
+        }
+        
+        int blockSize = x.length;
+        
+        // Create the buffers needed for computation with the maximum allowed size
+        DoubleBuffer xBuff = BufferUtils.createDoubleBuffer(blockSize);
+        DoubleBuffer yBuff = BufferUtils.createDoubleBuffer(blockSize);
+        
         xBuff.rewind();
         xBuff.put(x);
         xBuff.rewind();
@@ -210,6 +213,7 @@ public class OpenClMandelbrotComputeRoutines
     
     /**
      * Reads a file an converts it to a string.
+     * 
      * @param name
      * @return The content of the file as a <code>String</code>.
      */
@@ -274,6 +278,7 @@ public class OpenClMandelbrotComputeRoutines
     
     /**
      * playground
+     * 
      * @param args
      * @throws LWJGLException
      * @throws URISyntaxException
@@ -281,10 +286,10 @@ public class OpenClMandelbrotComputeRoutines
     public static void main(String[] args)
     throws LWJGLException, URISyntaxException
     {
-        int size = 4096;
+        int size = 4096 * 4;
         int blockSize = 1024 * 1024;
         
-        OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines(blockSize);
+        OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines();
         
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

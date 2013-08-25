@@ -1,5 +1,11 @@
 package net.lab0.nebula.core;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +20,7 @@ import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.listener.MandelbrotRendererListener;
+import net.lab0.tools.HumanReadable;
 import net.lab0.tools.geom.RectangleInterface;
 
 /**
@@ -122,8 +129,8 @@ public class NebulabrotRenderer
     }
     
     /**
-     * Fires a <code>rendererStopped</code> or <code>rendererFinished</code> to event to all the registered {@link MandelbrotRendererListener}, depending on the
-     * terminating action.
+     * Fires a <code>rendererStopped</code> or <code>rendererFinished</code> to event to all the registered
+     * {@link MandelbrotRendererListener}, depending on the terminating action.
      * 
      * @param raw
      */
@@ -140,7 +147,8 @@ public class NebulabrotRenderer
     }
     
     /**
-     * Basic and naive method to render the nebulabrot. Does a rendering of the nebulabrot using start points dispatched on a grid.
+     * Basic and naive method to render the nebulabrot. Does a rendering of the nebulabrot using start points dispatched
+     * on a grid.
      * 
      * @param pointsCount
      *            The number of points on the grid.
@@ -239,7 +247,7 @@ public class NebulabrotRenderer
                     try
                     {
                         done = executor.awaitTermination(250, TimeUnit.MILLISECONDS);
-//                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
+                        // System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
                         fireProgress(queue.size(), side);
                     }
                     catch (InterruptedException e)
@@ -267,18 +275,20 @@ public class NebulabrotRenderer
     }
     
     /**
-     * computation for 1 point
+     * Rendering on a 2D surface for 1 point.
      * 
      * @param minIter
+     *            The minimum iteration count to reach before doing the rendering with the remaining iterations.
      * @param maxIter
+     *            The maximum iteration count.
      * @param data
-     *            the data array to save the results to
+     *            The data array to save the results to.
      * @param real
-     *            real part of the point
+     *            The real part of the point.
      * @param img
-     *            imaginary part of the point
-     *            
-     *            @return the number of increment done when computing this point
+     *            The imaginary part of the point.
+     * 
+     * @return the number of increment done when computing this point
      */
     private int computePoint(int minIter, int maxIter, int[][] data, double real, double img)
     {
@@ -344,9 +354,9 @@ public class NebulabrotRenderer
     
     /**
      * 
-     * Evolved method to render the nebulabrot. Does a rendering of the nebulabrot using start points dispatched on a grid. If the points of this grid do not
-     * need to be computed, they are discarded and considered computed. This is made to ensure equivalence of this parameter with the parameter of the naive
-     * rendering method
+     * Evolved method to render the nebulabrot. Does a rendering of the nebulabrot using start points dispatched on a
+     * grid. If the points of this grid do not need to be computed, they are discarded and considered computed. This is
+     * made to ensure equivalence of this parameter with the parameter of the naive rendering method.
      * 
      * @param pointsCount
      *            the number of points on the grid
@@ -355,7 +365,8 @@ public class NebulabrotRenderer
      * @param maxIter
      *            the maximum number of iterations the points on the grid need to have to be utilized
      * @param root
-     *            the root, a {@link StatusQuadTreeNode} to the root of the tree which must be utilized to render the fractal
+     *            the root, a {@link StatusQuadTreeNode} to the root of the tree which must be utilized to render the
+     *            fractal
      * @param threads
      *            The maximum number of threads to use for this computation.
      * 
@@ -364,7 +375,8 @@ public class NebulabrotRenderer
      * @throws IllegalArgumentException
      *             if <code>minIter >= maxIter</code> is true
      */
-    public RawMandelbrotData quadTreeRender(long pointsCount, final int minIter, final int maxIter, StatusQuadTreeNode root, int threads)
+    public RawMandelbrotData quadTreeRender(long pointsCount, final int minIter, final int maxIter,
+    StatusQuadTreeNode root, int threads)
     {
         // wouldn't make sens otherwise (no point computed)
         if (minIter >= maxIter)
@@ -386,7 +398,8 @@ public class NebulabrotRenderer
         final List<StatusQuadTreeNode> nodesList = new ArrayList<>();
         root.getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID), minIter, maxIter);
         
-//        final List<Pair<StatusQuadTreeNode, Integer>> frequency = Collections.synchronizedList(new ArrayList<Pair<StatusQuadTreeNode, Integer>>());
+        // final List<Pair<StatusQuadTreeNode, Integer>> frequency = Collections.synchronizedList(new
+        // ArrayList<Pair<StatusQuadTreeNode, Integer>>());
         
         final int queueLimit = 1024;
         final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(queueLimit);
@@ -440,7 +453,7 @@ public class NebulabrotRenderer
                                         }
                                         
                                         int increments = computePoint(minIter, maxIter, data, real, img);
-//                                        frequency.add(new Pair<StatusQuadTreeNode, Integer>(finalNode, increments));
+                                        // frequency.add(new Pair<StatusQuadTreeNode, Integer>(finalNode, increments));
                                     }
                                     
                                     img += stepY;
@@ -474,7 +487,7 @@ public class NebulabrotRenderer
                     try
                     {
                         done = executor.awaitTermination(250, TimeUnit.MILLISECONDS);
-//                        System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
+                        // System.out.println("wait for " + queue.size() + ", running " + executor.getActiveCount());
                         fireProgress(queue.size(), side);
                     }
                     catch (InterruptedException e)
@@ -497,48 +510,112 @@ public class NebulabrotRenderer
             e.printStackTrace();
         }
         
-//        Collections.sort(frequency, new Comparator<Pair<StatusQuadTreeNode, Integer>>()
-//        {
-//            @Override
-//            public int compare(Pair<StatusQuadTreeNode, Integer> o1, Pair<StatusQuadTreeNode, Integer> o2)
-//            {
-//                return o2.b - o1.b;
-//            }
-//        });
+        // Collections.sort(frequency, new Comparator<Pair<StatusQuadTreeNode, Integer>>()
+        // {
+        // @Override
+        // public int compare(Pair<StatusQuadTreeNode, Integer> o1, Pair<StatusQuadTreeNode, Integer> o2)
+        // {
+        // return o2.b - o1.b;
+        // }
+        // });
         
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
         long total = 0;
-//        for (Pair<StatusQuadTreeNode, Integer> p : frequency)
-//        {
-//            total += p.b;
-//            if (p.b > max)
-//            {
-//                max = p.b;
-//            }
-//            if (p.b < min)
-//            {
-//                min = p.b;
-//            }
-//        }
+        // for (Pair<StatusQuadTreeNode, Integer> p : frequency)
+        // {
+        // total += p.b;
+        // if (p.b > max)
+        // {
+        // max = p.b;
+        // }
+        // if (p.b < min)
+        // {
+        // min = p.b;
+        // }
+        // }
         
         System.out.println("min=" + min + " max=" + max);
         int dX = 1; // decile
         int index = 0;
         long cumul = 0;
-//        for (Pair<StatusQuadTreeNode, Integer> p : frequency)
-//        {
-//            cumul += p.b;
-//            index++;
-//            if (cumul >= (dX * total / 20.0d))
-//            {
-//                System.out.println("D" + dX + " @ " + index);
-//                dX++;
-//            }
-//        }
+        // for (Pair<StatusQuadTreeNode, Integer> p : frequency)
+        // {
+        // cumul += p.b;
+        // index++;
+        // if (cumul >= (dX * total / 20.0d))
+        // {
+        // System.out.println("D" + dX + " @ " + index);
+        // dX++;
+        // }
+        // }
         
         fireFinishedOrStop(raw);
         return raw;
+    }
+    
+    /**
+     * 
+     * Does a rendering of the nebulabrot using points indicated in a file.
+     * 
+     * @param inputFile
+     *            The file to read for the computation. The file must be in binary format. The first 8 bytes represent a
+     *            <code>long</code> indicating how many points were computed. Then the file is composed of blocks {int
+     *            iterations, double xCoordinate, double yCoordinate} representing the coordinates to compute and how
+     *            many iterations are needed.
+     * @param minIter
+     *            the minimum number of iterations the points on the grid need to have to be used
+     * @param maxIter
+     *            the maximum number of iterations the points on the grid need to have to be used
+     * 
+     * @return a {@link RawMandelbrotData} of the computed points
+     * @throws IOException
+     *             if there is a problem while reading the file.
+     */
+    public RawMandelbrotData fileRender(File inputFile, int minIter, int maxIter)
+    throws IOException
+    {
+        try (
+//            XZInputStream inputStream = new XZInputStream(new FileInputStream(inputFile)))
+        InputStream inputStream =new BufferedInputStream(new FileInputStream(inputFile)))
+        {
+//             read the number of points contained in the file
+//            byte[] pointsCounts = new byte[8];
+//            ByteBuffer pointsCountBuffer = ByteBuffer.wrap(pointsCounts);
+//            pointsCountBuffer.clear();
+//            inputStream.read(pointsCounts);
+//            long pointsCount = pointsCountBuffer.getLong();
+            
+            RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, 0);
+            
+            System.out.println("Malloc");
+            final int[][] data = raw.getData();
+            
+            byte[] buffer = new byte[4 + 8 + 8];
+            ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+            
+            System.out.println("Reading");
+            int read = 0;
+            long totalRead = 0;
+            while ((read += inputStream.read(buffer)) != -1)
+            {
+                if (read > 1024 * 1024)
+                {
+                    totalRead += read;
+                    read = 0;
+                    System.out.println("Read " + HumanReadable.humanReadableNumber(totalRead));
+                }
+                int iter = byteBuffer.getInt();
+                double real = byteBuffer.getDouble();
+                double img = byteBuffer.getDouble();
+                int localMaxIter = Math.min(maxIter, iter);
+                byteBuffer.clear();
+                computePoint(minIter, localMaxIter, data, real, img);
+            }
+            
+            fireFinishedOrStop(raw);
+            return raw;
+        }
     }
     
     /**

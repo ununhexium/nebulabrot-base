@@ -73,7 +73,7 @@ public class Background
                 "p" + manager.getPointsPerSide() + "i" + manager.getMaxIter() + "d" + manager.getDiffIterLimit() + "D" + manager.getMaxDepth() + "v" + pass);
                 
                 System.out.println("save to " + path);
-                manager.saveToXML(path);
+                manager.saveToBinaryFile(path, false);
 
                 cal.add(Calendar.MINUTE, 90);
             }
