@@ -2,10 +2,12 @@ package net.lab0.nebula.example;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.List;
 
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.enums.Indexation;
 import net.lab0.nebula.project.Project;
+import net.lab0.nebula.project.QuadTreeMetadata;
 
 import org.apache.commons.io.FileUtils;
 
@@ -52,7 +54,9 @@ public class Example2
         // compute the tree
         project.compute(manager, Integer.MAX_VALUE);
         
-        // save it in the projet's folder
+        // save it in the project's folder
         project.save(manager, Indexation.NO_INDEXATION);
+        
+        //compute some rendering
     }
 }

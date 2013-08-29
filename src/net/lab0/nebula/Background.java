@@ -51,7 +51,7 @@ public class Background
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
         cal.add(Calendar.MINUTE, 90);
-
+        
         GregorianCalendar end = new GregorianCalendar();
         end.setTime(new Date());
         end.add(Calendar.DAY_OF_YEAR, 2);
@@ -67,7 +67,7 @@ public class Background
             // Statistics statistics = manager.computeStatistics();
             // System.out.println(statistics);
             
-            if (new Date().after(cal.getTime())) //save every 30 minutes
+            if (new Date().after(cal.getTime())) // save every 30 minutes
             {
                 pass++;
                 Path path = FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree",
@@ -75,7 +75,7 @@ public class Background
                 
                 System.out.println("save to " + path);
                 manager.saveToBinaryFile(path, Indexation.NO_INDEXATION);
-
+                
                 cal.add(Calendar.MINUTE, 90);
             }
         }

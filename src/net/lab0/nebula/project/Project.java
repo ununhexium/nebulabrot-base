@@ -1,22 +1,32 @@
 package net.lab0.nebula.project;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import javax.naming.ConfigurationException;
 
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
 import net.lab0.tools.quadtree.QuadTreeNode;
 import net.lab0.tools.quadtree.QuadTreeRoot;
+import nu.xom.Attribute;
+import nu.xom.Builder;
+import nu.xom.Document;
+import nu.xom.Element;
+import nu.xom.Elements;
+import nu.xom.ParsingException;
 import nu.xom.ValidityException;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 /**
  * Stores and loads the parameters of a project.
@@ -29,16 +39,23 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 public class Project
 {
     /**
-     * The path to the project's folder.
+     * The version of the project.xml file to use when saving a new project. Min version value: 1.
      */
-    private Path                       projectFolder;
+    private static final int        VERSION    = 1;
     
     /**
-     * Holds the parameters of this project.
+     * The version of this project.xml file. If version <=0, then the version is not set.
      */
-    private PropertiesConfiguration    propertiesConfiguration;
+    private int                     version;
     
-    private Map<QuadTreeManager, File> quadTreeFileMapping = new HashMap<QuadTreeManager, File>();
+    /**
+     * The path to the project's folder.
+     */
+    private Path                    projectFolder;
+    
+    private Map<ProjectKey, Object> parameters = new HashMap<>();
+    
+    private QuadTreeManager                 quadTreeManager;
     
     /**
      * Tries to load a project if it exists or create a new one if it doesn't.
@@ -52,11 +69,13 @@ public class Project
      *             If there was an error while reading the properties file.
      * @throws ProjectException
      *             If the given path doesn't point to a directory.
+     * @throws ParsingException
+     * @throws ValidityException
      * @throws ConfigurationException
      *             In case of error while loading the properties file
      */
     public Project(Path projectFolder)
-    throws ProjectException, NonEmptyFolderException, IOException, ConfigurationException
+    throws ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
     {
         super();
         this.projectFolder = projectFolder;
@@ -82,7 +101,7 @@ public class Project
             // there is no file -> new project
             if (folder.list().length == 0)
             {
-                initProperties(projectFile);
+                save();
             }
             // the is already something going on in this folder -> can't do anything
             else
@@ -94,50 +113,117 @@ public class Project
         // load the project's properties by overriding the default properties.
         else
         {
-            initProperties(projectFile);
             load();
         }
     }
     
     /**
-     * Creates and configures a properties object.
-     * 
-     * @param projectFile
-     */
-    private void initProperties(File projectFile)
-    {
-        propertiesConfiguration = new PropertiesConfiguration();
-        propertiesConfiguration.setFile(projectFile);
-        propertiesConfiguration.setAutoSave(true);
-    }
-    
-    /**
      * Saves the parameters of this project in /path/pto/project/folder/<code>project.xml</code>.
+     * 
+     * @throws FileNotFoundException
      * 
      * @throws ConfigurationException
      * 
      * @throws IOException
      */
     public synchronized void save()
-    throws ConfigurationException
+    throws FileNotFoundException
     {
-        propertiesConfiguration.save();
+        int versionToUse = version == 0 ? VERSION : version;
+        switch (versionToUse)
+        {
+            case 1:
+                saveVersion1();
+                break;
+            
+            default:
+                break;
+        }
+    }
+    
+    /**
+     * Saves this project with the version number 1 of the project.xml file.
+     * 
+     * @throws IOException
+     * @throws FileNotFoundException
+     */
+    private void saveVersion1()
+    throws FileNotFoundException
+    {
+        Element root = new Element("project");
+        root.addAttribute(new Attribute("version", Integer.toString(1)));
+        
+        Element parametersNode = new Element("parameters");
+        root.appendChild(parametersNode);
+        
+        // opencl
+        Boolean useOpenCLValue = (Boolean) parameters.get(ProjectKey.USE_OPENCL);
+        if (useOpenCLValue != null)
+        {
+            Element node = new Element(ProjectKey.USE_OPENCL.name());
+            node.addAttribute(new Attribute("boolean", Boolean.toString(useOpenCLValue)));
+            parametersNode.appendChild(node);
+        }
+        
+        Boolean useMultithreadingValue = (Boolean) parameters.get(ProjectKey.USE_MULTITHREADING);
+        if (useMultithreadingValue != null)
+        {
+            Element node = new Element(ProjectKey.USE_MULTITHREADING.name());
+            node.addAttribute(new Attribute("boolean", Boolean.toString(useMultithreadingValue)));
+            parametersNode.appendChild(node);
+        }
+        
+        Document document = new Document(root);
+        String xml = document.toXML();
+        File projectConfiguration = getProjectConfigurationFile();
+        try (
+            PrintWriter printWriter = new PrintWriter(projectConfiguration))
+        {
+            printWriter.write(xml);
+        }
     }
     
     /**
      * Loads a parameters file.
      * 
-     * @throws ConfigurationException
+     * @throws ParsingException
      * 
      * @throws ValidityException
      *             If the xml file is not valid.
      * @throws IOException
      *             If there is an error while reading the file.
+     * @throws ProjectException
      */
     private synchronized void load()
-    throws ConfigurationException
+    throws ValidityException, ParsingException, IOException, ProjectException
     {
-        propertiesConfiguration.load();
+        Builder builder = new Builder();
+        Document document = builder.build(getProjectConfigurationFile());
+        Element root = document.getRootElement();
+        if (!root.getLocalName().equals("project"))
+        {
+            throw new ProjectException("Expected a project file but found a root named " + root.getLocalName());
+        }
+        
+        Element parametersNode = root.getFirstChildElement("parameters");
+        Elements elements = parametersNode.getChildElements();
+        
+        for (int i = 0; i < elements.size(); ++i)
+        {
+            Element e = elements.get(i);
+            ProjectKey key = ProjectKey.valueOf(e.getLocalName());
+            switch (key)
+            {
+            // boolean keys
+                case USE_OPENCL:
+                case USE_MULTITHREADING:
+                    parameters.put(key, Boolean.parseBoolean(e.getAttributeValue("boolean")));
+                    break;
+                
+                default:
+                    break;
+            }
+        }
     }
     
     /**
@@ -155,7 +241,7 @@ public class Project
     private File getProjectConfigurationFile()
     {
         File folder = this.projectFolder.toFile();
-        File file = new File(folder, "project.conf");
+        File file = new File(folder, "project.xml");
         return file;
     }
     
@@ -164,7 +250,7 @@ public class Project
      */
     public void enableOpenCL()
     {
-        propertiesConfiguration.addProperty(ProjectKey.USE_OPENCL.toString(), Boolean.TRUE);
+        parameters.put(ProjectKey.USE_OPENCL, Boolean.TRUE);
     }
     
     /**
@@ -172,7 +258,7 @@ public class Project
      */
     public void disableOpenCL()
     {
-        propertiesConfiguration.addProperty(ProjectKey.USE_OPENCL.toString(), Boolean.FALSE);
+        parameters.put(ProjectKey.USE_OPENCL, Boolean.FALSE);
     }
     
     /**
@@ -180,7 +266,7 @@ public class Project
      */
     public void enableMultithreading()
     {
-        propertiesConfiguration.addProperty(ProjectKey.USE_MULTITHREADING.toString(), Boolean.TRUE);
+        parameters.put(ProjectKey.USE_MULTITHREADING, Boolean.TRUE);
     }
     
     /**
@@ -188,7 +274,7 @@ public class Project
      */
     public void disableMultithreading()
     {
-        propertiesConfiguration.addProperty(ProjectKey.USE_MULTITHREADING.toString(), Boolean.FALSE);
+        parameters.put(ProjectKey.USE_MULTITHREADING, Boolean.FALSE);
     }
     
     /**
@@ -253,7 +339,7 @@ public class Project
             newTree = new File(tree, Integer.toString(index));
         } while (newTree.exists());
         newTree.mkdir();
-        quadTreeFileMapping.put(quadTreeManager, newTree);
+        this.quadTreeManager = quadTreeManager;
     }
     
     /**
@@ -267,6 +353,10 @@ public class Project
     public void compute(QuadTreeManager manager, int maxValue)
     {
         manager.compute(maxValue);
+        if ((boolean) parameters.get(ProjectKey.USE_MULTITHREADING))
+        {
+            manager.setThreads(Runtime.getRuntime().availableProcessors() - 1);
+        }
     }
     
     /**
@@ -280,11 +370,18 @@ public class Project
     public void save(QuadTreeManager manager, Indexation indexation)
     throws IOException
     {
-        File path = quadTreeFileMapping.get(manager);
+        File path = quadTreeManager.getOriginalPath().toFile();
         if (path == null)
         {
             throw new IllegalArgumentException("This manager was not associated to this project.");
         }
         manager.saveToBinaryFile(path.toPath(), indexation);
     }
+
+    public QuadTreeManager getQuadTreeManager()
+    {
+        return quadTreeManager;
+    }
+    
+    
 }

@@ -1,9 +1,10 @@
 package net.lab0.nebula;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -24,6 +25,8 @@ import net.lab0.tools.Triplet;
 
 import org.tukaani.xz.FilterOptions;
 import org.tukaani.xz.LZMA2Options;
+import org.tukaani.xz.XZ;
+import org.tukaani.xz.XZOutputStream;
 
 public class XZWriter
 implements Runnable
@@ -32,36 +35,42 @@ implements Runnable
     private BlockingQueue<Runnable>                               tpeQueue      = new ArrayBlockingQueue<>(16);
     private boolean                                               stopWriter    = false;
     private long                                                  totalIterations;
+    private long                                                  discardedPoints;
+    private long                                                  writenPoints;
     private int                                                   maxIteration;
     private int                                                   minIteration;
     private ThreadPoolExecutor                                    threadPoolExecutor;
     private List<OutputStream>                                    outputStreams = new ArrayList<>();
     private List<Boolean>                                         locks         = new ArrayList<>();
+    private Path                                                  path;
+    private int                                                   threads;
     
     public XZWriter(Path path, int threads, long pointsCount, int minIteration, int maxIteration)
     throws IOException
     {
         this.maxIteration = maxIteration;
         this.minIteration = minIteration;
+        this.path = path;
+        this.threads = threads;
         
         threadPoolExecutor = new ThreadPoolExecutor(threads, threads, 10, TimeUnit.SECONDS, tpeQueue);
         for (int i = 0; i < threads; ++i)
         {
             File file = new File(path.toFile(), "chunck" + i + ".xz");
-            FilterOptions[] options = { new LZMA2Options(9) };
-//            OutputStream outputStream = new XZOutputStream(new FileOutputStream(file), options, XZ.CHECK_CRC64);
-            OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
+            FilterOptions[] options = { new LZMA2Options(3) };
+            OutputStream outputStream = new XZOutputStream(new FileOutputStream(file), options, XZ.CHECK_CRC64);
+            // OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
             outputStreams.add(outputStream);
             locks.add(false);
             
-//            if (i == 0)
-//            {
-//                byte[] buffer = new byte[8];
-//                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-//                byteBuffer.putLong(pointsCount);
-//                
-//                outputStream.write(buffer);
-//            }
+            if (i == 0)
+            {
+                byte[] buffer = new byte[8];
+                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+                byteBuffer.putLong(pointsCount);
+                
+                outputStream.write(buffer);
+            }
         }
     }
     
@@ -70,7 +79,7 @@ implements Runnable
         try
         {
             blockingQueue.put(new Triplet<IntBuffer, double[], double[]>(buffer, x, y));
-            System.out.println("Queue length: " + blockingQueue.size());
+            // System.out.println("Queue length: " + blockingQueue.size());
         }
         catch (InterruptedException e)
         {
@@ -120,7 +129,7 @@ implements Runnable
             {
                 // System.out.println("Queue length: " + blockingQueue.size());
                 System.out
-                .println("TPE Queue length: " + tpeQueue.size() + " - " + threadPoolExecutor.getActiveCount());
+                .println("Imput queue length: " + blockingQueue.size() + " - TPE Queue length: " + tpeQueue.size() + " - " + threadPoolExecutor.getActiveCount());
                 final Triplet<IntBuffer, double[], double[]> triplet = blockingQueue.take();
                 
                 FutureTask<Long> task = new FutureTask<>(new Callable<Long>()
@@ -147,6 +156,11 @@ implements Runnable
                                 byteBuffer.putDouble(triplet.b[i]);
                                 byteBuffer.putDouble(triplet.c[i]);
                                 writer.write(buffer);
+                                writenPoints++;
+                            }
+                            else
+                            {
+                                discardedPoints++;
                             }
                         }
                         
@@ -159,12 +173,12 @@ implements Runnable
                 futureTasks.add(task);
                 try
                 {
-                    System.out.println("Execute");
+                    // System.out.println("Execute");
                     threadPoolExecutor.execute(task);
                 }
                 catch (RejectedExecutionException e)
                 {
-                    System.out.println("Put");
+                    // System.out.println("Put");
                     tpeQueue.put(task);
                 }
             }
@@ -189,6 +203,33 @@ implements Runnable
             e1.printStackTrace();
         }
         
+        //merge the created files
+        try
+        {
+            OutputStream out = new FileOutputStream(new File(path.toFile(), "concat.xz"));
+            byte[] buf = new byte[1024 * 64];
+            for (int i = 0; i < threads; ++i)
+            {
+                // close the output streams before reading them to be sure to have all the data written in these files
+                outputStreams.get(i).close();
+                InputStream in = new FileInputStream(new File(path.toFile(), "chunck" + i + ".xz"));
+                int b = 0;
+                while ((b = in.read(buf)) >= 0)
+                {
+                    out.write(buf, 0, b);
+                }
+                in.close();
+            }
+            out.close();
+        }
+        catch (IOException e1)
+        {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+        
+        System.out.println("Discarded: " + discardedPoints);
+        System.out.println("Writen: " + writenPoints);
         System.out.println("closing streams");
         for (OutputStream outputStream : outputStreams)
         {

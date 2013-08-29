@@ -2,7 +2,8 @@ package net.lab0.nebula.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.InvalidPropertiesFormatException;
+
+import javax.naming.ConfigurationException;
 
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
@@ -10,7 +11,6 @@ import net.lab0.nebula.project.Project;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -81,7 +81,7 @@ public class TestProject
             }
             file.createNewFile();
         }
-        catch (ProjectException | NonEmptyFolderException | IOException | ConfigurationException e)
+        catch (ProjectException | NonEmptyFolderException | IOException | ParsingException e)
         {
             Assert.fail();
         }
@@ -89,28 +89,28 @@ public class TestProject
     
     @Test
     public void testProject1()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
     {
         new Project(empty.toPath());
     }
     
     @Test
     public void testProject2()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
     {
         new Project(existing.toPath());
     }
     
     @Test(expected = NonEmptyFolderException.class)
     public void testProject3()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
     {
         new Project(nonEmpty.toPath());
     }
     
     @Test(expected = ProjectException.class)
     public void testProject4()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
     {
         new Project(file.toPath());
     }

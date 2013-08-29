@@ -1,10 +1,8 @@
 package net.lab0.nebula.core;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +20,8 @@ import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.listener.MandelbrotRendererListener;
 import net.lab0.tools.HumanReadable;
 import net.lab0.tools.geom.RectangleInterface;
+
+import org.tukaani.xz.XZInputStream;
 
 /**
  * 
@@ -576,15 +576,15 @@ public class NebulabrotRenderer
     throws IOException
     {
         try (
-//            XZInputStream inputStream = new XZInputStream(new FileInputStream(inputFile)))
-        InputStream inputStream =new BufferedInputStream(new FileInputStream(inputFile)))
+            XZInputStream inputStream = new XZInputStream(new FileInputStream(inputFile)))
+//        InputStream inputStream =new BufferedInputStream(new FileInputStream(inputFile)))
         {
 //             read the number of points contained in the file
-//            byte[] pointsCounts = new byte[8];
-//            ByteBuffer pointsCountBuffer = ByteBuffer.wrap(pointsCounts);
-//            pointsCountBuffer.clear();
-//            inputStream.read(pointsCounts);
-//            long pointsCount = pointsCountBuffer.getLong();
+            byte[] pointsCounts = new byte[8];
+            ByteBuffer pointsCountBuffer = ByteBuffer.wrap(pointsCounts);
+            pointsCountBuffer.clear();
+            inputStream.read(pointsCounts);
+            long pointsCount = pointsCountBuffer.getLong();
             
             RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, 0);
             
@@ -595,14 +595,15 @@ public class NebulabrotRenderer
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
             
             System.out.println("Reading");
-            int read = 0;
+            long read = 0;
             long totalRead = 0;
-            while ((read += inputStream.read(buffer)) != -1)
+            long lastTime = System.currentTimeMillis();
+            while ((read = inputStream.read(buffer)) != -1)
             {
-                if (read > 1024 * 1024)
+                totalRead += read;
+                if (System.currentTimeMillis() > lastTime + TimeUnit.SECONDS.toMillis(2))
                 {
-                    totalRead += read;
-                    read = 0;
+                    lastTime += TimeUnit.SECONDS.toMillis(2);
                     System.out.println("Read " + HumanReadable.humanReadableNumber(totalRead));
                 }
                 int iter = byteBuffer.getInt();
@@ -612,6 +613,7 @@ public class NebulabrotRenderer
                 byteBuffer.clear();
                 computePoint(minIter, localMaxIter, data, real, img);
             }
+            System.out.println("Read all the file");
             
             fireFinishedOrStop(raw);
             return raw;
