@@ -576,15 +576,7 @@ public class NebulabrotRenderer
     {
         try (
             XZInputStream inputStream = new XZInputStream(new FileInputStream(inputFile)))
-//        InputStream inputStream =new BufferedInputStream(new FileInputStream(inputFile)))
         {
-//             read the number of points contained in the file
-            byte[] pointsCounts = new byte[8];
-            ByteBuffer pointsCountBuffer = ByteBuffer.wrap(pointsCounts);
-            pointsCountBuffer.clear();
-            inputStream.read(pointsCounts);
-            long pointsCount = pointsCountBuffer.getLong();
-            
             RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, 0);
             
             System.out.println("Malloc");
