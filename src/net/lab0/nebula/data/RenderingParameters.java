@@ -31,7 +31,8 @@ public class RenderingParameters
      * 1L &lt;&lt; 20, // points count
      * 16, // min iter
      * 1024, // max iter
-     * new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0)), new GrayScaleColorModel());
+     * new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0)), // viewport
+     * new GrayScaleColorModel());
      * </pre>
      */
     public RenderingParameters()

@@ -22,8 +22,7 @@ public class Example3
     throws Exception
     {
         /*
-         * The first part is the same as the beginning of the Example2 tutorial. First, we need to choose an empty
-         * directory.
+         * The first part is the same as the beginning of the Example2 tutorial. First, we need to choose a directory.
          */
         Path projectPath = FileSystems.getDefault().getPath("F:", "dev", "nebula", "big1");
         System.out.println("Project path set to " + projectPath);
@@ -58,7 +57,7 @@ public class Example3
         project.saveProjectsParameters();
         
         // add a new quadtree to this project
-        QuadTreeManager manager = project.newQuadTree(-2.0d, 2.0d, -2.0d, 2.0d, 256, 1 << 16, 5, 10);
+        QuadTreeManager manager = project.newQuadTree(-2.0d, 2.0d, -2.0d, 2.0d, 256, 1 << 8, 5, 8);
         manager.addQuadTreeComputeListener(new ConsoleQuadTreeComputeListener());
         
         // compute the tree

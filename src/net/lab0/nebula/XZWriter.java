@@ -57,6 +57,10 @@ implements Runnable
         for (int i = 0; i < threads; ++i)
         {
             File file = new File(path.toFile(), "chunck" + i + ".xz");
+            if (!path.toFile().exists())
+            {
+                path.toFile().mkdirs();
+            }
             FilterOptions[] options = { new LZMA2Options(1) };
             OutputStream outputStream = new XZOutputStream(new FileOutputStream(file), options, XZ.CHECK_CRC64);
             // OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
@@ -128,8 +132,8 @@ implements Runnable
                     {
                         if (blockingQueue.size() > 0)
                         {
-                            System.out.println("Queues (in,tpe,threads): " + blockingQueue.size() + " - " + tpeQueue.size()
-                            + " - " + threadPoolExecutor.getActiveCount());
+                            System.out.println("Queues (in,tpe,threads): " + blockingQueue.size() + " - "
+                            + tpeQueue.size() + " - " + threadPoolExecutor.getActiveCount());
                         }
                         
                         byte[] buffer = new byte[4 + 8 + 8];

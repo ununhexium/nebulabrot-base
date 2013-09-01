@@ -4,8 +4,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,15 +15,15 @@ import javax.naming.ConfigurationException;
 
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.QuadTreeManager;
+import net.lab0.nebula.data.QuadTreePointsComputingSet;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.RenderingParameters;
 import net.lab0.nebula.data.RootQuadTreeNode;
+import net.lab0.nebula.enums.ComputingMethod;
 import net.lab0.nebula.enums.Indexing;
-import net.lab0.nebula.enums.RenderingMethod;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
-import net.lab0.nebula.listener.QuadTreeComputeListener;
 import net.lab0.tools.quadtree.QuadTreeNode;
 import net.lab0.tools.quadtree.QuadTreeRoot;
 import nu.xom.Attribute;
@@ -47,21 +49,27 @@ public class Project
     /**
      * The version of the project.xml file to use when saving a new project. Min version value: 1.
      */
-    private static final int        VERSION    = 1;
+    private static final int                        VERSION           = 1;
     
     /**
      * The version of this project.xml file. If version <=0, then the version is not set.
      */
-    private int                     version;
+    private int                                     version;
     
     /**
      * The path to the project's folder.
      */
-    private Path                    projectFolder;
+    private Path                                    projectFolder;
     
-    private Map<ProjectKey, Object> parameters = new HashMap<>();
+    /**
+     * The parameters of this project
+     */
+    private Map<ProjectKey, Object>                 parameters        = new HashMap<>();
     
-    private QuadTreeManager         quadTreeManager;
+    private Map<String, QuadTreePointsComputingSet> computingSets     = new HashMap<>();
+    private Map<QuadTreePointsComputingSet, Path>   computingSetPaths = new HashMap<>();
+    
+    private QuadTreeManager                         quadTreeManager;
     
     /**
      * Tries to load a project if it exists or create a new one if it doesn't.
@@ -119,6 +127,7 @@ public class Project
         // load the project's properties by overriding the default properties.
         else
         {
+            System.out.println("Load an existing project");
             load();
         }
     }
@@ -384,19 +393,26 @@ public class Project
     {
         if (quadTreeManager == null)
         {
-            File tree = new File(projectFolder.toFile(), "tree");
-            try
-            {
-                quadTreeManager = new QuadTreeManager(tree.toPath(), null);
-            }
-            catch (ClassNotFoundException | NoSuchAlgorithmException | ParsingException | IOException
-            | InvalidBinaryFileException e)
-            {
-                e.printStackTrace();
-                throw new RuntimeException("No quadtree to load", e); // TODO: that's ugly
-            }
+            reloadQuadTree();
         }
         return quadTreeManager;
+    }
+    
+    /**
+     * tries to reload the quadtree from the disk
+     */
+    public void reloadQuadTree()
+    {
+        File tree = new File(projectFolder.toFile(), "tree");
+        try
+        {
+            quadTreeManager = new QuadTreeManager(tree.toPath(), null);
+        }
+        catch (ClassNotFoundException | NoSuchAlgorithmException | ParsingException | IOException
+        | InvalidBinaryFileException e)
+        {
+            throw new RuntimeException("No quadtree to load", e); // TODO: that's ugly
+        }
     }
     
     /**
@@ -404,11 +420,11 @@ public class Project
      * 
      * @param renderingParameters
      *            How you want your rendering to be.
-     * @param renderingMethod
+     * @param computingMethod
      *            How you want yuour rendering to be done.
      * @return a {@link RawMandelbrotData} resulting from the rendering.
      */
-    public RawMandelbrotData rawRender(RenderingParameters renderingParameters, RenderingMethod renderingMethod)
+    public RawMandelbrotData rawRender(RenderingParameters renderingParameters, ComputingMethod computingMethod)
     {
         NebulabrotRenderer nebulabrotRenderer = new NebulabrotRenderer(renderingParameters.getxResolution(),
         renderingParameters.getyResolution(), renderingParameters.getViewport());
@@ -420,7 +436,7 @@ public class Project
             threads = Runtime.getRuntime().availableProcessors() - 1;
         }
         
-        switch (renderingMethod)
+        switch (computingMethod)
         {
             case LINEAR:
                 return nebulabrotRenderer.linearRender(renderingParameters.getPointsCount(),
@@ -440,14 +456,72 @@ public class Project
      * Equivalent to <code>rawRender</code> but additionally computes an image from the raw data.
      * 
      * @param renderingParameters
-     * @param renderingMethod
+     * @param computingMethod
      * @return A {@link BufferedImage} of the rendering.
      */
-    public BufferedImage pictureRender(RenderingParameters renderingParameters, RenderingMethod renderingMethod)
+    public BufferedImage pictureRender(RenderingParameters renderingParameters, ComputingMethod computingMethod)
     {
-        RawMandelbrotData rawMandelbrotData = rawRender(renderingParameters, renderingMethod);
+        RawMandelbrotData rawMandelbrotData = rawRender(renderingParameters, computingMethod);
         BufferedImage bufferedImage = rawMandelbrotData.computeBufferedImage(renderingParameters.getColorationModel(),
         0);
         return bufferedImage;
     }
+    
+    /**
+     * Get this project's parameters
+     * 
+     * @return An unmodifiable view of the parameters of this project.
+     */
+    public Map<ProjectKey, Object> getParameters()
+    {
+        return Collections.unmodifiableMap(parameters);
+    }
+    
+    public QuadTreePointsComputingSet createNewPointComputingSet(int blocks,
+    ComputingMethod computingMethod, RenderingParameters renderingParameters, String string)
+    {
+        switch (computingMethod)
+        {
+            case QUADTREE:
+                QuadTreePointsComputingSet pointComputingSet = new QuadTreePointsComputingSet(this, blocks,
+                renderingParameters);
+                int index = 0;
+                Path path = null;
+                do
+                {
+                    path = FileSystems.getDefault().getPath(projectFolder.toString(), "points", "" + index);
+                    ++index;
+                } while (path.toFile().exists());
+                computingSetPaths.put(pointComputingSet, path);
+                return pointComputingSet;
+                
+            default:
+                break;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Returns the output path associated to the given <code>quadTreePointsComputingSet</code>.
+     * 
+     * @param quadTreePointsComputingSet
+     * @return The output folder in which the <code>quadTreePointsComputingSet</code> will put its results.
+     */
+    public Path getOutputFolder(QuadTreePointsComputingSet quadTreePointsComputingSet)
+    {
+        Path path = computingSetPaths.get(quadTreePointsComputingSet);
+        return path;
+    }
+    
+    public boolean useOpenCL()
+    {
+        return (boolean) parameters.get(ProjectKey.USE_OPENCL);
+    }
+
+    public boolean useMultithreading()
+    {
+        return (boolean) parameters.get(ProjectKey.USE_MULTITHREADING);
+    }
+    
 }

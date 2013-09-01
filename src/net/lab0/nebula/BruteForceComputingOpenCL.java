@@ -60,7 +60,7 @@ public class BruteForceComputingOpenCL
         }
         
         System.out.println("writer");
-        XZWriter xzWriter = new XZWriter(path, 4, (long) size * (long) size, minIter, maxIter);
+        XZWriter xzWriter = new XZWriter(path, 4, minIter, maxIter);
         Thread writerThread = new Thread(xzWriter, "XZ Writer");
         writerThread.start();
         

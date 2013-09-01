@@ -102,7 +102,6 @@ public class RenderingSpeed
         // load the best quadtree
         QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault()
         .getPath("F:", "dev", "nebula", "tree", "bck", "p256i65536d5D" + 1 + "binNoIndex"), new ConsoleQuadTreeManagerListener());
-        // TODO : add test case for tree depth loading=0
         
         for (Parameter parameterToTest : Parameter.values())
         {

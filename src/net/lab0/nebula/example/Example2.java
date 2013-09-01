@@ -12,7 +12,7 @@ import net.lab0.nebula.color.ColorationModel;
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.RenderingParameters;
 import net.lab0.nebula.enums.Indexing;
-import net.lab0.nebula.enums.RenderingMethod;
+import net.lab0.nebula.enums.ComputingMethod;
 import net.lab0.nebula.project.Project;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
@@ -91,7 +91,7 @@ public class Example2
         
         // render something
         System.out.println("Rendering");
-        BufferedImage image = project.pictureRender(renderingParameters, RenderingMethod.QUADTREE);
+        BufferedImage image = project.pictureRender(renderingParameters, ComputingMethod.QUADTREE);
         
         // save it
         File imageFile = new File("./test_folder/preview.png");

@@ -9,7 +9,7 @@ import net.lab0.nebula.project.Project;
  * @author 116@lab0.net
  * 
  */
-public enum RenderingMethod
+public enum ComputingMethod
 {
     LINEAR,
     QUADTREE,
