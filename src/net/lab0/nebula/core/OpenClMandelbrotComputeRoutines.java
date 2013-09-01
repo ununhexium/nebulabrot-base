@@ -9,8 +9,6 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
-import net.lab0.tools.HumanReadable;
-
 import org.apache.commons.lang3.time.StopWatch;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -115,9 +113,9 @@ public class OpenClMandelbrotComputeRoutines
     }
     
     /**
-     * Finishes the openCL
+     * Finishes the openCL context
      */
-    private void teardown()
+    public void teardown()
     {
         stopWatch.start();
         
@@ -274,91 +272,5 @@ public class OpenClMandelbrotComputeRoutines
         
         // Return the string read from the OpenCL kernel source code file
         return resultString;
-    }
-    
-    /**
-     * playground
-     * 
-     * @param args
-     * @throws LWJGLException
-     * @throws URISyntaxException
-     */
-    public static void main(String[] args)
-    throws LWJGLException, URISyntaxException
-    {
-        int size = 4096 * 4;
-        int blockSize = 1024 * 1024;
-        
-        OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines();
-        
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        
-        long totalIterations = 0;
-        double[] xCoordinates = new double[blockSize];
-        double[] yCoordinates = new double[blockSize];
-        double step = 1.0 / size;
-        double yCurrent = -2.0;
-        int index = 0;
-        int passes = 0;
-        int maxIter = 65536;
-        for (int y = 0; y < size; ++y)
-        {
-            yCurrent = -0.5 + step * y;
-            for (int x = 0; x < size; ++x)
-            {
-                yCoordinates[index] = yCurrent;
-                xCoordinates[index] = -0.5 + step * x;
-                index++;
-                if (index == blockSize)
-                {
-                    System.out.println("Block" + passes);
-                    final double[] xCtmp = xCoordinates;
-                    final double[] yCtmp = yCoordinates;
-                    
-                    IntBuffer result = ocl.compute(xCtmp, yCtmp, maxIter);
-                    // System.out.println("Ended computation");
-                    result.rewind();
-                    long total = 0;
-                    for (int i = 0; i < result.capacity(); ++i)
-                    {
-                        total += result.get();
-                    }
-                    totalIterations += total;
-                    
-                    index = 0;
-                    passes++;
-                }
-            }
-        }
-        
-        System.out.println("Passes: " + passes);
-        
-        stopWatch.stop();
-        System.out.println("OpenCL computation: " + stopWatch.toString());
-        
-        long speed = totalIterations / stopWatch.getTime() * 1000; // iterations per second
-        System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
-        
-        stopWatch.reset();
-        stopWatch.start();
-        totalIterations = 0;
-        for (int y = 0; y < size; ++y)
-        {
-            yCurrent = -0.5 + step * y;
-            for (int x = 0; x < size; ++x)
-            {
-                totalIterations += MandelbrotComputeRoutines.computeIterationsCountOptim2(-0.5 + step * x, yCurrent,
-                maxIter);
-            }
-        }
-        
-        stopWatch.stop();
-        System.out.println("CPU computation: " + stopWatch.toString());
-        
-        speed = totalIterations / stopWatch.getTime() * 1000; // points per second
-        System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CPU iteration per second");
-        
-        ocl.teardown(); // release the resources
     }
 }
