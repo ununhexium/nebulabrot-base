@@ -45,7 +45,7 @@ implements Runnable
     private Path                                                  path;
     private int                                                   threads;
     
-    public XZWriter(Path path, int threads, long pointsCount, int minIteration, int maxIteration)
+    public XZWriter(Path path, int threads, int minIteration, int maxIteration)
     throws IOException
     {
         this.maxIteration = maxIteration;
@@ -62,15 +62,6 @@ implements Runnable
             // OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
             outputStreams.add(outputStream);
             locks.add(false);
-            
-            if (i == 0)
-            {
-                byte[] buffer = new byte[8];
-                ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-                byteBuffer.putLong(pointsCount);
-                
-                outputStream.write(buffer);
-            }
         }
     }
     
