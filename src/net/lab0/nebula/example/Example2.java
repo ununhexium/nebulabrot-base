@@ -11,7 +11,7 @@ import net.lab0.nebula.color.AquaColorModel;
 import net.lab0.nebula.color.ColorationModel;
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.RenderingParameters;
-import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.enums.RenderingMethod;
 import net.lab0.nebula.project.Project;
 import net.lab0.tools.geom.Point;
@@ -73,7 +73,7 @@ public class Example2
         
         // save it in the project's folder
         System.out.println("Saving the quadtree");
-        project.save(manager, Indexation.NO_INDEXATION);
+        project.save(manager, Indexing.NO_INDEXING);
         
         /*
          * compute some rendering

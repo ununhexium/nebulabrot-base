@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.data.StatusQuadTreeNode;
-import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
@@ -74,7 +74,7 @@ public class TestQuadTreeSaveLoad
     throws IOException, ValidityException, ClassNotFoundException, ParsingException, InvalidBinaryFileException,
     NoSuchAlgorithmException
     {
-        quadTreeManager.saveToBinaryFile(savePath, Indexation.NO_INDEXATION);
+        quadTreeManager.saveToBinaryFile(savePath, Indexing.NO_INDEXING);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
@@ -85,7 +85,7 @@ public class TestQuadTreeSaveLoad
     throws IOException, ValidityException, ClassNotFoundException, ParsingException, InvalidBinaryFileException,
     NoSuchAlgorithmException
     {
-        quadTreeManager.saveToBinaryFile(savePath, Indexation.USE_INDEXATION);
+        quadTreeManager.saveToBinaryFile(savePath, Indexing.USE_INDEXING);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
@@ -96,7 +96,7 @@ public class TestQuadTreeSaveLoad
     throws IOException, ValidityException, ClassNotFoundException, ParsingException, InvalidBinaryFileException,
     NoSuchAlgorithmException
     {
-        quadTreeManager.saveToBinaryFile(savePath, Indexation.NO_INDEXATION);
+        quadTreeManager.saveToBinaryFile(savePath, Indexing.NO_INDEXING);
         QuadTreeManager manager = new QuadTreeManager(savePath, null);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
@@ -107,7 +107,7 @@ public class TestQuadTreeSaveLoad
     throws IOException, ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException,
     InvalidBinaryFileException
     {
-        quadTreeManager.saveToBinaryFile(savePath, Indexation.NO_INDEXATION);
+        quadTreeManager.saveToBinaryFile(savePath, Indexing.NO_INDEXING);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
@@ -119,7 +119,7 @@ public class TestQuadTreeSaveLoad
     throws IOException, ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException,
     InvalidBinaryFileException
     {
-        quadTreeManager.saveToBinaryFile(savePath, Indexation.NO_INDEXATION);
+        quadTreeManager.saveToBinaryFile(savePath, Indexing.NO_INDEXING);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
@@ -131,7 +131,7 @@ public class TestQuadTreeSaveLoad
     throws IOException, ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException,
     InvalidBinaryFileException
     {
-        quadTreeManager.saveToBinaryFile(savePath, Indexation.USE_INDEXATION);
+        quadTreeManager.saveToBinaryFile(savePath, Indexing.USE_INDEXING);
         int maxDepth = 5;
         QuadTreeManager manager = new QuadTreeManager(savePath, null, maxDepth);
         StatusQuadTreeNode root = manager.getQuadTreeRoot();

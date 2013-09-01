@@ -4,7 +4,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.listener.ConsoleQuadTreeComputeListener;
 import net.lab0.nebula.project.Project;
 
@@ -69,13 +69,13 @@ public class Example3
         {
             goOn = project.compute(manager, 1024);
             // prevently save every 1024 nodes computed
-            project.save(manager, Indexation.NO_INDEXATION);
+            project.save(manager, Indexing.NO_INDEXING);
             System.out.println("Pass" + ++pass);
         }
         
         // save it in the project's folder
         System.out.println("Saving the quadtree");
-        project.save(manager, Indexation.NO_INDEXATION);
+        project.save(manager, Indexing.NO_INDEXING);
         
     }
 }

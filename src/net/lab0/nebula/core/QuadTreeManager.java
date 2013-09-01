@@ -28,7 +28,7 @@ import net.lab0.nebula.data.Statistics;
 import net.lab0.nebula.data.StatisticsData;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.SynchronizedCounter;
-import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.enums.TreeSaveMode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
@@ -569,7 +569,7 @@ public class QuadTreeManager
      * @param outputDirectoryPath
      * @throws IOException
      */
-    public void saveToBinaryFile(Path outputDirectoryPath, Indexation indexation)
+    public void saveToBinaryFile(Path outputDirectoryPath, Indexing indexing)
     throws IOException
     {
         String algorithm = "SHA-512";
@@ -597,14 +597,14 @@ public class QuadTreeManager
             DigestOutputStream digestOutputStream = new DigestOutputStream(bufferedOutputStream, messageDigest);)
         {
             boolean indexed = false;
-            switch (indexation)
+            switch (indexing)
             {
-                case NO_INDEXATION:
+                case NO_INDEXING:
                     recursivelyConvertToBinaryFileWithoutIndexes(digestOutputStream, root);
                     indexed = false;
                     break;
                 
-                case USE_INDEXATION:
+                case USE_INDEXING:
                     recursivelyConvertToBinaryFileWithIndexes(digestOutputStream, root, 0);
                     indexed = true;
                     break;

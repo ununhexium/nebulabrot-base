@@ -11,7 +11,7 @@ import java.util.GregorianCalendar;
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.RootQuadTreeNode;
-import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
 import nu.xom.ParsingException;
@@ -74,7 +74,7 @@ public class Background
                 "p" + manager.getPointsPerSide() + "i" + manager.getMaxIter() + "d" + manager.getDiffIterLimit() + "D" + manager.getMaxDepth() + "v" + pass);
                 
                 System.out.println("save to " + path);
-                manager.saveToBinaryFile(path, Indexation.NO_INDEXATION);
+                manager.saveToBinaryFile(path, Indexing.NO_INDEXING);
                 
                 cal.add(Calendar.MINUTE, 90);
             }

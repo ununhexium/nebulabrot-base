@@ -16,7 +16,7 @@ import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.RenderingParameters;
 import net.lab0.nebula.data.RootQuadTreeNode;
-import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.enums.RenderingMethod;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
@@ -369,7 +369,7 @@ public class Project
      * @throws IOException
      *             If here was an error while saving the file.
      */
-    public void save(QuadTreeManager manager, Indexation indexation)
+    public void save(QuadTreeManager manager, Indexing indexation)
     throws IOException
     {
         File tree = new File(projectFolder.toFile(), "tree");
