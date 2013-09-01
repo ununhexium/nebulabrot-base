@@ -5,7 +5,7 @@ extends RuntimeException
 {
 
     /**
-     * 
+     * Serial UID of the ancient times has come again !
      */
     private static final long serialVersionUID = 1L;
 

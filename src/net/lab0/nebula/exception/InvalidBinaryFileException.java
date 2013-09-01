@@ -5,16 +5,17 @@ extends Exception
 {
     
     /**
-     * 
+     * Beware you fools.
      */
     private static final long serialVersionUID = 1L;
-
+    
     public InvalidBinaryFileException()
     {
         super();
     }
     
-    public InvalidBinaryFileException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
+    public InvalidBinaryFileException(String message, Throwable cause, boolean enableSuppression,
+    boolean writableStackTrace)
     {
         super(message, cause, enableSuppression, writableStackTrace);
     }

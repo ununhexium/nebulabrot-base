@@ -5,7 +5,7 @@ extends Exception
 {
     
     /**
-     * Serial UID
+     * Bzzbzzzzzbz. Splat ! Mosquito 0 - 1 Me
      */
     private static final long serialVersionUID = 1L;
     

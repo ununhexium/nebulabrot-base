@@ -5,7 +5,7 @@ extends Exception
 {
     
     /**
-     * 
+     * The daemon has arrived.
      */
     private static final long serialVersionUID = 1L;
     
