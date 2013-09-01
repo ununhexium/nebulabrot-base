@@ -184,8 +184,6 @@ public class RawMandelbrotData
         
         File indexFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "index.xml").toFile();
         File dataFile = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "rawData.dat").toFile();
-        File previewFileFolder = FileSystems.getDefault().getPath(outputDirectoryPath.toString(), "preview.png")
-        .toFile();
         
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(dataFile);
@@ -414,7 +412,8 @@ public class RawMandelbrotData
      * @param colorationModel
      *            The coloration model to use in the conversion.
      * 
-     * @param zoomOut The zoom out factor as a power of 2. Must be >= 0.
+     * @param zoomOut
+     *            The zoom out factor as a power of 2. Must be >= 0.
      * 
      * @return a BufferedImage The data converted into a BufferedImage
      */
