@@ -180,7 +180,6 @@ public class Project
         File projectConfiguration = getProjectConfigurationFile();
         Serializer serializer = new Serializer(new FileOutputStream(projectConfiguration), "UTF-8");
         serializer.setIndent(4);
-        serializer.setMaxLength(64);
         serializer.write(document);
     }
     
@@ -400,6 +399,15 @@ public class Project
         return quadTreeManager;
     }
     
+    /**
+     * Renders the Mandelbrot set with the given parameters and rendering method.
+     * 
+     * @param renderingParameters
+     *            How you want your rendering to be.
+     * @param renderingMethod
+     *            How you want yuour rendering to be done.
+     * @return a {@link RawMandelbrotData} resulting from the rendering.
+     */
     public RawMandelbrotData rawRender(RenderingParameters renderingParameters, RenderingMethod renderingMethod)
     {
         NebulabrotRenderer nebulabrotRenderer = new NebulabrotRenderer(renderingParameters.getxResolution(),
@@ -428,6 +436,13 @@ public class Project
         }
     }
     
+    /**
+     * Equivalent to <code>rawRender</code> but additionally computes an image from the raw data.
+     * 
+     * @param renderingParameters
+     * @param renderingMethod
+     * @return A {@link BufferedImage} of the rendering.
+     */
     public BufferedImage pictureRender(RenderingParameters renderingParameters, RenderingMethod renderingMethod)
     {
         RawMandelbrotData rawMandelbrotData = rawRender(renderingParameters, renderingMethod);
