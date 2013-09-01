@@ -1,18 +1,26 @@
 package net.lab0.nebula.test;
 
+import java.nio.IntBuffer;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.lwjgl.LWJGLException;
 
+import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.core.OpenClMandelbrotComputeRoutines;
 
 public class TestOpenClMandelbrotComputeRoutines
 {
-    private OpenClMandelbrotComputeRoutines routines;
+    private static final int                       maxIter = 2 << 10;
+    private static final int                       side    = 1024;
+    private static final double                    step    = 4.0 / side;
+    
+    private static OpenClMandelbrotComputeRoutines routines;
     
     @BeforeClass
-    public void setup()
+    public static void beforeClass()
     {
         try
         {
@@ -25,9 +33,38 @@ public class TestOpenClMandelbrotComputeRoutines
         }
     }
     
-    public void testLoadText(){
-        String text = routines.loadText("./cl/referenceForTests.cl");
-        String reference = "kernel void mandelbrot(global const double* a, global const double* b, global int* result, int const size, int const maxIter){    const int itemId = get_global_id(0);    if(itemId < size)    {        ...    }}";
-        Assert.assertEquals("Read text doesn't match the reference.", reference, text);
+    @Ignore //TODO: why ?
+    @Test
+    public void testCompute()
+    {
+        double[] xArray = new double[side * side];
+        double[] yArray = new double[side * side];
+        int index = 0;
+        
+        for (int x = 0; x < side; ++x)
+        {
+            for (int y = 0; y < side; ++y)
+            {
+                double real = -2.0 + x * step;
+                double img = -2.0 + y * step;
+                
+                xArray[index] = real;
+                yArray[index] = img;
+                index++;
+            }
+        }
+        
+        IntBuffer result = routines.compute(xArray, yArray, maxIter);
+        int[] iterations = new int[side * side];
+        index = 0;
+        while (result.hasRemaining())
+        {
+            iterations[index] = result.get();
+        }
+        for (int i = 0; i < side * side; ++i)
+        {
+            int iter = MandelbrotComputeRoutines.computeIterationsCountOptim2(xArray[i], yArray[i], maxIter);
+            Assert.assertEquals("For point (" + xArray[i] + ";" + yArray[i] + ")", iter, iterations[i]);
+        }
     }
 }

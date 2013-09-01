@@ -57,7 +57,7 @@ implements Runnable
         for (int i = 0; i < threads; ++i)
         {
             File file = new File(path.toFile(), "chunck" + i + ".xz");
-            FilterOptions[] options = { new LZMA2Options(3) };
+            FilterOptions[] options = { new LZMA2Options(1) };
             OutputStream outputStream = new XZOutputStream(new FileOutputStream(file), options, XZ.CHECK_CRC64);
             // OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
             outputStreams.add(outputStream);
@@ -127,9 +127,6 @@ implements Runnable
             // do the compression
             try
             {
-                // System.out.println("Queue length: " + blockingQueue.size());
-                System.out
-                .println("Imput queue length: " + blockingQueue.size() + " - TPE Queue length: " + tpeQueue.size() + " - " + threadPoolExecutor.getActiveCount());
                 final Triplet<IntBuffer, double[], double[]> triplet = blockingQueue.take();
                 
                 FutureTask<Long> task = new FutureTask<>(new Callable<Long>()
@@ -138,6 +135,12 @@ implements Runnable
                     public Long call()
                     throws Exception
                     {
+                        if (blockingQueue.size() > 0)
+                        {
+                            System.out.println("Queues (in,tpe,threads): " + blockingQueue.size() + " - " + tpeQueue.size()
+                            + " - " + threadPoolExecutor.getActiveCount());
+                        }
+                        
                         byte[] buffer = new byte[4 + 8 + 8];
                         ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
                         OutputStream writer = getOutputStream();
@@ -203,7 +206,7 @@ implements Runnable
             e1.printStackTrace();
         }
         
-        //merge the created files
+        // merge the created files
         try
         {
             OutputStream out = new FileOutputStream(new File(path.toFile(), "concat.xz"));

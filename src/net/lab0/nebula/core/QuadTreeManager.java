@@ -183,14 +183,14 @@ public class QuadTreeManager
     }
     
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
-    throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
+    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
     NoSuchAlgorithmException
     {
         this(inputFolder, listener, Integer.MAX_VALUE);
     }
     
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
-    throws ValidityException, ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
+    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
     NoSuchAlgorithmException
     {
         load(inputFolder, listener, maxLoadDepth);
@@ -214,7 +214,7 @@ public class QuadTreeManager
      * @throws NoSuchAlgorithmException
      */
     private void load(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
-    throws ParsingException, ValidityException, IOException, ClassNotFoundException, InvalidBinaryFileException,
+    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
     NoSuchAlgorithmException
     {
         // Save the location of the original file. Useful for saveACopy()

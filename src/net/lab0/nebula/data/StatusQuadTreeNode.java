@@ -1148,13 +1148,13 @@ public class StatusQuadTreeNode
     /**
      * Removes any node deeper than <code>maxDepth</code>. A node of depth equal to <code>maxDepth</code> is kept.
      * 
-     * @param maxLoadDepth
+     * @param maxDepth
      */
     public void strip(int maxDepth)
     {
         if (this.getDepth() > maxDepth)
         {
-            throw new IllegalArgumentException("Trying to strip from a node af depth > maxDepth. Impossible operation.");
+            throw new IllegalArgumentException("Trying to strip from a node of depth > maxDepth. Impossible operation.");
         }
         else if (this.getDepth() == maxDepth)
         {

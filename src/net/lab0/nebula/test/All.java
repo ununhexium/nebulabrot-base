@@ -7,10 +7,12 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses(value = { 
     TestMandelbrotComputeRoutines.class,
+    TestOpenClMandelbrotComputeRoutines.class,
     TestProject.class, 
     TestQuadTreeNode.class, 
     TestQuadTreeSaveLoad.class,
     TestRawMandelbrotData.class, 
+    TestRendering.class,
     TestStatusQuadTreeNode.class,
 })
 public class All

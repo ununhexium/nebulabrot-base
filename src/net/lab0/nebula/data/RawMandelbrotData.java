@@ -414,15 +414,17 @@ public class RawMandelbrotData
      * @param colorationModel
      *            The coloration model to use in the conversion.
      * 
+     * @param zoomOut The zoom out factor as a power of 2. Must be >= 0.
+     * 
      * @return a BufferedImage The data converted into a BufferedImage
      */
     public BufferedImage computeBufferedImage(ColorationModel colorationModel, int zoomOut)
     {
-        if (zoomOut < 1)
+        if (zoomOut < 0)
         {
             throw new IllegalArgumentException("zoomOut must be positive.");
         }
-        int zoomFactor = (1 << (zoomOut - 1));
+        int zoomFactor = (1 << zoomOut);
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
         .getDefaultConfiguration();
         final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomFactor, pixelHeight / zoomFactor,

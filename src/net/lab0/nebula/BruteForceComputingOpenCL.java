@@ -24,10 +24,12 @@ import org.apache.commons.lang3.time.StopWatch;
 
 public class BruteForceComputingOpenCL
 {
+    public static QuadTreeManager manager;
+    
     public static void main(String[] args)
     throws Exception
     {
-        long size = 1 << 14;
+        long size = 1 << 18;
         int blockSize = 1024 * 1024;
         
         System.out.println("Need to compute " + (size * size / (long) blockSize) + " blocks.");
@@ -41,8 +43,8 @@ public class BruteForceComputingOpenCL
         double yCurrent = -2.0;
         int index = 0;
         int passes = 0;
-        int minIter = 3;
-        int maxIter = 4096;
+        int minIter = 15;
+        int maxIter = 65536;
         
         int sub = 0;
         Path path = null;
@@ -58,13 +60,13 @@ public class BruteForceComputingOpenCL
         }
         
         System.out.println("writer");
-        XZWriter xzWriter = new XZWriter(path, Runtime.getRuntime().availableProcessors() -1, (long) size * (long) size, minIter, maxIter);
+        XZWriter xzWriter = new XZWriter(path, 4, (long) size * (long) size, minIter, maxIter);
         Thread writerThread = new Thread(xzWriter, "XZ Writer");
         writerThread.start();
         
         System.out.println("mandel");
-        passes = bruteForce(size, blockSize, ocl, step, index, passes, maxIter, xzWriter);
-//         passes = quadTree(size, blockSize, ocl, step, index, passes, maxIter, minIter, xzWriter);
+        // passes = bruteForce(size, blockSize, ocl, step, index, passes, maxIter, xzWriter);
+        passes = quadTree(size, blockSize, ocl, step, index, passes, maxIter, minIter, xzWriter);
         
         xzWriter.stopWriter();
         writerThread.join();
@@ -78,23 +80,26 @@ public class BruteForceComputingOpenCL
         long speed = xzWriter.getTotalIterations() / (stopWatch.getTime() / 1000); // iterations per second
         System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
         
-//        Path path = FileSystems.getDefault().getPath("F:\\dev\\nebula\\raw", "file" + 65);
+        // Path path = FileSystems.getDefault().getPath("F:\\dev\\nebula\\raw", "file" + 65);
         
-        NebulabrotRenderer nebulabrotRenderer = new NebulabrotRenderer(32768, 32768, new Rectangle(new Point(-2.0, -2.0),
-        new Point(2.0, 2.0)));
+        NebulabrotRenderer nebulabrotRenderer = new NebulabrotRenderer(32768, 32768, new Rectangle(
+        new Point(-2.0, -2.0), new Point(2.0, 2.0)));
         File renderFile = new File(path.toFile(), "concat.xz");
-        RawMandelbrotData data = nebulabrotRenderer.fileRender(renderFile, 0, Integer.MAX_VALUE);
-        data.saveAsTiles(new PowerGrayScaleColorModel(0.5), FileSystems.getDefault().getPath(path.toString() + "_tiles").toFile(),
-        512);
+        RawMandelbrotData data = nebulabrotRenderer.fileRender(renderFile, minIter, Integer.MAX_VALUE);
+        
+        data.saveAsTiles(new PowerGrayScaleColorModel(0.5), FileSystems.getDefault()
+        .getPath(path.toString() + "_tiles").toFile(), 512);
     }
     
     private static int quadTree(long size, int blockSize, OpenClMandelbrotComputeRoutines ocl, double step, int index,
     int passes, int maxIter, int minIter, XZWriter xzWriter)
     throws Exception
     {
-        QuadTreeManager manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree",
-        "bck", "p256i65536d5D" + 16 + "binNoIndex"), new ConsoleQuadTreeManagerListener());
-        manager.getQuadTreeRoot().strip(8);
+        manager = new QuadTreeManager(FileSystems.getDefault().getPath("F:", "dev", "nebula", "tree", "bck",
+        "p256i65536d5D16binNoIndex"), new ConsoleQuadTreeManagerListener());
+        int depth = (int) (Math.log(4.0 / step) / Math.log(2)) - 4;
+        manager.getQuadTreeRoot().strip(depth);
+        System.out.println("Depth " + depth);
         
         final List<StatusQuadTreeNode> nodesList = new ArrayList<>();
         manager.getQuadTreeRoot().getLeafNodes(nodesList, Arrays.asList(Status.BROWSED, Status.OUTSIDE, Status.VOID),
@@ -105,52 +110,49 @@ public class BruteForceComputingOpenCL
         double[] xCoordinates = new double[blockSize];
         double[] yCoordinates = new double[blockSize];
         
-        manager = null;
         System.gc();
         int currentNode = 0;
         int percentNode = 0;
         
         for (StatusQuadTreeNode node : nodesList)
         {
-            final StatusQuadTreeNode finalNode = node;
             currentNode++;
-            if ((currentNode * 100 / nodesList.size()) > percentNode)
+            if ((currentNode * 1000 / nodesList.size()) > percentNode)
             {
-                percentNode = (currentNode * 100 / nodesList.size());
-                System.out.println("" + percentNode + "% - " + currentNode + " - " + index);
+                percentNode = (currentNode * 1000 / nodesList.size());
+                System.out.println("" + percentNode + "%o - " + currentNode + " - " + index);
             }
             // System.out.println(++currentNode + " / " + index);
             
             // find the first point inside the node
             
-            double xStart = Math.ceil(finalNode.getMinX() / step) * step;
-            double yStart = Math.ceil(finalNode.getMinY() / step) * step;
+            double xStart = Math.ceil(node.getMinX() / step) * step;
+            double yStart = Math.ceil(node.getMinY() / step) * step;
             
             // System.out.println("start1 (" + xStart + ";" + yStart + ")");
             
             double real = xStart;
-            double maxX = finalNode.getMaxX();
-            double maxY = finalNode.getMaxY();
+            double maxX = node.getMaxX();
+            double maxY = node.getMaxY();
             
             while (real < maxX)
             {
                 double img = yStart;
                 while (img < maxY)
                 {
-                    yCoordinates[index] = real;
-                    xCoordinates[index] = img;
+                    xCoordinates[index] = real;
+                    yCoordinates[index] = img;
                     index++;
                     
                     if (index == blockSize)
                     {
-                        System.out.println("Block" + passes);
+                        // System.out.println("Block" + passes);
                         final double[] xCtmp = xCoordinates;
                         final double[] yCtmp = yCoordinates;
                         xCoordinates = new double[blockSize];
                         yCoordinates = new double[blockSize];
                         
                         IntBuffer result = ocl.compute(xCtmp, yCtmp, maxIter);
-                        System.out.println("Ended computation");
                         result.rewind();
                         
                         xzWriter.put(result, xCtmp, yCtmp);

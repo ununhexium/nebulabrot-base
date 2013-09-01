@@ -1,23 +1,27 @@
 package net.lab0.nebula.project;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.QuadTreeManager;
+import net.lab0.nebula.data.RawMandelbrotData;
+import net.lab0.nebula.data.RenderingParameters;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.enums.Indexation;
+import net.lab0.nebula.enums.RenderingMethod;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
+import net.lab0.nebula.listener.QuadTreeComputeListener;
 import net.lab0.tools.quadtree.QuadTreeNode;
 import net.lab0.tools.quadtree.QuadTreeRoot;
 import nu.xom.Attribute;
@@ -26,7 +30,9 @@ import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
 import nu.xom.ParsingException;
+import nu.xom.Serializer;
 import nu.xom.ValidityException;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Stores and loads the parameters of a project.
@@ -55,7 +61,7 @@ public class Project
     
     private Map<ProjectKey, Object> parameters = new HashMap<>();
     
-    private QuadTreeManager                 quadTreeManager;
+    private QuadTreeManager         quadTreeManager;
     
     /**
      * Tries to load a project if it exists or create a new one if it doesn't.
@@ -75,7 +81,7 @@ public class Project
      *             In case of error while loading the properties file
      */
     public Project(Path projectFolder)
-    throws ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
+    throws ProjectException, NonEmptyFolderException, IOException, ParsingException
     {
         super();
         this.projectFolder = projectFolder;
@@ -101,7 +107,7 @@ public class Project
             // there is no file -> new project
             if (folder.list().length == 0)
             {
-                save();
+                saveProjectsParameters();
             }
             // the is already something going on in this folder -> can't do anything
             else
@@ -120,14 +126,12 @@ public class Project
     /**
      * Saves the parameters of this project in /path/pto/project/folder/<code>project.xml</code>.
      * 
-     * @throws FileNotFoundException
-     * 
      * @throws ConfigurationException
      * 
      * @throws IOException
      */
-    public synchronized void save()
-    throws FileNotFoundException
+    public synchronized void saveProjectsParameters()
+    throws IOException
     {
         int versionToUse = version == 0 ? VERSION : version;
         switch (versionToUse)
@@ -145,10 +149,9 @@ public class Project
      * Saves this project with the version number 1 of the project.xml file.
      * 
      * @throws IOException
-     * @throws FileNotFoundException
      */
     private void saveVersion1()
-    throws FileNotFoundException
+    throws IOException
     {
         Element root = new Element("project");
         root.addAttribute(new Attribute("version", Integer.toString(1)));
@@ -174,13 +177,11 @@ public class Project
         }
         
         Document document = new Document(root);
-        String xml = document.toXML();
         File projectConfiguration = getProjectConfigurationFile();
-        try (
-            PrintWriter printWriter = new PrintWriter(projectConfiguration))
-        {
-            printWriter.write(xml);
-        }
+        Serializer serializer = new Serializer(new FileOutputStream(projectConfiguration), "UTF-8");
+        serializer.setIndent(4);
+        serializer.setMaxLength(64);
+        serializer.write(document);
     }
     
     /**
@@ -349,14 +350,15 @@ public class Project
      *            The manager to use for the computation. Range: [0;Integer.MAX_VALUE]
      * @param maxValue
      *            The maximum amount of nodes to computes.
+     * @return true if the are still nodes to compute
      */
-    public void compute(QuadTreeManager manager, int maxValue)
+    public boolean compute(QuadTreeManager manager, int maxValue)
     {
-        manager.compute(maxValue);
         if ((boolean) parameters.get(ProjectKey.USE_MULTITHREADING))
         {
             manager.setThreads(Runtime.getRuntime().availableProcessors() - 1);
         }
+        return manager.compute(maxValue);
     }
     
     /**
@@ -370,18 +372,67 @@ public class Project
     public void save(QuadTreeManager manager, Indexation indexation)
     throws IOException
     {
-        File path = quadTreeManager.getOriginalPath().toFile();
-        if (path == null)
-        {
-            throw new IllegalArgumentException("This manager was not associated to this project.");
-        }
-        manager.saveToBinaryFile(path.toPath(), indexation);
+        File tree = new File(projectFolder.toFile(), "tree");
+        manager.saveToBinaryFile(tree.toPath(), indexation);
     }
-
+    
+    /**
+     * Loads the existing quad tree manager if it exists or create a new one if it doesn't.
+     * 
+     * @return a {@link QuadTreeManager}
+     */
     public QuadTreeManager getQuadTreeManager()
     {
+        if (quadTreeManager == null)
+        {
+            File tree = new File(projectFolder.toFile(), "tree");
+            try
+            {
+                quadTreeManager = new QuadTreeManager(tree.toPath(), null);
+            }
+            catch (ClassNotFoundException | NoSuchAlgorithmException | ParsingException | IOException
+            | InvalidBinaryFileException e)
+            {
+                e.printStackTrace();
+                throw new RuntimeException("No quadtree to load", e); // TODO: that's ugly
+            }
+        }
         return quadTreeManager;
     }
     
+    public RawMandelbrotData rawRender(RenderingParameters renderingParameters, RenderingMethod renderingMethod)
+    {
+        NebulabrotRenderer nebulabrotRenderer = new NebulabrotRenderer(renderingParameters.getxResolution(),
+        renderingParameters.getyResolution(), renderingParameters.getViewport());
+        
+        boolean multithread = (boolean) this.parameters.get(ProjectKey.USE_MULTITHREADING);
+        int threads = 1;
+        if (multithread)
+        {
+            threads = Runtime.getRuntime().availableProcessors() - 1;
+        }
+        
+        switch (renderingMethod)
+        {
+            case LINEAR:
+                return nebulabrotRenderer.linearRender(renderingParameters.getPointsCount(),
+                renderingParameters.getMinimumIteration(), renderingParameters.getMaximumIteration(), threads);
+                
+            case QUADTREE:
+                return nebulabrotRenderer.quadTreeRender(renderingParameters.getPointsCount(),
+                renderingParameters.getMinimumIteration(), renderingParameters.getMaximumIteration(),
+                this.quadTreeManager.getQuadTreeRoot(), threads);
+                
+            default:
+                throw new NotImplementedException();
+        }
+    }
     
+    public BufferedImage pictureRender(RenderingParameters renderingParameters, RenderingMethod renderingMethod)
+    {
+        RawMandelbrotData rawMandelbrotData = rawRender(renderingParameters, renderingMethod);
+        BufferedImage bufferedImage = rawMandelbrotData.computeBufferedImage(renderingParameters.getColorationModel(),
+        0);
+        return bufferedImage;
+    }
 }

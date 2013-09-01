@@ -56,7 +56,7 @@ public class TestProject
                 existing.mkdirs();
             }
             Project project = new Project(existing.toPath());
-            project.save();
+            project.saveProjectsParameters();
             String folder = project.getProjectFolder();
             Assert.assertEquals("Folders mismatch", existing.getAbsolutePath(), folder);
             
