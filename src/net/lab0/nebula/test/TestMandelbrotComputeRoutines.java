@@ -93,7 +93,7 @@ public class TestMandelbrotComputeRoutines
     }
     
     @Test
-    @Ignore //TODO: find why this fucking always find a value to succeed to fail X(
+    @Ignore //TODO: find why this always find a value to succeed to fail X(
     public void testComputeIterationsCountOptim2()
     {
         for (int x = 0; x < side; ++x)

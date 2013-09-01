@@ -137,6 +137,4 @@ public class TestQuadTreeSaveLoad
         StatusQuadTreeNode root = manager.getQuadTreeRoot();
         Assert.assertEquals(maxDepth, root.getMaxNodeDepth());
     }
-    
-    // TODO : file corruption tests
 }

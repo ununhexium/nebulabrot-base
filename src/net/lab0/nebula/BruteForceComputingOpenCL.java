@@ -12,6 +12,7 @@ import net.lab0.nebula.color.PowerGrayScaleColorModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.OpenClMandelbrotComputeRoutines;
 import net.lab0.nebula.core.QuadTreeManager;
+import net.lab0.nebula.core.XZWriter;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.enums.Status;

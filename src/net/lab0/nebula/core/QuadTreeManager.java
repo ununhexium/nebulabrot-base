@@ -183,15 +183,13 @@ public class QuadTreeManager
     }
     
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
-    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
-    NoSuchAlgorithmException
+    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
         this(inputFolder, listener, Integer.MAX_VALUE);
     }
     
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
-    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
-    NoSuchAlgorithmException
+    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
         load(inputFolder, listener, maxLoadDepth);
     }
@@ -214,8 +212,7 @@ public class QuadTreeManager
      * @throws NoSuchAlgorithmException
      */
     private void load(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
-    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException,
-    NoSuchAlgorithmException
+    throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
         // Save the location of the original file. Useful for saveACopy()
         this.originalPath = inputFolder;
@@ -254,7 +251,7 @@ public class QuadTreeManager
         
         this.root.updateFields();
         
-        // TODO : better impl. Do not load over max depth
+        // too hard to implement an algorithm to load a quad tree with a maximal depth set when it is not indexed
         this.root.strip(maxLoadDepth);
     }
     

@@ -1,4 +1,4 @@
-package net.lab0.nebula;
+package net.lab0.nebula.core;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,7 +63,6 @@ implements Runnable
             }
             FilterOptions[] options = { new LZMA2Options(1) };
             OutputStream outputStream = new XZOutputStream(new FileOutputStream(file), options, XZ.CHECK_CRC64);
-            // OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
             outputStreams.add(outputStream);
             locks.add(false);
         }
@@ -74,12 +73,10 @@ implements Runnable
         try
         {
             blockingQueue.put(new Triplet<IntBuffer, double[], double[]>(buffer, x, y));
-            // System.out.println("Queue length: " + blockingQueue.size());
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
     }
     
@@ -91,37 +88,32 @@ implements Runnable
     @Override
     public void run()
     {
-        ArrayList<FutureTask<Long>> futureTasks = new ArrayList<>();
-        while (!stopWriter || blockingQueue.size() != 0)
+        try
         {
-            // get the result of the completed tasks
-            Iterator<FutureTask<Long>> it = futureTasks.iterator();
-            while (it.hasNext())
+            ArrayList<FutureTask<Long>> futureTasks = new ArrayList<>();
+            while (!stopWriter || blockingQueue.size() != 0)
             {
-                FutureTask<Long> task = it.next();
-                if (task.isDone())
+                // get the result of the completed tasks
+                Iterator<FutureTask<Long>> it = futureTasks.iterator();
+                while (it.hasNext())
                 {
-                    try
+                    FutureTask<Long> task = it.next();
+                    if (task.isDone())
                     {
-                        totalIterations += task.get();
-                        it.remove();
-                    }
-                    catch (InterruptedException e)
-                    {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    catch (ExecutionException e)
-                    {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        try
+                        {
+                            totalIterations += task.get();
+                            it.remove();
+                        }
+                        catch (ExecutionException e)
+                        {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-            
-            // do the compression
-            try
-            {
+                
+                // do the compression
                 final Triplet<IntBuffer, double[], double[]> triplet = blockingQueue.take();
                 
                 FutureTask<Long> task = new FutureTask<>(new Callable<Long>()
@@ -179,67 +171,59 @@ implements Runnable
                     // System.out.println("Put");
                     tpeQueue.put(task);
                 }
+                
+                threadPoolExecutor.shutdown();
+                while (!threadPoolExecutor.isTerminated() && !threadPoolExecutor.awaitTermination(1, TimeUnit.SECONDS))
+                {
+                    System.out.println("Awaiting termination of " + threadPoolExecutor.getActiveCount() + " threads");
+                }
             }
-            catch (InterruptedException e)
+            
+            // merge the created files
+            try
             {
-                e.printStackTrace();
-                continue;
+                OutputStream out = new FileOutputStream(new File(path.toFile(), "concat.xz"));
+                byte[] buf = new byte[1024 * 64];
+                for (int i = 0; i < threads; ++i)
+                {
+                    // close the output streams before reading them to be sure to have all the data written in these
+                    // files
+                    outputStreams.get(i).close();
+                    InputStream in = new FileInputStream(new File(path.toFile(), "chunck" + i + ".xz"));
+                    int b = 0;
+                    while ((b = in.read(buf)) >= 0)
+                    {
+                        out.write(buf, 0, b);
+                    }
+                    in.close();
+                }
+                out.close();
             }
-        }
-        
-        threadPoolExecutor.shutdown();
-        try
-        {
-            while (!threadPoolExecutor.isTerminated() && !threadPoolExecutor.awaitTermination(1, TimeUnit.SECONDS))
+            catch (IOException e1)
             {
-                System.out.println("Awaiting termination of " + threadPoolExecutor.getActiveCount() + " threads");
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            
+            System.out.println("Discarded: " + discardedPoints);
+            System.out.println("Writen: " + writenPoints);
+            System.out.println("closing streams");
+            for (OutputStream outputStream : outputStreams)
+            {
+                try
+                {
+                    outputStream.close();
+                }
+                catch (IOException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         }
         catch (InterruptedException e1)
         {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        
-        // merge the created files
-        try
-        {
-            OutputStream out = new FileOutputStream(new File(path.toFile(), "concat.xz"));
-            byte[] buf = new byte[1024 * 64];
-            for (int i = 0; i < threads; ++i)
-            {
-                // close the output streams before reading them to be sure to have all the data written in these files
-                outputStreams.get(i).close();
-                InputStream in = new FileInputStream(new File(path.toFile(), "chunck" + i + ".xz"));
-                int b = 0;
-                while ((b = in.read(buf)) >= 0)
-                {
-                    out.write(buf, 0, b);
-                }
-                in.close();
-            }
-            out.close();
-        }
-        catch (IOException e1)
-        {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        
-        System.out.println("Discarded: " + discardedPoints);
-        System.out.println("Writen: " + writenPoints);
-        System.out.println("closing streams");
-        for (OutputStream outputStream : outputStreams)
-        {
-            try
-            {
-                outputStream.close();
-            }
-            catch (IOException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            Thread.currentThread().interrupt();
         }
     }
     

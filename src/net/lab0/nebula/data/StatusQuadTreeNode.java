@@ -476,7 +476,6 @@ public class StatusQuadTreeNode
      * @throws InconsistentTreeStructure
      *             if there is an error in the quad tree
      */
-    // TODO : check tree structure validity
     public Element asXML(boolean recursive)
     throws InconsistentTreeStructure
     {

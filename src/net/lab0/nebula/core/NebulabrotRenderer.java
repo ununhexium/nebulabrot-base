@@ -175,10 +175,14 @@ public class NebulabrotRenderer
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
         final int[][] data = raw.getData();
         
-        // TODO : fins a better way to compute side parameter, based of the view port ratio
-        final int side = (int) Math.sqrt(pointsCount);
-        final double stepX = viewPort.getWidth() / side;
-        final double stepY = viewPort.getHeight() / side;
+        // choose a X and Y step adapted to the viewport ratio
+        final long side = Math.round(Math.sqrt(pointsCount));
+        double ratio = viewPort.getWidth() / viewPort.getHeight();
+        double pixelYCount = Math.sqrt(pointsCount / ratio);
+        double pixelXCount = pixelYCount * ratio;
+
+        final double stepX = viewPort.getWidth() / pixelXCount;
+        final double stepY = viewPort.getHeight() / pixelYCount;
         
         final int queueLimit = 1024;
         final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(queueLimit);
@@ -228,12 +232,11 @@ public class NebulabrotRenderer
                     {
                         try
                         {
-                            Thread.sleep(250);
+                            queue.put(runnable);
                         }
                         catch (InterruptedException e)
                         {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            Thread.currentThread().interrupt();
                         }
                     }
                     executor.execute(runnable);
@@ -251,8 +254,7 @@ public class NebulabrotRenderer
                     }
                     catch (InterruptedException e)
                     {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Thread.currentThread().interrupt();
                     }
                 }
             }
@@ -265,8 +267,7 @@ public class NebulabrotRenderer
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         
         fireFinishedOrStop(raw);
@@ -386,11 +387,15 @@ public class NebulabrotRenderer
         RawMandelbrotData raw = new RawMandelbrotData(pixelWidth, pixelHeight, pointsCount);
         System.out.println("malloc");
         final int[][] data = raw.getData();
-        
+
+        // choose a X and Y step adapted to the viewport ratio
         final long side = Math.round(Math.sqrt(pointsCount));
-        // TODO : better method to dispatch points between X and Y
-        final double stepX = viewPort.getWidth() / side;
-        final double stepY = viewPort.getHeight() / side;
+        double ratio = viewPort.getWidth() / viewPort.getHeight();
+        double pixelYCount = Math.sqrt(pointsCount / ratio);
+        double pixelXCount = pixelYCount * ratio;
+
+        final double stepX = viewPort.getWidth() / pixelXCount;
+        final double stepY = viewPort.getHeight() / pixelYCount;
         
         System.out.println("get nodes");
         // get the appropriate nodes
@@ -491,8 +496,7 @@ public class NebulabrotRenderer
                     }
                     catch (InterruptedException e)
                     {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        Thread.currentThread().interrupt();
                     }
                 }
             }
@@ -505,8 +509,7 @@ public class NebulabrotRenderer
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         
         // Collections.sort(frequency, new Comparator<Pair<StatusQuadTreeNode, Integer>>()

@@ -1,7 +1,5 @@
 package net.lab0.nebula.data;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -15,8 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import net.lab0.nebula.XZWriter;
 import net.lab0.nebula.core.OpenClMandelbrotComputeRoutines;
+import net.lab0.nebula.core.XZWriter;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.project.Project;
 
@@ -54,7 +52,7 @@ public class QuadTreePointsComputingSet
             {
                 computeWithOpenCL(blockIndex);
             }
-            catch (LWJGLException e)
+            catch (LWJGLException | IOException e)
             {
                 // TODO clean try catch
                 e.printStackTrace();
@@ -63,7 +61,7 @@ public class QuadTreePointsComputingSet
     }
     
     private void computeWithOpenCL(int blockIndex)
-    throws LWJGLException
+    throws LWJGLException, IOException
     {
         int blockSize = 1024 * 1024;
         Path path = getPathForBlock(blockIndex);
@@ -177,20 +175,13 @@ public class QuadTreePointsComputingSet
             }
             catch (InterruptedException e)
             {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
             
-        }
-        catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
         finally
         {
             ocl.teardown();
-            
         }
     }
     
