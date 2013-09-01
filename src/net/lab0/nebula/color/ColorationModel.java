@@ -5,7 +5,7 @@ package net.lab0.nebula.color;
  * {@link PointValues} objects for each call to speed up performances.
  * 
  * @since 1.0
- * @author 116
+ * @author 116@lab0.net
  * 
  */
 public interface ColorationModel

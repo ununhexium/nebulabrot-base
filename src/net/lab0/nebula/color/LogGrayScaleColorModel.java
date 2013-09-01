@@ -1,18 +1,32 @@
 package net.lab0.nebula.color;
 
-public class LogGrayScaleColorModel implements ColorationModel
+/**
+ * A natural logarithmic gray coloration model.
+ * 
+ * @author 116@lab0.net
+ * 
+ */
+public class LogGrayScaleColorModel
+implements ColorationModel
 {
-
+    
     @Override
     public void computeColorForPoint(float[] vector, PointValues... values)
     {
         PointValues v = values[0];
-        //warning : do not change this 1.0d or this will become an int divison and it will always be 0
-        double var = Math.log(v.value + 1) / Math.log(v.maxIter);
-        float rgb = (float) var * 255f;
+        // the minimal acceptable value for the log function
+        long minInput = v.value + 1;
+        // maximum possible output value
+        double maxOutput = Math.log(v.maxIter);
+        // minimum possible output value
+        double minOuput = Math.log(minInput);
+        // output (range ]0;1]) this the ratio between the 2 outputs
+        double output = minOuput / maxOutput;
+        // converting to a 255f max float value
+        float rgb = (float) output * 255f;
         vector[0] = vector[1] = vector[2] = rgb;
     }
-
+    
     @Override
     public int getChannelsCount()
     {

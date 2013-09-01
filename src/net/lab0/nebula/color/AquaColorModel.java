@@ -7,7 +7,7 @@ package net.lab0.nebula.color;
  * @see ColorationModel for details.
  * 
  * @since 1.0
- * @author 116
+ * @author 116@lab0.net
  *
  */
 public class AquaColorModel
