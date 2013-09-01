@@ -113,7 +113,7 @@ public class AdvancedExample1
         
         System.out.println("Computing with the CPU (single thread)");
         // optional because the CPU is really slow
-        // if (args.length > 0 && "opt".equals(args[0]))
+        if (args.length > 0 && "opt".equals(args[0]))
         {
             yCurrent = -2.0;
             stopWatch.reset();
