@@ -1,5 +1,11 @@
 package net.lab0.nebula.listener;
 
+/**
+ * A console output implementation of the {@link QuadTreeComputeListener}.
+ * 
+ * @author 116@lab0.net
+ * 
+ */
 public class ConsoleQuadTreeComputeListener
 implements QuadTreeComputeListener
 {
