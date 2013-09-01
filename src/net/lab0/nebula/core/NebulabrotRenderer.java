@@ -164,7 +164,6 @@ public class NebulabrotRenderer
      * @throws IllegalArgumentException
      *             if <code>minIter >= maxIter</code> is true
      */
-    
     public RawMandelbrotData linearRender(long pointsCount, final int minIter, final int maxIter, int threads)
     {
         // wouldn't make sens otherwise (no point computed)
