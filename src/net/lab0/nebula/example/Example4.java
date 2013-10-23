@@ -52,6 +52,8 @@ public class Example4
             System.out.println(key.name() + "=" + param.get(key));
         }
         
+        
+        
         // the amount of points on the whole mandelbrot set
         long pointsCount = 1L << 34;
         int blocks = (int) (pointsCount / (1L << 32));
