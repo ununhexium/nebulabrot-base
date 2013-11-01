@@ -6,15 +6,17 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.tools.Pair;
 
-import org.apache.commons.lang3.time.StopWatch;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import com.google.common.base.Stopwatch;
 
 public class TestMandelbrotComputeRoutines
 {
@@ -29,7 +31,7 @@ public class TestMandelbrotComputeRoutines
     private static List<Long> optim4Times     = new ArrayList<>();
     
     @Test
-    public static void testIsOutsideMandelbrotSetReference()
+    public void testIsOutsideMandelbrotSetReference()
     {
         // not much to test here as it is the reference function
         
@@ -127,7 +129,7 @@ public class TestMandelbrotComputeRoutines
     @Test
     public void testIsOutsideMandelbrotSetExecTime()
     {
-        StopWatch stopWatch = new StopWatch();
+        Stopwatch stopWatch = Stopwatch.createUnstarted();
         for (int i = 0; i < timersLoopCount; ++i)
         {
             stopWatch.start();
@@ -141,7 +143,7 @@ public class TestMandelbrotComputeRoutines
                 }
             }
             stopWatch.stop();
-            optim1Times.add(stopWatch.getNanoTime());
+            optim1Times.add(stopWatch.elapsed(TimeUnit.MICROSECONDS));
             stopWatch.reset();
         }
     }
@@ -164,7 +166,7 @@ public class TestMandelbrotComputeRoutines
     @Test
     public void testIsOutsideMandelbrotOptim2SetExecTime()
     {
-        StopWatch stopWatch = new StopWatch();
+        Stopwatch stopWatch = Stopwatch.createUnstarted();
         for (int i = 0; i < timersLoopCount; ++i)
         {
             stopWatch.start();
@@ -178,7 +180,7 @@ public class TestMandelbrotComputeRoutines
                 }
             }
             stopWatch.stop();
-            optim2Times.add(stopWatch.getNanoTime());
+            optim2Times.add(stopWatch.elapsed(TimeUnit.MICROSECONDS));
             stopWatch.reset();
         }
     }
@@ -201,7 +203,7 @@ public class TestMandelbrotComputeRoutines
     @Test
     public void testIsOutsideMandelbrotOptim4SetExecTime()
     {
-        StopWatch stopWatch = new StopWatch();
+        Stopwatch stopWatch = Stopwatch.createUnstarted();
         for (int i = 0; i < timersLoopCount; ++i)
         {
             stopWatch.start();
@@ -215,7 +217,7 @@ public class TestMandelbrotComputeRoutines
                 }
             }
             stopWatch.stop();
-            optim4Times.add(stopWatch.getNanoTime());
+            optim4Times.add(stopWatch.elapsed(TimeUnit.MICROSECONDS));
             stopWatch.reset();
         }
     }

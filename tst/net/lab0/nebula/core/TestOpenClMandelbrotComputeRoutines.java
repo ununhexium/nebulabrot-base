@@ -28,7 +28,6 @@ public class TestOpenClMandelbrotComputeRoutines
         }
         catch (LWJGLException e)
         {
-            Assert.fail();
             Assert.fail("Failed to init the OpenCL computing class.");
         }
     }

@@ -8,10 +8,10 @@ import javax.naming.ConfigurationException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
 import net.lab0.nebula.project.Project;
+import net.lab0.tools.FileUtils;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class TestProject
             }
             else
             {
-                FileUtils.deleteDirectory(empty);
+                FileUtils.removeRecursive(empty.toPath());
                 empty.mkdirs();
             }
             
@@ -52,7 +52,7 @@ public class TestProject
             }
             else
             {
-                FileUtils.deleteDirectory(existing);
+                FileUtils.removeRecursive(existing.toPath());
                 existing.mkdirs();
             }
             Project project = new Project(existing.toPath());
@@ -68,7 +68,7 @@ public class TestProject
             }
             else
             {
-                FileUtils.deleteDirectory(nonEmpty);
+                FileUtils.removeRecursive(nonEmpty.toPath());
             }
             nonEmpty.mkdirs();
             File touch = new File(nonEmpty, "touch");
@@ -77,7 +77,7 @@ public class TestProject
             file = new File(projectFolder, "file");
             if (file.isDirectory())
             {
-                FileUtils.deleteDirectory(file);
+                FileUtils.removeRecursive(file.toPath());
             }
             file.createNewFile();
         }

@@ -7,7 +7,7 @@ import net.lab0.nebula.core.TestRendering;
 import net.lab0.nebula.data.TestQuadTreeNode;
 import net.lab0.nebula.data.TestRawMandelbrotData;
 import net.lab0.nebula.data.TestStatusQuadTreeNode;
-import net.lab0.nebula.mgr.PointsBlockManager;
+import net.lab0.nebula.exe.TestLinearPointsBlockGenerator;
 import net.lab0.nebula.mgr.TestPointsBlockManager;
 import net.lab0.nebula.project.TestProject;
 
@@ -17,6 +17,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses(value = { 
+    TestLinearPointsBlockGenerator.class,
     TestMandelbrotComputeRoutines.class,
     TestOpenClMandelbrotComputeRoutines.class,
     TestPointsBlockManager.class,
