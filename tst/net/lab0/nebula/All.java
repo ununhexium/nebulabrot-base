@@ -9,6 +9,7 @@ import net.lab0.nebula.data.TestRawMandelbrotData;
 import net.lab0.nebula.data.TestStatusQuadTreeNode;
 import net.lab0.nebula.exe.TestLinearPointsBlockGenerator;
 import net.lab0.nebula.mgr.TestPointsBlockManager;
+import net.lab0.nebula.mgr.TestWriterManager;
 import net.lab0.nebula.project.TestProject;
 
 import org.junit.runner.RunWith;
@@ -27,6 +28,7 @@ import org.junit.runners.Suite.SuiteClasses;
     TestRawMandelbrotData.class, 
     TestRendering.class,
     TestStatusQuadTreeNode.class,
+    TestWriterManager.class,
 })
 public class All
 {
