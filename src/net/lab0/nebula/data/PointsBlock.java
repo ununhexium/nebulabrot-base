@@ -53,4 +53,14 @@ public class PointsBlock
     {
         manager.release(this);
     }
+    
+    /**
+     * Checks that the lengths of the arrays and the size are the same.
+     * 
+     * @return <code>true</code> if the length is the same. <code>false</code> otherwise.
+     */
+    public boolean isConsistent()
+    {
+        return size == real.length && size == imag.length && size == iter.length;
+    }
 }
