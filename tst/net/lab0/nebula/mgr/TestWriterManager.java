@@ -47,11 +47,10 @@ public class TestWriterManager
             FileInputStream in = new FileInputStream(path.toFile()))
         {
             byte[] buffer = new byte[1024 * (Double.SIZE/8)];
-            System.out.println(in.read(buffer, 0, Integer.SIZE / 8));
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
             Assert.assertEquals(1024, byteBuffer.asIntBuffer().get());
             
-            System.out.println(in.read(buffer));
+            in.read(buffer);
             DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
             real = 0;
             for (int i = 0; i < 1024; ++i)
@@ -60,7 +59,7 @@ public class TestWriterManager
                 real += Math.PI;
             }
             
-            System.out.println(in.read(buffer));
+            in.read(buffer);
             doubleBuffer.rewind();
             imag = 0;
             for (int i = 0; i < 1024; ++i)
@@ -69,7 +68,7 @@ public class TestWriterManager
                 imag -= Math.PI;
             }
             
-            System.out.println(in.read(buffer));
+            in.read(buffer);
             LongBuffer longBuffer = byteBuffer.asLongBuffer();
             for (int i = 0; i < 1024; ++i)
             {
