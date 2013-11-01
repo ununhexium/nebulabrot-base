@@ -23,6 +23,7 @@ import net.lab0.nebula.enums.ComputingMethod;
 import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
+import net.lab0.nebula.exception.NotImplemented;
 import net.lab0.nebula.exception.ProjectException;
 import net.lab0.tools.quadtree.QuadTreeNode;
 import net.lab0.tools.quadtree.QuadTreeRoot;
@@ -34,7 +35,6 @@ import nu.xom.Elements;
 import nu.xom.ParsingException;
 import nu.xom.Serializer;
 import nu.xom.ValidityException;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Stores and loads the parameters of a project.
@@ -448,7 +448,7 @@ public class Project
                 this.quadTreeManager.getQuadTreeRoot(), threads);
                 
             default:
-                throw new NotImplementedException();
+                throw new NotImplemented();
         }
     }
     

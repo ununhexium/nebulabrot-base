@@ -2,18 +2,20 @@ package net.lab0.nebula.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Stopwatch;
 
 import net.lab0.tools.HumanReadable;
 import net.lab0.tools.Pair;
 
-import org.apache.commons.lang3.time.StopWatch;
-
 /**
- * This class contains the usual routines used when computing the Mandelbrot set. The optimX suffix indicate that the method does the computation by groups of X
- * iterations. This has for consequence that the maxIter parameter max be exceeded by at most X-1 iterations. For instance if a point is considered out after 3
- * iterations in a normal function, it will be considered as outside after 4 iterations by a optim4 or optim2 method. It will be considered out after 8
- * iterations by an optim8 method etc. These methods are here to speed up a bit the computation by testing less the outside conditions. The Reference methods
- * are non optimized methods to check the validity of the results.
+ * This class contains the usual routines used when computing the Mandelbrot set. The optimX suffix indicate that the
+ * method does the computation by groups of X iterations. This has for consequence that the maxIter parameter max be
+ * exceeded by at most X-1 iterations. For instance if a point is considered out after 3 iterations in a normal
+ * function, it will be considered as outside after 4 iterations by a optim4 or optim2 method. It will be considered out
+ * after 8 iterations by an optim8 method etc. These methods are here to speed up a bit the computation by testing less
+ * the outside conditions. The Reference methods are non optimized methods to check the validity of the results.
  * 
  * @since 1.0
  * @author 116@lab0.net
@@ -41,7 +43,8 @@ public class MandelbrotComputeRoutines
         
         int iter = 0;
         while ((iter < maxIter) && ((real1 * real1 + img1 * img1) < 4.0d))
-        // there is no sqrt in the non optim methods to avoids failures due to rounding errors
+        // there is no sqrt in the non optim methods to avoids failures due to
+        // rounding errors
         {
             real2 = real1 * real1 - img1 * img1 + real;
             img2 = 2 * real1 * img1 + img;
@@ -75,7 +78,8 @@ public class MandelbrotComputeRoutines
         
         int iter = 0;
         while ((iter < maxIter) && ((real1 * real1 + img1 * img1) < 4.0d))
-        // there is no sqrt in the non optim methods to avoids failures due to rounding errors
+        // there is no sqrt in the non optim methods to avoids failures due to
+        // rounding errors
         {
             real2 = real1 * real1 - img1 * img1 + real;
             img2 = 2 * real1 * img1 + img;
@@ -90,8 +94,8 @@ public class MandelbrotComputeRoutines
     }
     
     /**
-     * Method to use for debug purposes. Computes the values of the real part and the imaginary part for a given number of iterations. Stops when the result of
-     * the real part or the imaginary part becomes NaN.
+     * Method to use for debug purposes. Computes the values of the real part and the imaginary part for a given number
+     * of iterations. Stops when the result of the real part or the imaginary part becomes NaN.
      * 
      * @param real
      *            The real part coordinate of the point to compute.
@@ -99,10 +103,11 @@ public class MandelbrotComputeRoutines
      *            The imaginary part coordinate of the point to compute.
      * @param iterations
      *            The quantity of iterations to do.
-     * @return a <code>List<Pair<real,imag>></code> containing the values of the real part and the imaginary part for each iteration. The first element of the
-     *         array is the first element that was computed in the loop.
+     * @return a <code>List<Pair<real,imag>></code> containing the values of the real part and the imaginary part for
+     *         each iteration. The first element of the array is the first element that was computed in the loop.
      */
-    public static List<Pair<Double, Double>> computeIterationsCountReferenceDebug(double real, double img, int iterations)
+    public static List<Pair<Double, Double>> computeIterationsCountReferenceDebug(double real, double img,
+    int iterations)
     {
         double real1 = real;
         double img1 = img;
@@ -129,7 +134,8 @@ public class MandelbrotComputeRoutines
     }
     
     /**
-     * Same as <code>computeIterationsCountReference()</code> with an optimization to test if inside or outside every 2 iterations.
+     * Same as <code>computeIterationsCountReference()</code> with an optimization to test if inside or outside every 2
+     * iterations.
      */
     public synchronized static int computeIterationsCountOptim2(double real, double img, int maxIter)
     {
@@ -197,7 +203,8 @@ public class MandelbrotComputeRoutines
     }
     
     /**
-     * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 2 iterations.
+     * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 2
+     * iterations.
      */
     public static boolean isOutsideMandelbrotSetOptim2(double real, double img, int maxIter)
     {
@@ -226,7 +233,8 @@ public class MandelbrotComputeRoutines
     }
     
     /**
-     * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 4 iterations.
+     * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 4
+     * iterations.
      */
     public static boolean isOutsideMandelbrotSetOptim4(double real, double img, int maxIter)
     {
@@ -267,7 +275,7 @@ public class MandelbrotComputeRoutines
         int side = 2048;
         double step = 4.0 / side;
         
-        StopWatch stopWatch = new StopWatch();
+        Stopwatch stopWatch = Stopwatch.createStarted();
         stopWatch.start();
         for (int x = 0; x < side; ++x)
         {
@@ -322,9 +330,12 @@ public class MandelbrotComputeRoutines
             }
         }
         
-        totalIterationCount *= 16; // multiply by the estimation of the floating point operations in 1 loop
+        totalIterationCount *= 16; // multiply by the estimation of the floating
+                                   // point operations in 1 loop
         stopWatch.stop();
-        System.out.println("Computing power: ~" + HumanReadable.humanReadableNumber(1000L * totalIterationCount / stopWatch.getTime(), true) + "flops");
+        System.out.println("Computing power: ~"
+        + HumanReadable.humanReadableNumber(1000L * totalIterationCount / stopWatch.elapsed(TimeUnit.MILLISECONDS),
+        true) + "flops");
         stopWatch.reset();
     }
 }

@@ -3,8 +3,6 @@ package net.lab0.nebula.mgr;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sun.swing.internal.plaf.synth.resources.synth;
-
 import net.lab0.nebula.data.PointsBlock;
 
 public class PointsBlockManager
@@ -24,9 +22,10 @@ public class PointsBlockManager
     }
     
     /**
-     * Request a {@link PointsBlock}. The data in the block can have any value.
+     * Request a {@link PointsBlock}. The data in the block can have any value. WARNING: this is equivalent to malloc().
+     * Don't forget to free() the block !
      * 
-     * @return an uninitialised {@link PointsBlock} with the requested size.
+     * @return an uninitialized {@link PointsBlock} with the requested size.
      */
     public PointsBlock allocatePointsBlock(int size)
     {

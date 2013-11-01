@@ -7,8 +7,7 @@ import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.listener.ConsoleQuadTreeComputeListener;
 import net.lab0.nebula.project.Project;
-
-import org.apache.commons.io.FileUtils;
+import net.lab0.tools.FileUtils;
 
 /**
  * Computing a huge quad tree. Introduces the listeners.
@@ -33,7 +32,7 @@ public class Example3
         if (projectPath.toFile().exists())
         {
             System.out.println("Deleting directory " + projectPath);
-            FileUtils.deleteDirectory(projectPath.toFile());
+            FileUtils.removeRecursive(projectPath);
         }
         else
         {

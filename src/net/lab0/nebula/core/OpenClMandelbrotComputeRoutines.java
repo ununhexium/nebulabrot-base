@@ -9,7 +9,6 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
-import org.apache.commons.lang3.time.StopWatch;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.PointerBuffer;
@@ -23,6 +22,8 @@ import org.lwjgl.opencl.CLMem;
 import org.lwjgl.opencl.CLPlatform;
 import org.lwjgl.opencl.CLProgram;
 import org.lwjgl.opencl.Util;
+
+import com.google.common.base.Stopwatch;
 
 /**
  * This class computes Mandelbrot data using double precision floating point numbers on GPUs.
@@ -38,7 +39,7 @@ public class OpenClMandelbrotComputeRoutines
     private List<CLDevice> devices;
     private CLCommandQueue queue;
     
-    private StopWatch      stopWatch;
+    private Stopwatch      stopWatch;
     private CLProgram      mandelbrotProgram;
     private CLKernel       mandelbrotKernel;
     private CLMem          xMemory;
@@ -53,12 +54,12 @@ public class OpenClMandelbrotComputeRoutines
      * Creates am OpenClMandelbrotComputeRoutines with a default kernel.
      * 
      * @throws LWJGLException
-     *             If there is an error during the OpenCL initialisation.
+     *             If there is an error during the OpenCL initialization.
      */
     public OpenClMandelbrotComputeRoutines()
     throws LWJGLException
     {
-        stopWatch = new StopWatch();
+        stopWatch = Stopwatch.createUnstarted();
         
         initializeCL();
         

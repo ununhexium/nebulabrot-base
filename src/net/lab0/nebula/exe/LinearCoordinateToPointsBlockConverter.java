@@ -5,7 +5,8 @@ import java.util.concurrent.ExecutorService;
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.PointsBlockManager;
-import net.lab0.tools.exec.CascadingPrioritizedRunnable;
+import net.lab0.tools.exec.JobBuilder;
+import net.lab0.tools.exec.MultipleOutputJob;
 
 /**
  * Converts a {@link CoordinatesBlock} into as many {@link PointsBlock} as needed.
@@ -13,11 +14,12 @@ import net.lab0.tools.exec.CascadingPrioritizedRunnable;
  * @author 116@lab0.net
  * 
  */
-public class LinearPointsBlockGenerator
-extends CascadingPrioritizedRunnable
+public class LinearCoordinateToPointsBlockConverter
+extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
 {
     private CoordinatesBlock   block;
-    private int                pointsBlockSize;
+    private PointsBlock        pointsBlock;
+    private final int          pointsBlockSize;
     private double             lastX;
     private double             lastY;
     private PointsBlockManager pointsBlockManager;
@@ -27,33 +29,36 @@ extends CascadingPrioritizedRunnable
      * @param executor
      *            The executor in which this job has to be executed
      * @param block
-     *            The block to convert
+     *            The {@link CoordinatesBlock} to convert
      * @param pointsBlockSize
      *            The amount of points for each {@link PointsBlock}
      * @param priority
      *            The priority of this task.
-     * @param pointsBlockManager
+     * @param manager
      *            The {@link PointsBlockManager} to use to allocate the {@link PointsBlock}s
      */
-    public LinearPointsBlockGenerator(ExecutorService executor, CoordinatesBlock block, int pointsBlockSize,
-    PointsBlockManager pointsBlockManager, int priority)
+    public LinearCoordinateToPointsBlockConverter(ExecutorService executor, int priority,
+    JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, int pointsBlockSize, PointsBlockManager manager)
     {
-        super(executor, priority);
+        super(executor, priority, jobBuilder);
         this.block = block;
         this.pointsBlockSize = pointsBlockSize;
-        this.pointsBlockManager = pointsBlockManager;
+        this.pointsBlockManager = manager;
         lastX = block.minX;
         lastY = block.minY;
     }
     
     @Override
-    public void executeTask()
+    public PointsBlock nextStep()
     {
-        // converts the coordinates block to points block
+        if (lastY >= block.maxY)
+        {
+            return null;
+        }
         int points = 0;
         double x = lastX;
         double y = lastY;
-        PointsBlock pointsBlock = pointsBlockManager.allocatePointsBlock(pointsBlockSize);
+        pointsBlock = pointsBlockManager.allocatePointsBlock(pointsBlockSize);
         while (points < pointsBlockSize)
         {
             pointsBlock.real[points] = x;
@@ -71,12 +76,26 @@ extends CascadingPrioritizedRunnable
                 }
             }
         }
-    }
-    
-    @Override
-    public CascadingPrioritizedRunnable[] nextJobs()
-    {
-        return null;
+        
+        lastX = x;
+        lastY = y;
+        // normal case
+        if (points != pointsBlockSize)
+        /*
+         * this can be the case only for the last block: copy the data in a block of the appropriate size before
+         * returning
+         */
+        {
+            PointsBlock pointsBlock2 = pointsBlockManager.allocatePointsBlock(points);
+            for (int i = 0; i < points; ++i)
+            {
+                pointsBlock2.real[i] = pointsBlock.real[i];
+                pointsBlock2.imag[i] = pointsBlock.imag[i];
+            }
+            pointsBlock.release();
+            pointsBlock = pointsBlock2;
+        }
+        return pointsBlock;
     }
     
 }

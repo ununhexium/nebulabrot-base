@@ -14,11 +14,11 @@ import net.lab0.nebula.data.RenderingParameters;
 import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.enums.ComputingMethod;
 import net.lab0.nebula.project.Project;
+import net.lab0.tools.FileUtils;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
 import net.lab0.tools.geom.RectangleInterface;
 
-import org.apache.commons.io.FileUtils;
 
 /**
  * This class' source code explains how to create a new project.
@@ -43,7 +43,7 @@ public class Example2
         if (projectPath.toFile().exists())
         {
             System.out.println("Deleting directory " + projectPath);
-            FileUtils.deleteDirectory(projectPath.toFile());
+            FileUtils.removeRecursive(projectPath);
         }
         System.out.println("Creating project's directory");
         projectPath.toFile().mkdirs();

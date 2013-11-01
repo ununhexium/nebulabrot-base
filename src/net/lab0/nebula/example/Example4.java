@@ -3,8 +3,9 @@ package net.lab0.nebula.example;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang3.time.StopWatch;
+import com.google.common.base.Stopwatch;
 
 import net.lab0.nebula.data.QuadTreePointsComputingSet;
 import net.lab0.nebula.data.RenderingParameters;
@@ -23,8 +24,7 @@ public class Example4
     public static void main(String[] args)
     throws Exception
     {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        Stopwatch stopWatch = Stopwatch.createStarted();
         /*
          * First, we need to choose a directory.
          */
@@ -71,6 +71,6 @@ public class Example4
         set.finish();
         
         stopWatch.stop();
-        System.out.println(stopWatch.getTime() / 1000 + "s");
+        System.out.println(stopWatch.elapsed(TimeUnit.SECONDS) + "s");
     }
 }

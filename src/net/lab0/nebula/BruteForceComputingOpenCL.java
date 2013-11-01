@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Stopwatch;
 
 import net.lab0.nebula.color.PowerGrayScaleColorModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
@@ -20,8 +23,6 @@ import net.lab0.nebula.listener.ConsoleQuadTreeManagerListener;
 import net.lab0.tools.HumanReadable;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
-
-import org.apache.commons.lang3.time.StopWatch;
 
 public class BruteForceComputingOpenCL
 {
@@ -37,8 +38,7 @@ public class BruteForceComputingOpenCL
         
         OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines();
         
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        Stopwatch stopWatch = Stopwatch.createStarted();
         
         double step = 4.0 / (double) size;
         double yCurrent = -2.0;
@@ -78,7 +78,7 @@ public class BruteForceComputingOpenCL
         System.out.println("OpenCL computation: " + stopWatch.toString() + " , " + xzWriter.getTotalIterations()
         + " iterations.");
         
-        long speed = xzWriter.getTotalIterations() / (stopWatch.getTime() / 1000); // iterations per second
+        long speed = xzWriter.getTotalIterations() / stopWatch.elapsed(TimeUnit.SECONDS); // iterations per second
         System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
         
         // Path path = FileSystems.getDefault().getPath("F:\\dev\\nebula\\raw", "file" + 65);

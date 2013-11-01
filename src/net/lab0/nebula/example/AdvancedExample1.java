@@ -2,13 +2,15 @@ package net.lab0.nebula.example;
 
 import java.net.URISyntaxException;
 import java.nio.IntBuffer;
+import java.util.concurrent.TimeUnit;
 
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.core.OpenClMandelbrotComputeRoutines;
 import net.lab0.tools.HumanReadable;
 
-import org.apache.commons.lang3.time.StopWatch;
 import org.lwjgl.LWJGLException;
+
+import com.google.common.base.Stopwatch;
 
 /**
  * This example shows how to use the openCL compute routine directly.
@@ -29,8 +31,7 @@ public class AdvancedExample1
         OpenClMandelbrotComputeRoutines ocl = new OpenClMandelbrotComputeRoutines();
         
         // we are going to time the computation
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+        Stopwatch stopWatch = Stopwatch.createStarted();
         
         /*
          * counts the number of computed iterations. The time the GPU is going to run is proportional to the number of
@@ -105,7 +106,7 @@ public class AdvancedExample1
         stopWatch.stop();
         System.out.println("OpenCL computation: " + stopWatch.toString());
         
-        long speed = totalIterations / stopWatch.getTime() * 1000; // iterations per second
+        long speed = totalIterations / stopWatch.elapsed(TimeUnit.MILLISECONDS) * 1000; // iterations per second
         System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
         
         // release the resources
@@ -133,7 +134,7 @@ public class AdvancedExample1
             stopWatch.stop();
             System.out.println("CPU computation: " + stopWatch.toString());
             
-            speed = totalIterations / stopWatch.getTime() * 1000; // points per second
+            speed = totalIterations / stopWatch.elapsedTime(TimeUnit.MILLISECONDS) * 1000; // points per second
             System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CPU iteration per second");
         }
     }

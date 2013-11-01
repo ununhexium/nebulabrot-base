@@ -24,8 +24,6 @@ import java.util.Queue;
 import javax.swing.event.EventListenerList;
 
 import net.lab0.nebula.data.RootQuadTreeNode;
-import net.lab0.nebula.data.Statistics;
-import net.lab0.nebula.data.StatisticsData;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.data.SynchronizedCounter;
 import net.lab0.nebula.enums.Indexing;
@@ -33,6 +31,7 @@ import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.enums.TreeSaveMode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NoMoreNodesToCompute;
+import net.lab0.nebula.exception.NotImplemented;
 import net.lab0.nebula.listener.QuadTreeComputeListener;
 import net.lab0.nebula.listener.QuadTreeManagerListener;
 import net.lab0.tools.MyString;
@@ -43,7 +42,6 @@ import nu.xom.Element;
 import nu.xom.ParsingException;
 import nu.xom.Serializer;
 import nu.xom.ValidityException;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * 
@@ -239,7 +237,7 @@ public class QuadTreeManager
         switch (treeSaveMode)
         {
             case XML_TREE:
-                throw new NotImplementedException();
+                throw new NotImplemented();
                 
             case CUSTOM_BINARY:
                 loadAsCustomBinary(inputFolder, index);
@@ -993,51 +991,6 @@ public class QuadTreeManager
         {
             fireComputationFinished(false);
             return false;
-        }
-    }
-    
-    /**
-     * compute statistics for the root node
-     * 
-     * @return {@link Statistics}
-     */
-    public Statistics computeStatistics()
-    {
-        return computeStatistics(root);
-    }
-    
-    /**
-     * compute statistics for the given node
-     * 
-     * @param node
-     *            to compute statistics on
-     * @return {@link Statistics}
-     */
-    public static Statistics computeStatistics(StatusQuadTreeNode node)
-    {
-        Statistics statistics = new Statistics();
-        recursiveComputeStatistics(node, statistics);
-        return statistics;
-    }
-    
-    private static void recursiveComputeStatistics(StatusQuadTreeNode node, Statistics statistics)
-    {
-        // System.out.println(node.getPath());
-        StatisticsData data = statistics.getStatisticsDataForDepth(node.getDepth());
-        data.addStatusCount(node.status, 1);
-        data.addSurface(node.status, node.getSurface());
-        if (node.status == Status.OUTSIDE)
-        {
-            data.addIterations(node.getMin(), node.getMax());
-            statistics.updateMaxKnownIter(node.getMax());
-        }
-        
-        if (node.children != null)
-        {
-            for (StatusQuadTreeNode child : node.children)
-            {
-                recursiveComputeStatistics(child, statistics);
-            }
         }
     }
     
