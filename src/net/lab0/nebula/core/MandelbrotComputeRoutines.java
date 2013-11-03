@@ -35,13 +35,13 @@ public class MandelbrotComputeRoutines
      *            The maximum number of iterations to do.
      * @return <code>true</code> if the point is outside the Mandelbrot set, <code>false</code> otherwise.
      */
-    public static boolean isOutsideMandelbrotSetReference(double real, double img, int maxIter)
+    public static boolean isOutsideMandelbrotSetReference(double real, double img, long maxIter)
     {
         double real1 = real;
         double img1 = img;
         double real2, img2;
         
-        int iter = 0;
+        long iter = 0;
         while ((iter < maxIter) && ((real1 * real1 + img1 * img1) < 4.0d))
         // there is no sqrt in the non optim methods to avoids failures due to
         // rounding errors
@@ -70,13 +70,13 @@ public class MandelbrotComputeRoutines
      *            The maximum number of iterations to do.
      * @return The number of iterations needed to know whether this point is outside Mandelbrot's set.
      */
-    public static int computeIterationsCountReference(double real, double img, int maxIter)
+    public static long computeIterationsCountReference(double real, double img, long maxIter)
     {
         double real1 = real;
         double img1 = img;
         double real2, img2;
         
-        int iter = 0;
+        long iter = 0;
         while ((iter < maxIter) && ((real1 * real1 + img1 * img1) < 4.0d))
         // there is no sqrt in the non optim methods to avoids failures due to
         // rounding errors
@@ -137,7 +137,7 @@ public class MandelbrotComputeRoutines
      * Same as <code>computeIterationsCountReference()</code> with an optimization to test if inside or outside every 2
      * iterations.
      */
-    public synchronized static int computeIterationsCountOptim2(double real, double img, int maxIter)
+    public synchronized static long computeIterationsCountOptim2(double real, double img, long maxIter)
     {
         double realsqr = real * real;
         double imgsqr = img * img;
@@ -146,7 +146,7 @@ public class MandelbrotComputeRoutines
         double img1 = img;
         double real2, img2;
         
-        int iter = 0;
+        long iter = 0;
         while ((iter < maxIter) & ((realsqr + imgsqr) < 4.0d))
         {
             real2 = real1 * real1 - img1 * img1 + real;
@@ -174,7 +174,7 @@ public class MandelbrotComputeRoutines
      *            The maximum number of iterations to do.
      * @return <code>true</code> if the point is outside the Mandelbrot set, <code>false</code> otherwise.
      */
-    public static boolean isOutsideMandelbrotSet(double real, double img, int maxIter)
+    public static boolean isOutsideMandelbrotSet(double real, double img, long maxIter)
     {
         // optim: compute it and then assign it: avoids 2 multiplications
         double realsqr = real * real;
@@ -184,7 +184,7 @@ public class MandelbrotComputeRoutines
         double img1 = img;
         double real2, img2;
         
-        int iter = 0;
+        long iter = 0;
         // optim visible on non optim methods: single & avoids double branching
         while ((iter < maxIter) & ((realsqr + imgsqr) < 4.0d))
         {
@@ -206,7 +206,7 @@ public class MandelbrotComputeRoutines
      * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 2
      * iterations.
      */
-    public static boolean isOutsideMandelbrotSetOptim2(double real, double img, int maxIter)
+    public static boolean isOutsideMandelbrotSetOptim2(double real, double img, long maxIter)
     {
         double realsqr = real * real;
         double imgsqr = img * img;
@@ -215,7 +215,7 @@ public class MandelbrotComputeRoutines
         double img1 = img;
         double real2, img2;
         
-        int iter = 0;
+        long iter = 0;
         while ((iter < maxIter) & ((realsqr + imgsqr) < 4.0d))
         {
             real2 = real1 * real1 - img1 * img1 + real;
@@ -236,7 +236,7 @@ public class MandelbrotComputeRoutines
      * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 4
      * iterations.
      */
-    public static boolean isOutsideMandelbrotSetOptim4(double real, double img, int maxIter)
+    public static boolean isOutsideMandelbrotSetOptim4(double real, double img, long maxIter)
     {
         double realsqr = real * real;
         double imgsqr = img * img;
@@ -245,7 +245,7 @@ public class MandelbrotComputeRoutines
         double img1 = img;
         double real2, img2;
         
-        int iter = 0;
+        long iter = 0;
         while ((iter < maxIter) & ((realsqr + imgsqr) < 4.0d))
         {
             real2 = real1 * real1 - img1 * img1 + real;
