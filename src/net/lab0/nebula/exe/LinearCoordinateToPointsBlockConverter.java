@@ -1,12 +1,11 @@
 package net.lab0.nebula.exe;
 
-import java.util.concurrent.ExecutorService;
-
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.PointsBlockManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.MultipleOutputJob;
+import net.lab0.tools.exec.PriorityExecutor;
 
 /**
  * Converts a {@link CoordinatesBlock} into as many {@link PointsBlock} as needed.
@@ -37,7 +36,7 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
      * @param manager
      *            The {@link PointsBlockManager} to use to allocate the {@link PointsBlock}s
      */
-    public LinearCoordinateToPointsBlockConverter(ExecutorService executor, int priority,
+    public LinearCoordinateToPointsBlockConverter(PriorityExecutor executor, int priority,
     JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, int pointsBlockSize, PointsBlockManager manager)
     {
         super(executor, priority, jobBuilder);

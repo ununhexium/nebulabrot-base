@@ -1,5 +1,8 @@
 package net.lab0.nebula.data;
 
+import java.nio.DoubleBuffer;
+import java.nio.LongBuffer;
+
 import net.lab0.nebula.mgr.PointsBlockManager;
 
 /**
@@ -128,5 +131,38 @@ public class PointsBlock
         {
             this.iter[i] = iter[i];
         }
+    }
+    
+    /**
+     * Copies <code>real</code> into <code>this.real</code>
+     * 
+     * @param real
+     *            the buffer to copy
+     */
+    public void copyReal(DoubleBuffer real)
+    {
+        real.get(this.real);
+    }
+    
+    /**
+     * Copies <code>imag</code> into <code>this.imag</code>
+     * 
+     * @param imag
+     *            the buffer to copy
+     */
+    public void copyImag(DoubleBuffer imag)
+    {
+        imag.get(this.imag);
+    }
+    
+    /**
+     * Copies <code>iter</code> into <code>this.iter</code>
+     * 
+     * @param iter
+     *            the buffer to copy
+     */
+    public void copyIter(LongBuffer iter)
+    {
+        iter.get(this.iter);
     }
 }
