@@ -63,4 +63,70 @@ public class PointsBlock
     {
         return size == real.length && size == imag.length && size == iter.length;
     }
+    
+    /**
+     * Copies <code>real</code> into <code>this.real</code>
+     * 
+     * @param real
+     *            the array to copy
+     * @throws IllegalArgumentException
+     *             If the 2 arrays don't have the same length.
+     */
+    public void copyReal(double[] real)
+    {
+        if (real.length != this.real.length)
+        {
+            throw new IllegalArgumentException("The two arrays must have the same length: real=" + real.length
+            + ", this.real=" + this.real.length);
+        }
+        
+        for (int i = 0; i < real.length; ++i)
+        {
+            this.real[i] = real[i];
+        }
+    }
+    
+    /**
+     * Copies <code>imag</code> into <code>this.imag</code>
+     * 
+     * @param imag
+     *            the array to copy
+     * @throws IllegalArgumentException
+     *             If the 2 arrays don't have the same length.
+     */
+    public void copyImag(double[] imag)
+    {
+        if (imag.length != this.imag.length)
+        {
+            throw new IllegalArgumentException("The two arrays must have the same length: imag=" + imag.length
+            + ", this.imag=" + this.imag.length);
+        }
+        
+        for (int i = 0; i < imag.length; ++i)
+        {
+            this.imag[i] = imag[i];
+        }
+    }
+    
+    /**
+     * Copies <code>iter</code> into <code>this.iter</code>
+     * 
+     * @param iter
+     *            the array to copy
+     * @throws IllegalArgumentException
+     *             If the 2 arrays don't have the same length.
+     */
+    public void copyIter(long[] iter)
+    {
+        if (iter.length != this.iter.length)
+        {
+            throw new IllegalArgumentException("The two arrays must have the same length: iter=" + iter.length
+            + ", this.iter=" + this.iter.length);
+        }
+        
+        for (int i = 0; i < iter.length; ++i)
+        {
+            this.iter[i] = iter[i];
+        }
+    }
 }
