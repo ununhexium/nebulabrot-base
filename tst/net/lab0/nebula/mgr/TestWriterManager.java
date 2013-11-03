@@ -48,9 +48,11 @@ public class TestWriterManager
         {
             byte[] buffer = new byte[1024 * (Double.SIZE/8)];
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+            in.read(buffer, 0, Integer.SIZE/8);
             Assert.assertEquals(1024, byteBuffer.asIntBuffer().get());
             
             in.read(buffer);
+            byteBuffer.rewind();
             DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
             real = 0;
             for (int i = 0; i < 1024; ++i)

@@ -8,6 +8,7 @@ import net.lab0.nebula.data.TestQuadTreeNode;
 import net.lab0.nebula.data.TestRawMandelbrotData;
 import net.lab0.nebula.data.TestStatusQuadTreeNode;
 import net.lab0.nebula.exe.TestLinearPointsBlockGenerator;
+import net.lab0.nebula.exe.TestPointsBlockReader;
 import net.lab0.nebula.mgr.TestPointsBlockManager;
 import net.lab0.nebula.mgr.TestWriterManager;
 import net.lab0.nebula.project.TestProject;
@@ -22,6 +23,7 @@ import org.junit.runners.Suite.SuiteClasses;
     TestMandelbrotComputeRoutines.class,
     TestOpenClMandelbrotComputeRoutines.class,
     TestPointsBlockManager.class,
+    TestPointsBlockReader.class,
     TestProject.class, 
     TestQuadTreeNode.class, 
     TestQuadTreeSaveLoad.class,

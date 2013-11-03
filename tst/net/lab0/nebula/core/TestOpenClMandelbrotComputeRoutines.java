@@ -62,7 +62,7 @@ public class TestOpenClMandelbrotComputeRoutines
         }
         for (int i = 0; i < side * side; ++i)
         {
-            int iter = MandelbrotComputeRoutines.computeIterationsCountOptim2(xArray[i], yArray[i], maxIter);
+            long iter = MandelbrotComputeRoutines.computeIterationsCountOptim2(xArray[i], yArray[i], maxIter);
             Assert.assertEquals("For point (" + xArray[i] + ";" + yArray[i] + ")", iter, iterations[i]);
         }
     }

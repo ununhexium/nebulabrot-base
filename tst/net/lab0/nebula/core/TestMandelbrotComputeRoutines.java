@@ -20,7 +20,7 @@ import com.google.common.base.Stopwatch;
 
 public class TestMandelbrotComputeRoutines
 {
-    private static int        maxIter         = 2 << 10;
+    private static long       maxIter         = 2L << 10;
     private static int        side            = 1024;
     private static double     step            = 4.0 / side;
     private static int        timersLoopCount = 4;
@@ -58,7 +58,7 @@ public class TestMandelbrotComputeRoutines
     @Test
     public void testComputeIterationsCountReference()
     {
-        int result;
+        long result;
         
         result = MandelbrotComputeRoutines.computeIterationsCountReference(0.0d, 0.0d, maxIter);
         assertEquals(maxIter, result);
@@ -77,7 +77,7 @@ public class TestMandelbrotComputeRoutines
     public void testComputeIterationsCountReferenceDebug()
     {
         List<Pair<Double, Double>> points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(0.0, 0.0,
-        maxIter);
+        (int) maxIter);
         
         assertEquals(maxIter, points.size());
         for (Pair<Double, Double> p : points)
@@ -86,16 +86,17 @@ public class TestMandelbrotComputeRoutines
             assertEquals(0.0d, p.b.doubleValue(), 0.0);
         }
         
-        points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(2.0, 2.0, maxIter);
+        points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(2.0, 2.0, (int) maxIter);
         assertTrue(0 < points.size());
         
-        points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(10.0, 10.0, maxIter);
+        points = MandelbrotComputeRoutines.computeIterationsCountReferenceDebug(10.0, 10.0, (int) maxIter);
         assertFalse(Double.isNaN(points.get(points.size() - 1).a));
         assertFalse(Double.isNaN(points.get(points.size() - 1).b));
     }
     
     @Test
-    @Ignore //TODO: find why this always find a value to succeed to fail X(
+    @Ignore
+    // TODO: find why this always find a value to succeed to fail X(
     public void testComputeIterationsCountOptim2()
     {
         for (int x = 0; x < side; ++x)
@@ -105,8 +106,8 @@ public class TestMandelbrotComputeRoutines
                 double real = -2.0 + x * step;
                 double img = -2.0 + y * step;
                 
-                int count2 = MandelbrotComputeRoutines.computeIterationsCountOptim2(real, img, maxIter);
-                int count = MandelbrotComputeRoutines.computeIterationsCountReference(real, img, maxIter);
+                long count2 = MandelbrotComputeRoutines.computeIterationsCountOptim2(real, img, maxIter);
+                long count = MandelbrotComputeRoutines.computeIterationsCountReference(real, img, maxIter);
                 
                 if (count != 0)
                 {
