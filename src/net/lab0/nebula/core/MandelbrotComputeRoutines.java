@@ -137,7 +137,7 @@ public class MandelbrotComputeRoutines
      * Same as <code>computeIterationsCountReference()</code> with an optimization to test if inside or outside every 2
      * iterations.
      */
-    public synchronized static long computeIterationsCountOptim2(double real, double img, long maxIter)
+    public static long computeIterationsCountOptim2(double real, double img, long maxIter)
     {
         double realsqr = real * real;
         double imgsqr = img * img;

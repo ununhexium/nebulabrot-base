@@ -30,7 +30,6 @@ public class TestPointsBlockCPUIterationComputing
         try
         {
             priorityExecutor.finishAndShutdown();
-            System.out.println("finish exec");
         }
         catch (InterruptedException e)
         {

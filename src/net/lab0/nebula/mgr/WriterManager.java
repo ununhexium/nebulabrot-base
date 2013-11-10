@@ -71,7 +71,7 @@ public class WriterManager
             out.write(sizeBuffer.array());
             
             // arrays
-            byte [] buffer = new byte[pointsBlock.size * (Double.SIZE / 8)];
+            byte[] buffer = new byte[pointsBlock.size * (Double.SIZE / 8)];
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
             
             // real
@@ -127,6 +127,10 @@ public class WriterManager
     private FileOutputStream getWriterFor(Path output)
     throws FileNotFoundException
     {
+        if (output.toFile().isDirectory())
+        {
+            throw new IllegalArgumentException("The file " + output + " already exists and is a directory.");
+        }
         FileOutputStream outputStream = mappings.get(output);
         if (outputStream == null)
         {

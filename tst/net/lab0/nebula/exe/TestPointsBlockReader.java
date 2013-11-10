@@ -56,7 +56,7 @@ public class TestPointsBlockReader
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         // hopefully, there will be no rounding errors Powers of 2 are great :)
         CoordinatesBlock block = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 32d, 4.0 / 32d);
-        LinearCoordinateToPointsBlockConverter generator = new LinearCoordinateToPointsBlockConverter(executor, 0,
+        CoordinatesToPointsBlockConverter generator = new CoordinatesToPointsBlockConverter(executor, 0,
         new PointsBlockWriterCreator(), block, 16 * 16, manager);
         executor.prestartAllCoreThreads();
         executor.submit(generator);

@@ -13,7 +13,7 @@ import net.lab0.tools.exec.PriorityExecutor;
  * @author 116@lab0.net
  * 
  */
-public class LinearCoordinateToPointsBlockConverter
+public class CoordinatesToPointsBlockConverter
 extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
 {
     private CoordinatesBlock   block;
@@ -36,7 +36,7 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
      * @param manager
      *            The {@link PointsBlockManager} to use to allocate the {@link PointsBlock}s
      */
-    public LinearCoordinateToPointsBlockConverter(PriorityExecutor executor, int priority,
+    public CoordinatesToPointsBlockConverter(PriorityExecutor executor, int priority,
     JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, int pointsBlockSize, PointsBlockManager manager)
     {
         super(executor, priority, jobBuilder);
@@ -94,6 +94,7 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
             pointsBlock.release();
             pointsBlock = pointsBlock2;
         }
+        System.out.println("next block");
         return pointsBlock;
     }
     

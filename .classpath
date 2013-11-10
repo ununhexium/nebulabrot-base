@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="ext"/>
+	<classpathentry kind="src" path="tst"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-	<classpathentry kind="lib" path="/libs/lib/jnaerator-0.10-shaded.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/mandelbrot">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="Nebulabrot/lib"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/guava-15.0.jar" sourcepath="C:/Users/116/workspace/lib/guava-15.0-sources.jar"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/xz-1.4.jar" sourcepath="C:/Users/116/workspace/lib/xz-1.4-sources.jar"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/XOM/xom-1.2.10.jar" sourcepath="C:/Users/116/workspace/lib/XOM/src"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/lwjgl-2.9.0/jar/lwjgl.jar" sourcepath="C:/Users/116/workspace/lib/lwjgl-2.9.0/src/java">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Users/116/workspace/lib/lwjgl-2.9.0/native/windows"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/lwjgl-2.9.0/jar/lzma.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

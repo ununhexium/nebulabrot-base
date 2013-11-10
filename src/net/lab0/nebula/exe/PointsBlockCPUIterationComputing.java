@@ -1,7 +1,5 @@
 package net.lab0.nebula.exe;
 
-import java.util.concurrent.ExecutorService;
-
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.tools.exec.JobBuilder;
@@ -30,7 +28,6 @@ extends SingleOutputJob<PointsBlock, PointsBlock>
         {
             iter[i] = MandelbrotComputeRoutines.computeIterationsCountOptim2(real[i], imag[i], maximumIteration);
         }
-        System.out.println("finish");
         return input;
     }
     

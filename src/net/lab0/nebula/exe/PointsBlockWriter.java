@@ -37,6 +37,7 @@ extends CascadingJob<PointsBlock, Void>
     {
         writerManager.write(pointsBlock, outputPath);
         pointsBlock.release();
+        System.out.println("out file");
     }
     
 }
