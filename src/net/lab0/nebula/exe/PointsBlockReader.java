@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.LongBuffer;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutorService;
 
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.PointsBlockManager;

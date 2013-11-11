@@ -46,7 +46,7 @@ public class Example02
         /*
          * This time, we redirect the points blocks to a computing job that will compute the iterations.
          */
-        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputating(toFile);
+        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputating(toFile, 65536);
         CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
         toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
         

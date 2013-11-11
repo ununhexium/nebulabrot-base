@@ -15,23 +15,25 @@ public class ToCPUIterationComputating
 implements JobBuilder<PointsBlock>
 {
     private final JobBuilder<PointsBlock> jobBuilder;
+    private final long                    iteration;
     
     /**
      * 
      * @param jobBuilder
      *            the next job builder that will be used at the {@link PointsBlockCPUIterationComputing} creation time.
      */
-    public ToCPUIterationComputating(JobBuilder<PointsBlock> jobBuilder)
+    public ToCPUIterationComputating(JobBuilder<PointsBlock> jobBuilder, long iteration)
     {
         super();
         this.jobBuilder = jobBuilder;
+        this.iteration = iteration;
     }
     
     @Override
     public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
     {
         return new PointsBlockCPUIterationComputing(parent.getExecutor(), parent.getPriority() + 1, jobBuilder, output,
-        65536);
+        iteration);
     }
     
 }

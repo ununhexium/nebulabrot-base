@@ -94,7 +94,6 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
             pointsBlock.release();
             pointsBlock = pointsBlock2;
         }
-        System.out.println("next block");
         return pointsBlock;
     }
     
