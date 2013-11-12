@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import net.lab0.nebula.data.PointsBlock;
+import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.SerializationException;
 
 public class WriterManager
@@ -107,15 +109,86 @@ public class WriterManager
     }
     
     /**
+     * Writes {@link RawMandelbrotData} elements to a binary file. The structure is as follows:
+     * 
+     * <pre>
+     * 4 bytes, int, the 'width' (net.lab0.nebula.data.RawMandelbrotData.pixelWidth).
+     * 4 bytes, int, the 'height' (net.lab0.nebula.data.RawMandelbrotData.pixelHeight).
+     * int[width][height]: the data block, column by column
+     * </pre>
+     * 
+     * @param pointsBlock
+     *            The block of points to serialize
+     * @param output
+     *            The location where the data must be written
+     * @throws SerializationException
+     *             if an error happens during this write operation.
+     */
+    public void write(RawMandelbrotData data, Path output)
+    throws SerializationException
+    {
+        try
+        {
+            lock.lock();
+            
+            FileOutputStream out = getWriterFor(output);
+            
+            // width / height
+            ByteBuffer sizeBuffer = ByteBuffer.wrap(new byte[Integer.SIZE / 8 * 2]);
+            IntBuffer intBuffer = sizeBuffer.asIntBuffer();
+            intBuffer.put(data.getPixelWidth());
+            intBuffer.put(data.getPixelHeight());
+            sizeBuffer.flip();
+            out.write(sizeBuffer.array());
+            
+            // data block
+            final int width = data.getPixelWidth();
+            byte[] buffer = new byte[data.getPixelHeight() * (Integer.SIZE / 8)];
+            ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
+            IntBuffer dataBuffer = byteBuffer.asIntBuffer();
+            for (int i = 0; i < width; ++i)
+            {
+                dataBuffer.clear();
+                dataBuffer.put(data.getData()[i]);
+                dataBuffer.rewind();
+                byteBuffer.rewind();
+                out.write(buffer);
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new SerializationException("Error when trying to get the data ouput stream", e);
+        }
+        catch (IOException e)
+        {
+            throw new SerializationException("Error while writing the data", e);
+        }
+        finally
+        {
+            lock.unlock();
+        }
+    }
+    
+    /**
      * Use this method when there is nothing left ot write to that path. Releases the path (removes references to it,
      * allowing the GC to do its job.
      * 
      * @param path
      *            The path to release.
+     * @return <code>true</code> if the release was successful, <code>false</code> otherwise.
      */
-    public void release(Path path)
+    public boolean release(Path path)
     {
-        mappings.remove(path);
+        try
+        {
+            getWriterFor(path).close();
+            mappings.remove(path);
+            return true;
+        }
+        catch (IOException e)
+        {
+            return false;
+        }
     }
     
     /**

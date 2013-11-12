@@ -429,8 +429,8 @@ public class RawMandelbrotData
         final BufferedImage bufferedImage = gc.createCompatibleImage(pixelWidth / zoomFactor, pixelHeight / zoomFactor,
         BufferedImage.TYPE_INT_RGB);
         
-        System.out.println("img size " + pixelWidth / zoomFactor + "/" + pixelHeight / zoomFactor);
-        System.out.println("zoom factor " + zoomFactor + " zoomOut " + zoomOut);
+        // System.out.println("img size " + pixelWidth / zoomFactor + "/" + pixelHeight / zoomFactor);
+        // System.out.println("zoom factor " + zoomFactor + " zoomOut " + zoomOut);
         // System.out.println("" + raw.getPixelWidth() + " * " + raw.getPixelHeight());
         long min = Long.MAX_VALUE;
         long max = Long.MIN_VALUE;
