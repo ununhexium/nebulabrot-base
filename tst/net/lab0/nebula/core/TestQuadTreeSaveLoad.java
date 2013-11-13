@@ -18,6 +18,7 @@ import nu.xom.ValidityException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -102,6 +103,7 @@ public class TestQuadTreeSaveLoad
         assertTrue(root.testIsExactlyTheSameAs(quadTreeManager.getQuadTreeRoot(), false));
     }
     
+    @Ignore
     @Test
     public void testXmlLoadDepthLimit()
     throws IOException, ValidityException, ClassNotFoundException, NoSuchAlgorithmException, ParsingException,

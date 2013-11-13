@@ -1,5 +1,6 @@
 package net.lab0.nebula.mgr;
 
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,37 +48,17 @@ public class TestWriterManager
         
         // check written data
         try (
-            FileInputStream in = new FileInputStream(path.toFile()))
+            DataInputStream in = new DataInputStream(new FileInputStream(path.toFile())))
         {
-            byte[] buffer = new byte[1024 * (Double.SIZE / 8)];
-            ByteBuffer byteBuffer = ByteBuffer.wrap(buffer);
-            in.read(buffer, 0, Integer.SIZE / 8);
-            Assert.assertEquals(1024, byteBuffer.asIntBuffer().get());
-            
-            in.read(buffer);
-            byteBuffer.rewind();
-            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
             real = 0;
-            for (int i = 0; i < 1024; ++i)
-            {
-                Assert.assertEquals("Error at index " + i, real, doubleBuffer.get(), 0.0d);
-                real += Math.PI;
-            }
-            
-            in.read(buffer);
-            doubleBuffer.rewind();
             imag = 0;
             for (int i = 0; i < 1024; ++i)
             {
-                Assert.assertEquals("Error at index " + i, imag, doubleBuffer.get(), 0.0d);
+                Assert.assertEquals("Error at index " + i, real, in.readDouble(), 0.0d);
+                Assert.assertEquals("Error at index " + i, imag, in.readDouble(), 0.0d);
+                Assert.assertEquals("Error at index " + i, i, in.readLong());
+                real += Math.PI;
                 imag -= Math.PI;
-            }
-            
-            in.read(buffer);
-            LongBuffer longBuffer = byteBuffer.asLongBuffer();
-            for (int i = 0; i < 1024; ++i)
-            {
-                Assert.assertEquals("Error at index " + i, i, longBuffer.get());
             }
         }
     }

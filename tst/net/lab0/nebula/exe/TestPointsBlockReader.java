@@ -16,6 +16,7 @@ import net.lab0.tools.exec.Dump;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -26,7 +27,6 @@ public class TestPointsBlockReader
     private static WriterManager      writerManager = new WriterManager();
     private static PointsBlockManager manager       = new PointsBlockManager(10);
     public static List<PointsBlock>   dumpList      = Collections.synchronizedList(new ArrayList<PointsBlock>());
-    private static long               count         = 0;
     
     private static final class PointsBlockWriterCreator
     implements JobBuilder<PointsBlock>
@@ -34,7 +34,6 @@ public class TestPointsBlockReader
         @Override
         public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
         {
-            count++;
             return new PointsBlockWriter(parent.getExecutor(), parent.getPriority() + 1, output, path, writerManager);
         }
     }
@@ -71,18 +70,12 @@ public class TestPointsBlockReader
     }
     
     @Test
-    public void foo()
-    {
-        System.out.println(count + " blocks created");
-    }
-    
-    @Test
     public void testReader()
     throws FileNotFoundException
     {
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         PointsBlockManager manager = new PointsBlockManager(10);
-        PointsBlockReader pointsBlockReader = new PointsBlockReader(executor, 0, new Dumper(), path, manager);
+        PointsBlockReader pointsBlockReader = new PointsBlockReader(executor, 0, new Dumper(), path, manager, 250);
         executor.prestartAllCoreThreads();
         executor.submit(pointsBlockReader);
         try
@@ -91,14 +84,15 @@ public class TestPointsBlockReader
         }
         catch (InterruptedException e)
         {
+            Assert.fail();
             e.printStackTrace();
         }
         
-        System.out.println(dumpList.size());
-        for (PointsBlock block : dumpList)
+        Assert.assertTrue(dumpList.size() == 5);
+        for (PointsBlock block : dumpList.subList(0, 4))
         {
-            System.out.println(block.size);
+            Assert.assertTrue(block.size == 250);
         }
-        
+        Assert.assertEquals(4*6, dumpList.get(4).size);
     }
 }
