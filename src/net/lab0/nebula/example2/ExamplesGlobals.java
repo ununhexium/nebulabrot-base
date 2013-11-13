@@ -44,7 +44,7 @@ public class ExamplesGlobals
             }
             else if (dir.list().length != 0)
             {
-                System.out.println("Deleting the contrent of " + dir.getAbsolutePath());
+                System.out.println("Deleting the content of " + dir.getAbsolutePath());
                 FileUtils.removeRecursive(path, false);
                 dir.mkdir();
             }

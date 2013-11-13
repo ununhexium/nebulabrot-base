@@ -47,7 +47,7 @@ implements QuadTreeManagerListener
     @Override
     public void loadingOfCurrentFileProgress(long current, long total)
     {
-        System.out.println("Loading " + HumanReadable.humanReadableByteCount(current, true) + " out of " + HumanReadable.humanReadableByteCount(total, true));
+        System.out.println("Loading " + HumanReadable.humanReadableSizeInBytes(current) + " out of " + HumanReadable.humanReadableSizeInBytes(total));
     }
     
 }

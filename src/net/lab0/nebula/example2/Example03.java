@@ -38,8 +38,8 @@ public class Example03
         /*
          * Same as example 2
          */
-        CoordinatesBlock coordinatesBlock = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 4096d, 4.0 / 4096d);
-        int blockSize = 1024 * 1024;
+        CoordinatesBlock coordinatesBlock = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 2048d, 4.0 / 2048d);
+        int blockSize = 512*512;
         
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
@@ -55,6 +55,7 @@ public class Example03
         priorityExecutor.prestartAllCoreThreads();
         priorityExecutor.submit(converter);
         priorityExecutor.finishAndShutdown();
+        writerManager.release(outputPath);
         System.out.println("The file is available at " + outputPath.toUri());
         
         // Example 03
@@ -71,20 +72,19 @@ public class Example03
          */
         RectangleInterface viewPort = new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0));
         /*
-         * The job builder that will take points block as input and convert them to the raw mandelbrot rendering.
+         * The job builder that will take points block as input and convert them to the raw Mandelbrot rendering.
          */
         ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
         /*
          * The data input: the file we created in Example02. We don't care about the exception for this example.
          */
         PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, 0, toAggregator, outputPath,
-        pointsBlockManager);
+        pointsBlockManager, 1024 * 1024);
         /*
          * Do the computation
          */
         priorityExecutor.submit(pointsBlockReader);
         priorityExecutor.finishAndShutdown();
-        
         /*
          * Graphic rendering
          */
