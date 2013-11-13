@@ -107,7 +107,7 @@ public class AdvancedExample1
         System.out.println("OpenCL computation: " + stopWatch.toString());
         
         long speed = totalIterations / stopWatch.elapsed(TimeUnit.MILLISECONDS) * 1000; // iterations per second
-        System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
+        System.out.println(HumanReadable.humanReadableNumber(speed) + " CL iteration per second");
         
         // release the resources
         ocl.teardown();
@@ -135,7 +135,7 @@ public class AdvancedExample1
             System.out.println("CPU computation: " + stopWatch.toString());
             
             speed = totalIterations / stopWatch.elapsedTime(TimeUnit.MILLISECONDS) * 1000; // points per second
-            System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CPU iteration per second");
+            System.out.println(HumanReadable.humanReadableNumber(speed) + " CPU iteration per second");
         }
     }
 }

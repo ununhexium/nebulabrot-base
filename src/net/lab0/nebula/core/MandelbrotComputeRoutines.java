@@ -334,8 +334,7 @@ public class MandelbrotComputeRoutines
                                    // point operations in 1 loop
         stopWatch.stop();
         System.out.println("Computing power: ~"
-        + HumanReadable.humanReadableNumber(1000L * totalIterationCount / stopWatch.elapsed(TimeUnit.MILLISECONDS),
-        true) + "flops");
+        + HumanReadable.humanReadableNumber(1000L * totalIterationCount / stopWatch.elapsed(TimeUnit.MILLISECONDS)) + "flops");
         stopWatch.reset();
     }
 }

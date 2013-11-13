@@ -79,7 +79,7 @@ public class BruteForceComputingOpenCL
         + " iterations.");
         
         long speed = xzWriter.getTotalIterations() / stopWatch.elapsed(TimeUnit.SECONDS); // iterations per second
-        System.out.println(HumanReadable.humanReadableNumber(speed, true) + " CL iteration per second");
+        System.out.println(HumanReadable.humanReadableNumber(speed) + " CL iteration per second");
         
         // Path path = FileSystems.getDefault().getPath("F:\\dev\\nebula\\raw", "file" + 65);
         
