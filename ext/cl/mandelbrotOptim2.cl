@@ -1,9 +1,9 @@
-kernel void mandelbrot(global const double* a, global const double* b, global int* result, int const size, int const maxIter)
+kernel void mandelbrot(global const double* a, global const double* b, global int* result, int const size, long const maxIter)
 {
     const int itemId = get_global_id(0); 
     if(itemId < size)
     {
-        int i = 0;
+        long i = 0;
         double real = a[itemId];
         double real1 = real;
         double real2;
