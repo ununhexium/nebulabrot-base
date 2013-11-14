@@ -17,19 +17,38 @@ public class PointsBlockWriter
 extends Writer<PointsBlock>
 {
     private WriterManager writerManager;
+    private long          minimumIteration;
+    private long          maximumIteration;
+    
+    /**
+     * Writes points if the number of iterations IT it has is such as <code>minimumIteration</code> <= IT <=
+     * <code>maximumIteration</code>.
+     * 
+     * @param minimumIteration
+     *            The minimum number of iteration a point must have to be written
+     * @param maximumIteration
+     *            The maximum number of iteration a point must have to be written
+     */
+    public PointsBlockWriter(PriorityExecutor executor, int priority, PointsBlock pointsBlock, Path ouputPath,
+    WriterManager writerManager, long minimumIteration, long maximumIteration)
+    {
+        super(executor, priority, pointsBlock, ouputPath);
+        this.writerManager = writerManager;
+        this.minimumIteration = minimumIteration;
+        this.maximumIteration = maximumIteration;
+    }
     
     public PointsBlockWriter(PriorityExecutor executor, int priority, PointsBlock pointsBlock, Path ouputPath,
     WriterManager writerManager)
     {
-        super(executor, priority, pointsBlock, ouputPath);
-        this.writerManager = writerManager;
+        this(executor, priority, pointsBlock, ouputPath, writerManager, Long.MIN_VALUE, Long.MAX_VALUE);
     }
-
+    
     @Override
     protected void save(PointsBlock data, Path outputPath)
     throws Exception
     {
-        writerManager.write(data, outputPath);
+        writerManager.write(data, outputPath, minimumIteration, maximumIteration);
         data.release();
     }
     

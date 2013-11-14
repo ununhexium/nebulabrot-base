@@ -28,6 +28,15 @@ public class WriterManager
     private Lock                        lock     = new ReentrantLock();
     
     /**
+     * Equivalent of net.lab0.nebula.mgr.WriterManager#write(pointsBlock, output, Long.MIN_VALUE, Long.MAX_VALUE)
+     */
+    public void write(PointsBlock pointsBlock, Path output)
+    throws SerializationException
+    {
+        write(pointsBlock, output, Long.MIN_VALUE, Long.MAX_VALUE);
+    }
+    
+    /**
      * Writes {@link PointsBlock} elements to a binary file. The structure is as follows:
      * 
      * <pre>
@@ -37,14 +46,21 @@ public class WriterManager
      *      8 bytes, long,   the 'iter[i]' coordinate
      * </pre>
      * 
+     * Points are written if the number of iteration IT is such as <code>minimumIteration</code> <= IT <=
+     * <code>maximumIteration</code>.
+     * 
      * @param pointsBlock
      *            The block of points to serialize
      * @param output
      *            The location where the data must be written
+     * @param minimumIteration
+     *            The minimum number of iteration a point must have to be written
+     * @param maximumIteration
+     *            The maximum number of iteration a point must have to be written
      * @throws SerializationException
      *             if an error happens during this write operation.
      */
-    public void write(PointsBlock pointsBlock, Path output)
+    public void write(PointsBlock pointsBlock, Path output, long minimumIteration, long maximumIteration)
     throws SerializationException
     {
         try
@@ -70,9 +86,12 @@ public class WriterManager
             
             for (int i = 0; i < pointsBlock.size; ++i)
             {
-                out.writeDouble(pointsBlock.real[i]);
-                out.writeDouble(pointsBlock.imag[i]);
-                out.writeLong(pointsBlock.iter[i]);
+                if (pointsBlock.iter[i] >= minimumIteration && pointsBlock.iter[i] <= maximumIteration)
+                {
+                    out.writeDouble(pointsBlock.real[i]);
+                    out.writeDouble(pointsBlock.imag[i]);
+                    out.writeLong(pointsBlock.iter[i]);
+                }
             }
             
             out.flush();
