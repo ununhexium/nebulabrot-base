@@ -37,11 +37,19 @@ public class Example02
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
         
-        WriterManager writerManager = new WriterManager();
+        final WriterManager writerManager = new WriterManager();
         Path basePath = ExamplesGlobals.createClearDirectory(Example02.class);
-        Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
+        final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
         PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
+        priorityExecutor.registerShutdownHook(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                writerManager.release(outputPath);
+            }
+        });
         
         /*
          * This time, we redirect the points blocks to a computing job that will compute the iterations.

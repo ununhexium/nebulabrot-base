@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.SerializationException;
@@ -28,13 +29,6 @@ public class WriterManager
     
     /**
      * Writes {@link PointsBlock} elements to a binary file. The structure is as follows:
-     * 
-     * <pre>
-     * 4 bytes, int, the 'size' (net.lab0.nebula.data.PointsBlock.size).
-     * double[size]  : the real array of the points block
-     * double[size]  : the imag array of the points block
-     * long[size]    : the iter array of the points block
-     * </pre>
      * 
      * <pre>
      * for each point in PointsBlock
@@ -80,6 +74,8 @@ public class WriterManager
                 out.writeDouble(pointsBlock.imag[i]);
                 out.writeLong(pointsBlock.iter[i]);
             }
+            
+            out.flush();
         }
         catch (FileNotFoundException e)
         {
@@ -105,8 +101,8 @@ public class WriterManager
      *      int[width][height]: the data block, column by column
      * </pre>
      * 
-     * @param pointsBlock
-     *            The block of points to serialize
+     * @param data
+     *            The raw Mandelbrot data to serialize
      * @param output
      *            The location where the data must be written
      * @throws SerializationException
@@ -142,6 +138,66 @@ public class WriterManager
                 byteBuffer.rewind();
                 out.write(buffer);
             }
+            
+            out.flush();
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new SerializationException("Error when trying to get the data ouput stream", e);
+        }
+        catch (IOException e)
+        {
+            throw new SerializationException("Error while writing the data", e);
+        }
+        finally
+        {
+            lock.unlock();
+        }
+    }
+    
+    /**
+     * Writes {@link CoordinatesBlock}s elements to a binary file. The structure is as follows:
+     * 
+     * <pre>
+     * for each CoordinatesBlock:
+     *      8 bytes, double, the 'minX'  (net.lab0.nebula.data.CoordinatesBlock.minX).
+     *      8 bytes, double, the 'maxX'  (net.lab0.nebula.data.CoordinatesBlock.maxX).
+     *      8 bytes, double, the 'minY'  (net.lab0.nebula.data.CoordinatesBlock.minY).
+     *      8 bytes, double, the 'maxY'  (net.lab0.nebula.data.CoordinatesBlock.maxY).
+     *      8 bytes, double, the 'stepX' (net.lab0.nebula.data.CoordinatesBlock.stepX).
+     *      8 bytes, double, the 'stepY' (net.lab0.nebula.data.CoordinatesBlock.stepY).
+     * </pre>
+     * 
+     * @param data
+     *            The array of coordinates block to write.
+     * @param output
+     *            The location where the data must be written
+     * @throws SerializationException
+     *             if an error happens during this write operation.
+     */
+    public void write(CoordinatesBlock[] dataArray, Path output)
+    throws SerializationException
+    {
+        if (dataArray.length == 0)
+        {
+            return;
+        }
+        try
+        {
+            lock.lock();
+            DataOutputStream out = getWriterFor(output);
+            
+            for (CoordinatesBlock b : dataArray)
+            {
+                out.writeDouble(b.minX);
+                out.writeDouble(b.maxX);
+                out.writeDouble(b.minY);
+                out.writeDouble(b.maxY);
+                out.writeDouble(b.stepX);
+                out.writeDouble(b.stepY);
+            }
+            
+            out.flush();
         }
         catch (FileNotFoundException e)
         {

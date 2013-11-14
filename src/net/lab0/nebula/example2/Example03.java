@@ -44,18 +44,25 @@ public class Example03
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
         
-        WriterManager writerManager = new WriterManager();
+        final WriterManager writerManager = new WriterManager();
         Path basePath = ExamplesGlobals.createClearDirectory(Example03.class);
-        Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
+        final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
         PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
         JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputating(toFile, 1024);
         CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
         toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
+        priorityExecutor.registerShutdownHook(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                writerManager.release(outputPath);
+            }
+        });
         priorityExecutor.prestartAllCoreThreads();
         priorityExecutor.submit(converter);
         priorityExecutor.finishAndShutdown();
-        writerManager.release(outputPath);
         System.out.println("The file is available at " + outputPath.toUri());
         
         // Example 03

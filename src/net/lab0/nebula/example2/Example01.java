@@ -29,7 +29,7 @@ public class Example01
     public static void main(String[] args)
     {
         /*
-         * First, the area we want to compute. This is the whole Mandelbrot set with 16 million points.
+         * First, the area we want to compute. This is the whole Mandelbrot set with 1 million points.
          */
         CoordinatesBlock coordinatesBlock = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 1024d, 4.0 / 1024d);
         
@@ -56,10 +56,22 @@ public class Example01
          * The job builder is the class that will create the job that has to be executed for each of the created points
          * block. In this case, we want to output the result in a file. @see net.lab0.nebula.exe.builder.ToFile
          */
-        WriterManager writerManager = new WriterManager();
+        final WriterManager writerManager = new WriterManager();
         Path basePath = ExamplesGlobals.createClearDirectory(Example01.class);
-        Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
+        final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
+        /*
+         * After the computation, we need to tell to the write manager that we won't write anything in the above file
+         * anymore. We can do that by registering a hook instead of doing it manually after the executor ended.
+         */
+        priorityExecutor.registerShutdownHook(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                writerManager.release(outputPath);
+            }
+        });
         
         /*
          * The points block manager is the class in charge of the allocation and management of the points blocks

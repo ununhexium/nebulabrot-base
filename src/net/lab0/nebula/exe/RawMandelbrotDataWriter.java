@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.SerializationException;
 import net.lab0.nebula.mgr.WriterManager;
-import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
 
 public class RawMandelbrotDataWriter
@@ -13,10 +12,10 @@ extends Writer<RawMandelbrotData>
 {
     private WriterManager writerManager;
     
-    public RawMandelbrotDataWriter(PriorityExecutor executor, int priority, JobBuilder<Void> jobBuilder,
-    RawMandelbrotData rawMandelbrotData, Path ouputPath, WriterManager writerManager)
+    public RawMandelbrotDataWriter(PriorityExecutor executor, int priority, RawMandelbrotData rawMandelbrotData,
+    Path ouputPath, WriterManager writerManager)
     {
-        super(executor, priority, jobBuilder, rawMandelbrotData, ouputPath);
+        super(executor, priority, rawMandelbrotData, ouputPath);
         this.writerManager = writerManager;
     }
     

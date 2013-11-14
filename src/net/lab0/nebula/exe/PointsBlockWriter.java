@@ -3,9 +3,7 @@ package net.lab0.nebula.exe;
 import java.nio.file.Path;
 
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.exception.SerializationException;
 import net.lab0.nebula.mgr.WriterManager;
-import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.PriorityExecutor;
 
 /**
@@ -16,27 +14,23 @@ import net.lab0.tools.exec.PriorityExecutor;
  * 
  */
 public class PointsBlockWriter
-extends CascadingJob<PointsBlock, Void>
+extends Writer<PointsBlock>
 {
-    private PointsBlock   pointsBlock;
-    private Path          outputPath;
     private WriterManager writerManager;
     
     public PointsBlockWriter(PriorityExecutor executor, int priority, PointsBlock pointsBlock, Path ouputPath,
     WriterManager writerManager)
     {
-        super(executor, priority, null);
-        this.pointsBlock = pointsBlock;
-        this.outputPath = ouputPath;
+        super(executor, priority, pointsBlock, ouputPath);
         this.writerManager = writerManager;
     }
-    
+
     @Override
-    public void executeTask()
-    throws SerializationException
+    protected void save(PointsBlock data, Path outputPath)
+    throws Exception
     {
-        writerManager.write(pointsBlock, outputPath);
-        pointsBlock.release();
+        writerManager.write(data, outputPath);
+        data.release();
     }
     
 }
