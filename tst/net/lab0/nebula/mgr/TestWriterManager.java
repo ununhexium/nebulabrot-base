@@ -4,12 +4,11 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.SerializationException;
@@ -39,7 +38,7 @@ public class TestWriterManager
         }
         
         WriterManager writerManager = new WriterManager();
-        Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file.data");
+        Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file1.data");
         path.toFile().getParentFile().mkdirs();
         writerManager.write(block, path);
         writerManager.release(path);
@@ -109,6 +108,45 @@ public class TestWriterManager
                     tested);
                     current++;
                 }
+            }
+        }
+    }
+    
+    @Test
+    public void testWriteCoordinatesBlock()
+    throws SerializationException, IOException
+    {
+        CoordinatesBlock[] blocks = new CoordinatesBlock[10];
+        for (int i = 0; i < 10; ++i)
+        {
+            blocks[i] = new CoordinatesBlock(0, 0, 0, 0, 0, 0);
+            blocks[i].minX = Math.PI * i;
+            blocks[i].maxX = -Math.PI * i;
+            blocks[i].minY = Math.E * i;
+            blocks[i].maxY = -Math.E * i;
+            blocks[i].stepX = 1.1 * i;
+            blocks[i].stepY = -1.1 * i;
+        }
+        
+        WriterManager writerManager = new WriterManager();
+        Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file3.data");
+        path.toFile().getParentFile().mkdirs();
+        writerManager.write(blocks, path);
+        writerManager.release(path);
+        
+        Assert.assertTrue("The file is empty", path.toFile().length() > 0);
+        
+        try (
+            DataInputStream in = new DataInputStream(new FileInputStream(path.toFile())))
+        {
+            for (int i = 0; i < 10; ++i)
+            {
+                Assert.assertEquals(in.readDouble(), Math.PI * i, 0.0);
+                Assert.assertEquals(in.readDouble(), -Math.PI * i, 0.0);
+                Assert.assertEquals(in.readDouble(), Math.E * i, 0.0);
+                Assert.assertEquals(in.readDouble(), -Math.E * i, 0.0);
+                Assert.assertEquals(in.readDouble(), 1.1 * i, 0.0);
+                Assert.assertEquals(in.readDouble(), -1.1 * i, 0.0);
             }
         }
     }

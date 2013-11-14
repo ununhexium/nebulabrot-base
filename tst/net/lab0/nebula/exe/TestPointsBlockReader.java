@@ -57,6 +57,14 @@ public class TestPointsBlockReader
         CoordinatesBlock block = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 32d, 4.0 / 32d);
         CoordinatesToPointsBlockConverter generator = new CoordinatesToPointsBlockConverter(executor, 0,
         new PointsBlockWriterCreator(), block, 16 * 16, manager);
+        executor.registerShutdownHook(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                writerManager.release(path);
+            }
+        });
         executor.prestartAllCoreThreads();
         executor.submit(generator);
         try
@@ -93,6 +101,6 @@ public class TestPointsBlockReader
         {
             Assert.assertTrue(block.size == 250);
         }
-        Assert.assertEquals(4*6, dumpList.get(4).size);
+        Assert.assertEquals(4 * 6, dumpList.get(4).size);
     }
 }
