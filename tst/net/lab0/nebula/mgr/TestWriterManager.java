@@ -20,6 +20,9 @@ public class TestWriterManager
 {
     private PointsBlockManager pointsBlockManager = new PointsBlockManager(1);
     
+    /**
+     * Tests net.lab0.nebula.mgr.WriterManager#write(PointsBlock, Path)
+     */
     @Test
     public void testWritePointsBlock()
     throws SerializationException, IOException
@@ -58,6 +61,47 @@ public class TestWriterManager
                 Assert.assertEquals("Error at index " + i, i, in.readLong());
                 real += Math.PI;
                 imag -= Math.PI;
+            }
+        }
+    }
+    
+    /**
+     * Tests net.lab0.nebula.mgr.WriterManager#write(PointsBlock, Path, long, long)
+     */
+    @Test
+    public void testWritePointsBlock2()
+    throws SerializationException, IOException
+    {
+        PointsBlock block = new PointsBlock(1024, pointsBlockManager);
+        
+        double real = 0;
+        double imag = 0;
+        for (int i = 0; i < 1024; ++i)
+        {
+            block.real[i] = (double)i * Math.PI;
+            block.imag[i] = (double)i * -Math.PI;
+            block.iter[i] = i;
+        }
+        
+        WriterManager writerManager = new WriterManager();
+        Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file1.data");
+        path.toFile().getParentFile().mkdirs();
+        writerManager.write(block, path, 256, 512 + 256);
+        writerManager.release(path);
+        
+        Assert.assertTrue("The file is empty", path.toFile().length() > 0);
+        
+        // check written data
+        try (
+            DataInputStream in = new DataInputStream(new FileInputStream(path.toFile())))
+        {
+            for (int i = 256; i <= 512 + 256; ++i)
+            {
+                real = i * Math.PI;
+                imag = i * -Math.PI;
+                Assert.assertEquals("Error at index " + i, real, in.readDouble(), 0.0d);
+                Assert.assertEquals("Error at index " + i, imag, in.readDouble(), 0.0d);
+                Assert.assertEquals("Error at index " + i, i, in.readLong());
             }
         }
     }
