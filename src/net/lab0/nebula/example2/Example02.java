@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
-import net.lab0.nebula.exe.builder.ToCPUIterationComputating;
+import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.nebula.exe.builder.ToFile;
 import net.lab0.nebula.mgr.PointsBlockManager;
 import net.lab0.nebula.mgr.WriterManager;
@@ -54,7 +54,7 @@ public class Example02
         /*
          * This time, we redirect the points blocks to a computing job that will compute the iterations.
          */
-        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputating(toFile, 65536);
+        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 65536);
         CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
         toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
         

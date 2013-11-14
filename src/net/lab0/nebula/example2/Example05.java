@@ -13,8 +13,8 @@ import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
 import net.lab0.nebula.exe.PointsBlockReader;
-import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.nebula.exe.builder.ToFile;
+import net.lab0.nebula.exe.builder.ToOCLIterationComputing;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
 import net.lab0.nebula.mgr.PointsBlockManager;
 import net.lab0.nebula.mgr.WriterManager;
@@ -25,24 +25,24 @@ import net.lab0.tools.geom.Rectangle;
 import net.lab0.tools.geom.RectangleInterface;
 
 /**
- * Rendering selected points
+ * Using openCL for computation
  * 
  * @author 116
  * 
  */
-public class Example04
+public class Example05
 {
     public static void main(String[] args)
     throws InterruptedException, IOException
     {
         /*
-         * Same as example 3 except 3 lines
+         * Same as example 4 except 3 lines
          */
         /*
-         * 1: we want more points
+         * 1: we want more points and bigger blocks
          */
-        CoordinatesBlock coordinatesBlock = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 2048d, 4.0 / 2048d);
-        int blockSize = 512 * 512;
+        CoordinatesBlock coordinatesBlock = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 8192d, 4.0 / 8192d);
+        int blockSize = 1024*1024;
         
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
@@ -51,14 +51,14 @@ public class Example04
         /*
          * 2: Change the target folder
          */
-        Path basePath = ExamplesGlobals.createClearDirectory(Example04.class);
+        Path basePath = ExamplesGlobals.createClearDirectory(Example05.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
-        /*
-         * 3: Set a minimum iteration count criteria
-         */
-        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath, 128);
+        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath, -1);
         PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
-        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 1024);
+        /*
+         * 3: We want to use the openCL computation facility
+         */
+        JobBuilder<PointsBlock> toCPUComp = new ToOCLIterationComputing(toFile, 4096);
         CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
         toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
         priorityExecutor.registerShutdownHook(new Runnable()
@@ -75,7 +75,7 @@ public class Example04
         System.out.println("The file is available at " + outputPath.toUri());
         
         priorityExecutor = new PriorityExecutor(threads);
-        RawMandelbrotData aggregate = new RawMandelbrotData(512, 512, 0);
+        RawMandelbrotData aggregate = new RawMandelbrotData(1024, 1024, 0);
         RectangleInterface viewPort = new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0));
         ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
         PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, 0, toAggregator, outputPath,

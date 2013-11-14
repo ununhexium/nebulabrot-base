@@ -146,9 +146,9 @@ public class OpenClMandelbrotComputeRoutines
      *            The y points coordinates. x and y must be the same size.
      * @param maximumIteration
      *            The maximum number of iterations to do while computing.
-     * @return An {@link IntBuffer} containing the number of iterations for each of the given points.
+     * @return An {@link IntBuffer} of capacity equal to x.length, containing the number of iterations for each of the given points.
      */
-    public synchronized IntBuffer compute(double[] x, double[] y, int maximumIteration)
+    public synchronized IntBuffer compute(double[] x, double[] y, long maximumIteration)
     {
         if (x.length != y.length)
         {

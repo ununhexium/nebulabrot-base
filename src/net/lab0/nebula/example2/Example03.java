@@ -13,7 +13,7 @@ import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
 import net.lab0.nebula.exe.PointsBlockReader;
-import net.lab0.nebula.exe.builder.ToCPUIterationComputating;
+import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.nebula.exe.builder.ToFile;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
 import net.lab0.nebula.mgr.PointsBlockManager;
@@ -49,7 +49,7 @@ public class Example03
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
         PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
-        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputating(toFile, 1024);
+        JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 1024);
         CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
         toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
         priorityExecutor.registerShutdownHook(new Runnable()
