@@ -15,17 +15,41 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import net.lab0.nebula.data.CoordinatesBlock;
+import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.SerializationException;
 
+/**
+ * This class is singleton because we want to be sure to write 1 file at a time and never have 2 write manager writing
+ * to the same file.
+ * 
+ * @author 116
+ * 
+ */
 public class WriterManager
 {
+    private static WriterManager        instance;
+    
     private Map<Path, DataOutputStream> mappings = new HashMap<>();
     /**
      * Lock: we want only 1 write operation at a time
      */
     private Lock                        lock     = new ReentrantLock();
+    
+    private WriterManager()
+    {
+        
+    }
+    
+    public static synchronized WriterManager getInstance()
+    {
+        if (instance == null)
+        {
+            instance = new WriterManager();
+        }
+        return instance;
+    }
     
     /**
      * Equivalent of net.lab0.nebula.mgr.WriterManager#write(pointsBlock, output, Long.MIN_VALUE, Long.MAX_VALUE)
@@ -214,6 +238,65 @@ public class WriterManager
                 out.writeDouble(b.maxY);
                 out.writeDouble(b.stepX);
                 out.writeDouble(b.stepY);
+            }
+            
+            out.flush();
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new SerializationException("Error when trying to get the data ouput stream", e);
+        }
+        catch (IOException e)
+        {
+            throw new SerializationException("Error while writing the data", e);
+        }
+        finally
+        {
+            lock.unlock();
+        }
+    }
+    
+    /**
+     * Writes {@link MandelbrotQuadTreeNode}s elements to a binary file. The structure is as follows:
+     * 
+     * <pre>
+     * for each CoordinatesBlock:
+     *      4 bytes, int, the 'depth'  (net.lab0.nebula.data.MandelbrotQuadTreeNode.depth).
+     *      4 bytes, int, the size of the following data block in byte
+     *      'size' byte, BitSet, the path of the node
+     *      1 byte, byte, the status as an integer
+     *      8 bytes, long, the 'minimumIteration' (net.lab0.nebula.data.MandelbrotQuadTreeNode.minimumIteration).
+     *      8 bytes, long, the 'maximumIteration' (net.lab0.nebula.data.MandelbrotQuadTreeNode.maximumIteration).
+     * </pre>
+     * 
+     * @param data
+     *            The array of coordinates block to write.
+     * @param output
+     *            The location where the data must be written
+     * @throws SerializationException
+     *             if an error happens during this write operation
+     */
+    public void write(MandelbrotQuadTreeNode[] dataArray, Path output)
+    throws SerializationException
+    {
+        if (dataArray.length == 0)
+        {
+            return;
+        }
+        try
+        {
+            lock.lock();
+            DataOutputStream out = getWriterFor(output);
+            
+            for (MandelbrotQuadTreeNode n : dataArray)
+            {
+                out.writeInt(n.depth);
+                byte[] bytes = n.path.toByteArray();
+                out.writeInt(bytes.length);
+                out.write(bytes);
+                out.writeByte(n.status.ordinal());
+                out.writeLong(n.minimumIteration);
+                out.writeLong(n.maximumIteration);
             }
             
             out.flush();

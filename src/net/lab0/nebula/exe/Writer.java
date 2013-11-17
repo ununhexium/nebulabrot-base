@@ -19,7 +19,7 @@ extends CascadingJob<T, Void>
     }
     
     @Override
-    public void executeTask()
+    public final void executeTask()
     throws Exception
     {
         save(data, outputPath);

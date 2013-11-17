@@ -56,7 +56,7 @@ public class Example01
          * The job builder is the class that will create the job that has to be executed for each of the created points
          * block. In this case, we want to output the result in a file. @see net.lab0.nebula.exe.builder.ToFile
          */
-        final WriterManager writerManager = new WriterManager();
+        final WriterManager writerManager = WriterManager.getInstance();
         Path basePath = ExamplesGlobals.createClearDirectory(Example01.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);

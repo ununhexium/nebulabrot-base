@@ -25,7 +25,7 @@ extends OpenClMandelbrotComputeRoutines
         return instance;
     }
     
-    public OpenCLManager()
+    private OpenCLManager()
     throws LWJGLException
     {
         super();

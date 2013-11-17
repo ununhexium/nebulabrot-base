@@ -47,7 +47,7 @@ public class Example05
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
         
-        final WriterManager writerManager = new WriterManager();
+        final WriterManager writerManager = WriterManager.getInstance();
         /*
          * 2: Change the target folder
          */

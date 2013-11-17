@@ -44,7 +44,7 @@ public class Example03
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
         
-        final WriterManager writerManager = new WriterManager();
+        final WriterManager writerManager = WriterManager.getInstance();
         Path basePath = ExamplesGlobals.createClearDirectory(Example03.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
