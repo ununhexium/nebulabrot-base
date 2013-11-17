@@ -2,16 +2,22 @@ package net.lab0.nebula.mgr;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.BitSet;
 
 import net.lab0.nebula.data.CoordinatesBlock;
+import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
+import net.lab0.nebula.enums.PositionInParent;
+import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exception.SerializationException;
+import net.lab0.tools.StaticRandom;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,7 +46,7 @@ public class TestWriterManager
             imag -= Math.PI;
         }
         
-        WriterManager writerManager = new WriterManager();
+        WriterManager writerManager = WriterManager.getInstance();
         Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file1.data");
         path.toFile().getParentFile().mkdirs();
         writerManager.write(block, path);
@@ -78,12 +84,12 @@ public class TestWriterManager
         double imag = 0;
         for (int i = 0; i < 1024; ++i)
         {
-            block.real[i] = (double)i * Math.PI;
-            block.imag[i] = (double)i * -Math.PI;
+            block.real[i] = (double) i * Math.PI;
+            block.imag[i] = (double) i * -Math.PI;
             block.iter[i] = i;
         }
         
-        WriterManager writerManager = new WriterManager();
+        WriterManager writerManager = WriterManager.getInstance();
         Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file1.data");
         path.toFile().getParentFile().mkdirs();
         writerManager.write(block, path, 256, 512 + 256);
@@ -122,7 +128,7 @@ public class TestWriterManager
             }
         }
         
-        WriterManager writerManager = new WriterManager();
+        WriterManager writerManager = WriterManager.getInstance();
         Path output = FileSystems.getDefault().getPath("test", "write_manager", "test_file2.data");
         output.toFile().getParentFile().mkdirs();
         writerManager.write(mandelbrotData, output);
@@ -172,7 +178,7 @@ public class TestWriterManager
             blocks[i].stepY = -1.1 * i;
         }
         
-        WriterManager writerManager = new WriterManager();
+        WriterManager writerManager = WriterManager.getInstance();
         Path path = FileSystems.getDefault().getPath("test", "write_manager", "test_file3.data");
         path.toFile().getParentFile().mkdirs();
         writerManager.write(blocks, path);
@@ -191,6 +197,74 @@ public class TestWriterManager
                 Assert.assertEquals(in.readDouble(), -Math.E * i, 0.0);
                 Assert.assertEquals(in.readDouble(), 1.1 * i, 0.0);
                 Assert.assertEquals(in.readDouble(), -1.1 * i, 0.0);
+            }
+        }
+    }
+    
+    @Test
+    public void testWriteMandelbrotQuadTreeNodeBlock()
+    throws SerializationException, FileNotFoundException, IOException
+    {
+        MandelbrotQuadTreeNode[] nodes = new MandelbrotQuadTreeNode[10];
+        BitSet[] paths = new BitSet[10];
+        for (int i = 0; i < 10; ++i)
+        {
+            int[] randoms = StaticRandom.randomArray(10, PositionInParent.TopLeft.ordinal(),
+            PositionInParent.Root.ordinal());
+            randoms[0] = PositionInParent.Root.ordinal();
+            
+            PositionInParent[] pathAsEnum = new PositionInParent[10];
+            for (int j = 0; j < 10; ++j)
+            {
+                pathAsEnum[j] = PositionInParent.values()[randoms[j]];
+            }
+            
+            paths[i] = MandelbrotQuadTreeNode.positionToBitSetPath(pathAsEnum);
+            nodes[i] = new MandelbrotQuadTreeNode(i, paths[i], 100 * i, 200 * i);
+            switch (i % 4)
+            {
+                case 0:
+                    nodes[i].status = Status.BROWSED;
+                    break;
+                case 1:
+                    nodes[i].status = Status.INSIDE;
+                    break;
+                case 2:
+                    nodes[i].status = Status.OUTSIDE;
+                    break;
+                case 3:
+                    nodes[i].status = Status.VOID;
+                    break;
+            }
+        }
+        
+        WriterManager writerManager = WriterManager.getInstance();
+        Path output = FileSystems.getDefault().getPath("test", "write_manager", "test_file2.data");
+        output.toFile().getParentFile().mkdirs();
+        writerManager.write(nodes, output);
+        writerManager.release(output);
+        
+        try (
+            DataInputStream in = new DataInputStream(new FileInputStream(output.toFile())))
+        {
+            for (int i = 0; i < 10; ++i)
+            {
+                Assert.assertEquals(i, in.readInt());
+                int bitSetLength = in.readInt();
+                // if (i < 8)
+                // {
+                // Assert.assertEquals(1, bitSetLength);
+                // }
+                // else
+                // {
+                // Assert.assertEquals(2, bitSetLength);
+                // }
+                byte[] buffer = new byte[bitSetLength];
+                in.read(buffer);
+                Assert.assertArrayEquals(buffer, paths[i].toByteArray());
+                Assert.assertEquals(i % 4, in.readByte());
+                Assert.assertEquals(100 * i, in.readLong());
+                Assert.assertEquals(200 * i, in.readLong());
             }
         }
     }

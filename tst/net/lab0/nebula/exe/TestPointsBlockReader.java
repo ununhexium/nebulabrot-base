@@ -24,7 +24,7 @@ public class TestPointsBlockReader
 {
     private static final Path         path          = FileSystems.getDefault().getPath("test", "points_block_reader",
                                                     "test_file.data");
-    private static WriterManager      writerManager = new WriterManager();
+    private static WriterManager      writerManager = WriterManager.getInstance();
     private static PointsBlockManager manager       = new PointsBlockManager(10);
     public static List<PointsBlock>   dumpList      = Collections.synchronizedList(new ArrayList<PointsBlock>());
     
