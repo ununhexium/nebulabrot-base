@@ -250,7 +250,10 @@ public class QuadTreeManager
         this.root.updateFields();
         
         // too hard to implement an algorithm to load a quad tree with a maximal depth set when it is not indexed
-        this.root.strip(maxLoadDepth);
+        if (this.maxDepth > maxLoadDepth)
+        {
+            this.root.strip(maxLoadDepth);
+        }
     }
     
     /**
