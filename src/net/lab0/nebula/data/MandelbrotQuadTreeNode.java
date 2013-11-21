@@ -39,7 +39,7 @@ public class MandelbrotQuadTreeNode
         this.path = new BitSet(depth * 2);
     }
     
-    public MandelbrotQuadTreeNode(int depth, BitSet path)
+    protected MandelbrotQuadTreeNode(int depth, BitSet path)
     {
         if (depth < 0)
         {
@@ -52,6 +52,11 @@ public class MandelbrotQuadTreeNode
         }
         this.depth = depth;
         this.path = path;
+    }
+    
+    public MandelbrotQuadTreeNode(Pair<Integer, BitSet> path)
+    {
+        this(path.a, path.b);
     }
     
     public MandelbrotQuadTreeNode(int depth, BitSet path, long minimumIteration, long maximumIteration)
@@ -115,7 +120,7 @@ public class MandelbrotQuadTreeNode
         return new Pair<Double, Double>(minY, maxY);
     }
     
-    public static BitSet positionToBitSetPath(PositionInParent... positions)
+    public static Pair<Integer, BitSet> positionToDepthAndBitSetPath(PositionInParent... positions)
     {
         BitSet path = new BitSet(positions.length * 2);
         int index = 0;
@@ -160,6 +165,6 @@ public class MandelbrotQuadTreeNode
             }
             index += 2;
         }
-        return path;
+        return new Pair<Integer, BitSet>(positions.length - 1, path);
     }
 }
