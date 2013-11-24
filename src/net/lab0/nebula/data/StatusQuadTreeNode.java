@@ -38,12 +38,14 @@ public class StatusQuadTreeNode
     public Status               status;
     
     /**
-     * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should then have the VOID status).
+     * The minimum number of iterations. If negative : was not set. This means that it was never computed (and should
+     * then have the VOID status).
      */
     private int                 min               = -1;
     
     /**
-     * The maximum number of iterations. If negative : was not set which means either that it was not computed or that it was over the iteration limit
+     * The maximum number of iterations. If negative : was not set which means either that it was not computed or that
+     * it was over the iteration limit
      */
     private int                 max               = -1;
     
@@ -146,8 +148,8 @@ public class StatusQuadTreeNode
      * Returns true if this is a child node position.
      * 
      * @param position
-     * @return <code>true</code> if child node position. <code>false</code> if <code>this</code> is a root indicator which must be equivalent to say that
-     *         <code>this</code> is a root node.
+     * @return <code>true</code> if child node position. <code>false</code> if <code>this</code> is a root indicator
+     *         which must be equivalent to say that <code>this</code> is a root node.
      */
     private boolean isChildNode(PositionInParent position)
     {
@@ -518,8 +520,9 @@ public class StatusQuadTreeNode
     }
     
     /**
-     * Get a node for the given path. This method should be (but is not required to be) called on the root of the tree. The node is searched in the whole tree
-     * containing this node, starting by the root node and must therefore start with an R. For relative path, use {@link getSubnodeByPath}.
+     * Get a node for the given path. This method should be (but is not required to be) called on the root of the tree.
+     * The node is searched in the whole tree containing this node, starting by the root node and must therefore start
+     * with an R. For relative path, use {@link getSubnodeByPath}.
      * 
      * @param path
      *            The path of the node to get.
@@ -537,8 +540,9 @@ public class StatusQuadTreeNode
     }
     
     /**
-     * Get a node for the given path. The node is searched from the node it was invoked on. The given path must be relative. For instance, to get
-     * <code>this</code>, use <code>""</code>(empty string). To get the top left child, use <code>"0"</code>.
+     * Get a node for the given path. The node is searched from the node it was invoked on. The given path must be
+     * relative. For instance, to get <code>this</code>, use <code>""</code>(empty string). To get the top left child,
+     * use <code>"0"</code>.
      * 
      * @param path
      *            The relative path to another node
@@ -785,7 +789,8 @@ public class StatusQuadTreeNode
     }
     
     /**
-     * Retrieves the leaf nodes of this branch. They are retrieved only if they are usable for the given min/max iter interval.
+     * Retrieves the leaf nodes of this branch. They are retrieved only if they are usable for the given min/max iter
+     * interval.
      * 
      * @param leafNodes
      *            a list which will contain the leaf nodes.
@@ -862,7 +867,8 @@ public class StatusQuadTreeNode
      * @param collection
      *            la collection contenant le rﾃｩsultat
      */
-    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2, Collection<StatusQuadTreeNode> collection)
+    public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2,
+    Collection<StatusQuadTreeNode> collection)
     {
         double rectMaxX = Math.max(p1.getX(), p2.getX());
         double rectMaxY = Math.max(p1.getY(), p2.getY());
@@ -882,17 +888,20 @@ public class StatusQuadTreeNode
      * @param collection
      *            la collection contenant le rﾃｩsultat
      */
-    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY, Collection<StatusQuadTreeNode> collection)
+    private void getNodesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY,
+    Collection<StatusQuadTreeNode> collection)
     {
         // si la zone de cette node est entiﾃｨrement contenue dans le rectangle
-        if (this.getMinX() >= rectMinX && this.getMaxX() <= rectMaxX && this.getMaxY() <= rectMaxY && this.getMinY() >= rectMinY)
+        if (this.getMinX() >= rectMinX && this.getMaxX() <= rectMaxX && this.getMaxY() <= rectMaxY
+        && this.getMinY() >= rectMinY)
         {
             this.getAllNodes(collection);
         }
         else
         {
             // si la zone de cette node est partiellement contenue dans le rectangle
-            if ((this.getMinX() <= rectMaxX || this.getMaxX() >= rectMinX) && (this.getMinY() <= rectMaxY || this.getMaxY() >= rectMinY))
+            if ((this.getMinX() <= rectMaxX || this.getMaxX() >= rectMinX)
+            && (this.getMinY() <= rectMaxY || this.getMaxY() >= rectMinY))
             {
                 collection.add(this);
             }
@@ -901,7 +910,8 @@ public class StatusQuadTreeNode
             {
                 for (PositionInParent zone : getZonesOverlappingRectangle(rectMaxX, rectMaxY, rectMinX, rectMinY))
                 {
-                    children[zone.ordinal()].getNodesOverlappingRectangle(rectMaxX, rectMaxY, rectMinX, rectMinY, collection);
+                    children[zone.ordinal()].getNodesOverlappingRectangle(rectMaxX, rectMaxY, rectMinX, rectMinY,
+                    collection);
                 }
             }
         }
@@ -909,13 +919,16 @@ public class StatusQuadTreeNode
     
     public void getAllNodes(Collection<StatusQuadTreeNode> collection)
     {
-        collection.add(this);
         if (children != null)
         {
             for (StatusQuadTreeNode n : children)
             {
                 n.getAllNodes(collection);
             }
+        }
+        else
+        {
+            collection.add(this);
         }
     }
     
@@ -928,7 +941,8 @@ public class StatusQuadTreeNode
      * @param rectMinY
      * @return a list of the zones contained in the rectangle
      */
-    protected ArrayList<PositionInParent> getZonesOverlappingRectangle(double rectMaxX, double rectMaxY, double rectMinX, double rectMinY)
+    protected ArrayList<PositionInParent> getZonesOverlappingRectangle(double rectMaxX, double rectMaxY,
+    double rectMinX, double rectMinY)
     {
         ArrayList<PositionInParent> ret = new ArrayList<PositionInParent>(4);
         
@@ -997,7 +1011,8 @@ public class StatusQuadTreeNode
     @Override
     public String toString()
     {
-        return "AbstractQuadTreeNode [minX=" + getMinX() + ", maxX=" + getMaxX() + ", minY=" + getMinY() + ", maxY=" + getMaxY() + ", status=" + status + "]";
+        return "AbstractQuadTreeNode [minX=" + getMinX() + ", maxX=" + getMaxX() + ", minY=" + getMinY() + ", maxY="
+        + getMaxY() + ", status=" + status + "]";
     }
     
     /**
@@ -1118,9 +1133,10 @@ public class StatusQuadTreeNode
     
     public String completeToString()
     {
-        return "QuadTreeNode [parent=" + parent + ", children=" + Arrays.toString(children) + ", minX=" + getMinX() + ", maxX=" + getMaxX() + ", minY="
-        + getMinY() + ", maxY=" + getMaxY() + ", depth=" + getDepth() + ", positionInParent=" + getPositionInParent() + ", status=" + status + ", min=" + min
-        + ", max=" + max + ", flagedForComputing=" + flagedForComputing + "]";
+        return "QuadTreeNode [parent=" + parent + ", children=" + Arrays.toString(children) + ", minX=" + getMinX()
+        + ", maxX=" + getMaxX() + ", minY=" + getMinY() + ", maxY=" + getMaxY() + ", depth=" + getDepth()
+        + ", positionInParent=" + getPositionInParent() + ", status=" + status + ", min=" + min + ", max=" + max
+        + ", flagedForComputing=" + flagedForComputing + "]";
     }
     
     /**
@@ -1265,7 +1281,8 @@ public class StatusQuadTreeNode
         {
             if (children != null)
             {
-                return Math.min(Math.min(children[0].getMin(), children[1].getMin()), Math.min(children[2].getMin(), children[3].getMin()));
+                return Math.min(Math.min(children[0].getMin(), children[1].getMin()),
+                Math.min(children[2].getMin(), children[3].getMin()));
             }
             else
             {
@@ -1313,7 +1330,8 @@ public class StatusQuadTreeNode
             }
         }
         
-        throw new InconsistentTreeStructure("The node has a parent but the parent doesn't contain this node (" + this + ")");
+        throw new InconsistentTreeStructure("The node has a parent but the parent doesn't contain this node (" + this
+        + ")");
     }
     
     /**
