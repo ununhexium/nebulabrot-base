@@ -1,9 +1,11 @@
 package net.lab0.nebula.data;
 
 import java.util.BitSet;
-import static net.lab0.nebula.enums.PositionInParent.*;
 
+import static net.lab0.nebula.enums.PositionInParent.*;
+import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
 import net.lab0.nebula.enums.PositionInParent;
+import net.lab0.tools.Pair;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,13 +70,13 @@ public class TestMandelbrotQuadTreeNode
     @Test(expected = IllegalArgumentException.class)
     public void testPathCreationException1()
     {
-        MandelbrotQuadTreeNode.positionToBitSetPath(new PositionInParent[0]);
+        MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(new PositionInParent[0]);
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void testPathCreationException2()
     {
-        MandelbrotQuadTreeNode.positionToBitSetPath(PositionInParent.BottomLeft, PositionInParent.Root);
+        MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(PositionInParent.BottomLeft, PositionInParent.Root);
     }
     
     @Test
@@ -83,13 +85,14 @@ public class TestMandelbrotQuadTreeNode
         BitSet path = null;
         BitSet reference = null;
         // XX 00
-        path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, TopLeft);
+        path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, TopLeft).getPath();
         reference = new BitSet();
         path.xor(reference);
         Assert.assertTrue(path.isEmpty());
         
         // XX 01 10 11 00
-        path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, TopRight, BottomLeft, BottomRight, TopLeft);
+        path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, TopRight, BottomLeft, BottomRight, TopLeft)
+        .getPath();
         reference = new BitSet(10);
         reference.set(3, true);
         reference.set(4, true);
@@ -103,96 +106,96 @@ public class TestMandelbrotQuadTreeNode
     @Test
     public void testGetXY1()
     {
-        BitSet path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, TopLeft);
+        NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, TopLeft);
         
-        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(1, path);
+        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(path);
         // minX
-        Assert.assertEquals(-2.0, node.getX().a, 0.0);
+        Assert.assertEquals(-2.0, node.getX().getMin(), 0.0);
         // maxX
-        Assert.assertEquals(0.0, node.getX().b, 0.0);
+        Assert.assertEquals(0.0, node.getX().getMax(), 0.0);
         // minY
-        Assert.assertEquals(0.0, node.getY().a, 0.0);
+        Assert.assertEquals(0.0, node.getY().getMin(), 0.0);
         // maxY
-        Assert.assertEquals(2.0, node.getY().b, 0.0);
+        Assert.assertEquals(2.0, node.getY().getMax(), 0.0);
     }
     
     @Test
     public void testGetXY2()
     {
-        BitSet path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, TopLeft, BottomRight);
+        NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, TopLeft, BottomRight);
         
-        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(2, path);
+        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(path);
         // minX
-        Assert.assertEquals(-1.0, node.getX().a, 0.0);
+        Assert.assertEquals(-1.0, node.getX().getMin(), 0.0);
         // maxX
-        Assert.assertEquals(0.0, node.getX().b, 0.0);
+        Assert.assertEquals(0.0, node.getX().getMax(), 0.0);
         // minY
-        Assert.assertEquals(0.0, node.getY().a, 0.0);
+        Assert.assertEquals(0.0, node.getY().getMin(), 0.0);
         // maxY
-        Assert.assertEquals(1.0, node.getY().b, 0.0);
+        Assert.assertEquals(1.0, node.getY().getMax(), 0.0);
     }
     
     @Test
     public void testGetXY3()
     {
-        BitSet path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, TopLeft, BottomRight, TopLeft);
+        NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, TopLeft, BottomRight, TopLeft);
         
-        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(3, path);
+        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(path);
         // minX
-        Assert.assertEquals(-1.0, node.getX().a, 0.0);
+        Assert.assertEquals(-1.0, node.getX().getMin(), 0.0);
         // maxX
-        Assert.assertEquals(-0.5, node.getX().b, 0.0);
+        Assert.assertEquals(-0.5, node.getX().getMax(), 0.0);
         // minY
-        Assert.assertEquals(0.5, node.getY().a, 0.0);
+        Assert.assertEquals(0.5, node.getY().getMin(), 0.0);
         // maxY
-        Assert.assertEquals(1.0, node.getY().b, 0.0);
+        Assert.assertEquals(1.0, node.getY().getMax(), 0.0);
     }
     
     @Test
     public void testGetXY4()
     {
-        BitSet path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, TopRight, BottomLeft, TopRight);
+        NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, TopRight, BottomLeft, TopRight);
         
-        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(3, path);
+        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(path);
         // minX
-        Assert.assertEquals(0.5, node.getX().a, 0.0);
+        Assert.assertEquals(0.5, node.getX().getMin(), 0.0);
         // maxX
-        Assert.assertEquals(1.0, node.getX().b, 0.0);
+        Assert.assertEquals(1.0, node.getX().getMax(), 0.0);
         // minY
-        Assert.assertEquals(0.5, node.getY().a, 0.0);
+        Assert.assertEquals(0.5, node.getY().getMin(), 0.0);
         // maxY
-        Assert.assertEquals(1.0, node.getY().b, 0.0);
+        Assert.assertEquals(1.0, node.getY().getMax(), 0.0);
     }
     
     @Test
     public void testGetXY5()
     {
-        BitSet path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, BottomLeft, TopRight, BottomLeft);
+        NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, BottomLeft, TopRight, BottomLeft);
         
-        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(3, path);
+        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(path);
         // minX
-        Assert.assertEquals(-1.0, node.getX().a, 0.0);
+        Assert.assertEquals(-1.0, node.getX().getMin(), 0.0);
         // maxX
-        Assert.assertEquals(-0.5, node.getX().b, 0.0);
+        Assert.assertEquals(-0.5, node.getX().getMax(), 0.0);
         // minY
-        Assert.assertEquals(-1.0, node.getY().a, 0.0);
+        Assert.assertEquals(-1.0, node.getY().getMin(), 0.0);
         // maxY
-        Assert.assertEquals(-0.5, node.getY().b, 0.0);
+        Assert.assertEquals(-0.5, node.getY().getMax(), 0.0);
     }
     
     @Test
     public void testGetXY6()
     {
-        BitSet path = MandelbrotQuadTreeNode.positionToBitSetPath(Root, BottomRight, TopLeft, BottomRight);
+        NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(Root, BottomRight, TopLeft, BottomRight);
         
-        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(3, path);
+        MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(path);
         // minX
-        Assert.assertEquals(0.5, node.getX().a, 0.0);
+        Assert.assertEquals(0.5, node.getX().getMin(), 0.0);
         // maxX
-        Assert.assertEquals(1.0, node.getX().b, 0.0);
+        Assert.assertEquals(1.0, node.getX().getMax(), 0.0);
         // minY
-        Assert.assertEquals(-1.0, node.getY().a, 0.0);
+        Assert.assertEquals(-1.0, node.getY().getMin(), 0.0);
         // maxY
-        Assert.assertEquals(-0.5, node.getY().b, 0.0);
+        Assert.assertEquals(-0.5, node.getY().getMax(), 0.0);
     }
 }

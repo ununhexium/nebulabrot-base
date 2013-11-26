@@ -2,14 +2,15 @@ package net.lab0.nebula.exe;
 
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
+import net.lab0.nebula.data.MandelbrotQuadTreeNode.Coords;
 import net.lab0.nebula.enums.Status;
 import net.lab0.tools.Pair;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
-import net.lab0.tools.exec.SingleOutputJob;
+import net.lab0.tools.exec.SimpleJob;
 
 public class ComputeInOutForQuadTreeNode
-extends SingleOutputJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
+extends SimpleJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
 {
     private long maximumIteration;
     private int  sidePointsCount;
@@ -46,12 +47,12 @@ extends SingleOutputJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
     private boolean isInsideMandelbrotSet(MandelbrotQuadTreeNode node, int sidePointsCount, long maxIter)
     {
         // get the bounds of the node
-        Pair<Double, Double> X = node.getX();
-        double minX = X.a;
-        double maxX = X.b;
-        Pair<Double, Double> Y = node.getY();
-        double minY = Y.a;
-        double maxY = Y.b;
+        Coords X = node.getX();
+        double minX = X.getMin();
+        double maxX = X.getMax();
+        Coords Y = node.getY();
+        double minY = Y.getMin();
+        double maxY = Y.getMax();
         
         double step = (maxX - minX) / (double) (sidePointsCount - 1);
         
@@ -112,12 +113,12 @@ extends SingleOutputJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
     private void computeOutsideMandelbrotSet(MandelbrotQuadTreeNode node, int sidePointsCount, long maxIter, long diff)
     {
         // get the bounds of the node
-        Pair<Double, Double> X = node.getX();
-        double minX = X.a;
-        double maxX = X.b;
-        Pair<Double, Double> Y = node.getY();
-        double minY = Y.a;
-        double maxY = Y.b;
+        Coords X = node.getX();
+        double minX = X.getMin();
+        double maxX = X.getMax();
+        Coords Y = node.getY();
+        double minY = Y.getMin();
+        double maxY = Y.getMax();
         
         long min, max;
         // init min and max iter

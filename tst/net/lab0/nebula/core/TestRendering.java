@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
+import javax.xml.bind.JAXBException;
+
 import net.lab0.nebula.color.PowerGrayScaleColorModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.QuadTreeManager;
@@ -16,8 +18,8 @@ import net.lab0.nebula.project.Project;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
 import nu.xom.ParsingException;
-
 import static org.junit.Assert.*;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -43,7 +45,7 @@ public class TestRendering
             project.disableOpenCL();
             manager = project.newQuadTree(-2.0, 2.0, -2.0, 2.0, 128, 4096, 3, 7);
         }
-        catch (ProjectException | NonEmptyFolderException | IOException | ParsingException e)
+        catch (ProjectException | JAXBException | NonEmptyFolderException | IOException e)
         {
             fail();
             e.printStackTrace();

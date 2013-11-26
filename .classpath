@@ -3,6 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="ext"/>
 	<classpathentry kind="src" path="tst"/>
+	<classpathentry kind="src" path="macro"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/mandelbrot">
 		<attributes>
@@ -20,5 +21,8 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/lwjgl-2.9.0/jar/lzma.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/jaxb-ri-2.2.7/lib/jaxb-api.jar" sourcepath="C:/Users/116/workspace/lib/jaxb-ri-2.2.7/lib/jaxb-api-src.zip"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/jaxb-ri-2.2.7/lib/jaxb-core.jar" sourcepath="C:/Users/116/workspace/lib/jaxb-ri-2.2.7/lib/jaxb-core.src.zip"/>
+	<classpathentry kind="lib" path="C:/Users/116/workspace/lib/jaxb-ri-2.2.7/lib/jaxb-impl.jar" sourcepath="C:/Users/116/workspace/lib/jaxb-ri-2.2.7/lib/jaxb-impl.src.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

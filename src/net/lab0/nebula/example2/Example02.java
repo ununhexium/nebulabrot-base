@@ -5,13 +5,13 @@ import java.nio.file.Path;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
 import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
+import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
 import net.lab0.nebula.exe.builder.ToFile;
-import net.lab0.nebula.mgr.PointsBlockManager;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.SingleOutputGenerator;
 
 /**
  * Basic computing of an area of the Mandelbrot set.
@@ -41,7 +41,6 @@ public class Example02
         Path basePath = ExamplesGlobals.createClearDirectory(Example02.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
-        PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
         priorityExecutor.registerShutdownHook(new Runnable()
         {
             @Override
@@ -55,14 +54,14 @@ public class Example02
          * This time, we redirect the points blocks to a computing job that will compute the iterations.
          */
         JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 65536);
-        CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
-        toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
+        JobBuilder<CoordinatesBlock> toCoordinatesBlockConverter = new ToCoordinatesPointsBlockConverter(toCPUComp, blockSize);
+        SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(priorityExecutor, toCoordinatesBlockConverter, coordinatesBlock);
         
         /*
          * Start the execution of the job. The call will start the job execution automatically.
          */
         priorityExecutor.prestartAllCoreThreads();
-        priorityExecutor.submit(converter);
+        priorityExecutor.submit(generator);
         /*
          * We now have to wait for the job to finish.
          */

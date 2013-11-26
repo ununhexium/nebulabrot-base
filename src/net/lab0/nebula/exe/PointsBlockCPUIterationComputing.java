@@ -4,10 +4,10 @@ import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
-import net.lab0.tools.exec.SingleOutputJob;
+import net.lab0.tools.exec.SimpleJob;
 
 public class PointsBlockCPUIterationComputing
-extends SingleOutputJob<PointsBlock, PointsBlock>
+extends SimpleJob<PointsBlock, PointsBlock>
 {
     private long maximumIteration;
     

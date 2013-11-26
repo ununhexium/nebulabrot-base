@@ -4,17 +4,17 @@ import java.nio.file.Path;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.mgr.WriterManager;
-import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.CascadingJob;
 
 public class CoordinatesBlockWriter
 extends Writer<CoordinatesBlock[]>
 {
     private WriterManager writerManager;
     
-    public CoordinatesBlockWriter(PriorityExecutor executor, int priority, CoordinatesBlock[] data, Path outputPath,
+    public CoordinatesBlockWriter(CascadingJob<?, CoordinatesBlock[]> parentJob, CoordinatesBlock[] data, Path outputPath,
     WriterManager writerManager)
     {
-        super(executor, priority, data, outputPath);
+        super(parentJob, data, outputPath);
         this.writerManager = writerManager;
     }
 

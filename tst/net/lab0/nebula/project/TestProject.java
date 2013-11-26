@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.naming.ConfigurationException;
+import javax.xml.bind.JAXBException;
 
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
@@ -81,7 +82,7 @@ public class TestProject
             }
             file.createNewFile();
         }
-        catch (ProjectException | NonEmptyFolderException | IOException | ParsingException e)
+        catch (ProjectException | NonEmptyFolderException | IOException | JAXBException e)
         {
             Assert.fail();
         }
@@ -89,28 +90,28 @@ public class TestProject
     
     @Test
     public void testProject1()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException, JAXBException
     {
         new Project(empty.toPath());
     }
     
     @Test
     public void testProject2()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException, JAXBException
     {
         new Project(existing.toPath());
     }
     
     @Test(expected = NonEmptyFolderException.class)
     public void testProject3()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException, JAXBException
     {
         new Project(nonEmpty.toPath());
     }
     
     @Test(expected = ProjectException.class)
     public void testProject4()
-    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException
+    throws ConfigurationException, ProjectException, NonEmptyFolderException, IOException, ValidityException, ParsingException, JAXBException
     {
         new Project(file.toPath());
     }

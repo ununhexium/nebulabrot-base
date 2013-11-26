@@ -6,7 +6,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses(value={
-    TestPointsBlockManager.class,
     TestWriterManager.class,
 })
 public class AllMrg

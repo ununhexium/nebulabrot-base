@@ -1,39 +1,28 @@
 package net.lab0.nebula.project;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
-import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.QuadTreePointsComputingSet;
-import net.lab0.nebula.data.RawMandelbrotData;
-import net.lab0.nebula.data.RenderingParameters;
 import net.lab0.nebula.data.RootQuadTreeNode;
-import net.lab0.nebula.enums.ComputingMethod;
 import net.lab0.nebula.enums.Indexing;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
-import net.lab0.nebula.exception.NotImplemented;
 import net.lab0.nebula.exception.ProjectException;
 import net.lab0.tools.quadtree.QuadTreeNode;
 import net.lab0.tools.quadtree.QuadTreeRoot;
-import nu.xom.Attribute;
-import nu.xom.Builder;
-import nu.xom.Document;
-import nu.xom.Element;
-import nu.xom.Elements;
 import nu.xom.ParsingException;
-import nu.xom.Serializer;
 import nu.xom.ValidityException;
 
 /**
@@ -47,16 +36,6 @@ import nu.xom.ValidityException;
 public class Project
 {
     /**
-     * The version of the project.xml file to use when saving a new project. Min version value: 1.
-     */
-    private static final int                        VERSION           = 1;
-    
-    /**
-     * The version of this project.xml file. If version <=0, then the version is not set.
-     */
-    private int                                     version;
-    
-    /**
      * The path to the project's folder.
      */
     private Path                                    projectFolder;
@@ -64,7 +43,7 @@ public class Project
     /**
      * The parameters of this project
      */
-    private Map<ProjectKey, Object>                 parameters        = new HashMap<>();
+    private ProjetInformation                       projetInformation;
     
     private Map<String, QuadTreePointsComputingSet> computingSets     = new HashMap<>();
     private Map<QuadTreePointsComputingSet, Path>   computingSetPaths = new HashMap<>();
@@ -79,17 +58,12 @@ public class Project
      * 
      * @throws NonEmptyFolderException
      *             If the folder doesn't contain a <code>project.xml</code> file but is not empty.
-     * @throws IOException
-     *             If there was an error while reading the properties file.
      * @throws ProjectException
      *             If the given path doesn't point to a directory.
-     * @throws ParsingException
-     * @throws ValidityException
-     * @throws ConfigurationException
-     *             In case of error while loading the properties file
+     * @throws JAXBException
      */
     public Project(Path projectFolder)
-    throws ProjectException, NonEmptyFolderException, IOException, ParsingException
+    throws ProjectException, JAXBException, NonEmptyFolderException
     {
         super();
         this.projectFolder = projectFolder;
@@ -135,61 +109,29 @@ public class Project
     /**
      * Saves the parameters of this project in /path/pto/project/folder/<code>project.xml</code>.
      * 
-     * @throws ConfigurationException
+     * @throws JAXBException
      * 
-     * @throws IOException
+     * @throws ConfigurationException
      */
     public synchronized void saveProjectsParameters()
-    throws IOException
+    throws JAXBException
     {
-        int versionToUse = version == 0 ? VERSION : version;
-        switch (versionToUse)
-        {
-            case 1:
-                saveVersion1();
-                break;
-            
-            default:
-                break;
-        }
+        save();
     }
     
     /**
      * Saves this project with the version number 1 of the project.xml file.
      * 
-     * @throws IOException
+     * @throws JAXBException
      */
-    private void saveVersion1()
-    throws IOException
+    private void save()
+    throws JAXBException
     {
-        Element root = new Element("project");
-        root.addAttribute(new Attribute("version", Integer.toString(1)));
-        
-        Element parametersNode = new Element("parameters");
-        root.appendChild(parametersNode);
-        
-        // opencl
-        Boolean useOpenCLValue = (Boolean) parameters.get(ProjectKey.USE_OPENCL);
-        if (useOpenCLValue != null)
-        {
-            Element node = new Element(ProjectKey.USE_OPENCL.name());
-            node.addAttribute(new Attribute("boolean", Boolean.toString(useOpenCLValue)));
-            parametersNode.appendChild(node);
-        }
-        
-        Boolean useMultithreadingValue = (Boolean) parameters.get(ProjectKey.USE_MULTITHREADING);
-        if (useMultithreadingValue != null)
-        {
-            Element node = new Element(ProjectKey.USE_MULTITHREADING.name());
-            node.addAttribute(new Attribute("boolean", Boolean.toString(useMultithreadingValue)));
-            parametersNode.appendChild(node);
-        }
-        
-        Document document = new Document(root);
-        File projectConfiguration = getProjectConfigurationFile();
-        Serializer serializer = new Serializer(new FileOutputStream(projectConfiguration), "UTF-8");
-        serializer.setIndent(4);
-        serializer.write(document);
+        JAXBContext context = JAXBContext.newInstance(ProjetInformation.class);
+        Marshaller marshaller = context.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+        marshaller.marshal(projetInformation, getProjectConfigurationFile());
     }
     
     /**
@@ -204,35 +146,11 @@ public class Project
      * @throws ProjectException
      */
     private synchronized void load()
-    throws ValidityException, ParsingException, IOException, ProjectException
+    throws JAXBException
     {
-        Builder builder = new Builder();
-        Document document = builder.build(getProjectConfigurationFile());
-        Element root = document.getRootElement();
-        if (!root.getLocalName().equals("project"))
-        {
-            throw new ProjectException("Expected a project file but found a root named " + root.getLocalName());
-        }
-        
-        Element parametersNode = root.getFirstChildElement("parameters");
-        Elements elements = parametersNode.getChildElements();
-        
-        for (int i = 0; i < elements.size(); ++i)
-        {
-            Element e = elements.get(i);
-            ProjectKey key = ProjectKey.valueOf(e.getLocalName());
-            switch (key)
-            {
-            // boolean keys
-                case USE_OPENCL:
-                case USE_MULTITHREADING:
-                    parameters.put(key, Boolean.parseBoolean(e.getAttributeValue("boolean")));
-                    break;
-                
-                default:
-                    break;
-            }
-        }
+        JAXBContext context = JAXBContext.newInstance(ProjetInformation.class);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        projetInformation = (ProjetInformation) unmarshaller.unmarshal(getProjectConfigurationFile());
     }
     
     /**
@@ -259,7 +177,7 @@ public class Project
      */
     public void enableOpenCL()
     {
-        parameters.put(ProjectKey.USE_OPENCL, Boolean.TRUE);
+        projetInformation.computingInformation.enableOpenCL();
     }
     
     /**
@@ -267,15 +185,15 @@ public class Project
      */
     public void disableOpenCL()
     {
-        parameters.put(ProjectKey.USE_OPENCL, Boolean.FALSE);
+        projetInformation.computingInformation.disableOpenCL();
     }
     
     /**
      * Enables multithreading in computation where available.
      */
-    public void enableMultithreading()
+    public void enableMultithreading(int threads)
     {
-        parameters.put(ProjectKey.USE_MULTITHREADING, Boolean.TRUE);
+        projetInformation.computingInformation.setMaxThreadCount(threads);
     }
     
     /**
@@ -283,7 +201,7 @@ public class Project
      */
     public void disableMultithreading()
     {
-        parameters.put(ProjectKey.USE_MULTITHREADING, Boolean.FALSE);
+        projetInformation.computingInformation.setMaxThreadCount(1);
     }
     
     /**
@@ -352,24 +270,6 @@ public class Project
     }
     
     /**
-     * Computes at most <code>maxValue</code> nodes before returning.
-     * 
-     * @param manager
-     *            The manager to use for the computation. Range: [0;Integer.MAX_VALUE]
-     * @param maxValue
-     *            The maximum amount of nodes to computes.
-     * @return true if the are still nodes to compute
-     */
-    public boolean compute(QuadTreeManager manager, int maxValue)
-    {
-        if ((boolean) parameters.get(ProjectKey.USE_MULTITHREADING))
-        {
-            manager.setThreads(Runtime.getRuntime().availableProcessors() - 1);
-        }
-        return manager.compute(maxValue);
-    }
-    
-    /**
      * Saves the QuadTree managed by this <code>manager</code> in this project.
      * 
      * @param manager
@@ -415,93 +315,11 @@ public class Project
         }
     }
     
-    /**
-     * Renders the Mandelbrot set with the given parameters and rendering method.
-     * 
-     * @param renderingParameters
-     *            How you want your rendering to be.
-     * @param computingMethod
-     *            How you want yuour rendering to be done.
-     * @return a {@link RawMandelbrotData} resulting from the rendering.
-     */
-    public RawMandelbrotData rawRender(RenderingParameters renderingParameters, ComputingMethod computingMethod)
+    public boolean useOpenCL()
     {
-        NebulabrotRenderer nebulabrotRenderer = new NebulabrotRenderer(renderingParameters.getxResolution(),
-        renderingParameters.getyResolution(), renderingParameters.getViewport());
+        return projetInformation.computingInformation.useOpenCL();
+    }
         
-        boolean multithread = (boolean) this.parameters.get(ProjectKey.USE_MULTITHREADING);
-        int threads = 1;
-        if (multithread)
-        {
-            threads = Runtime.getRuntime().availableProcessors() - 1;
-        }
-        
-        switch (computingMethod)
-        {
-            case LINEAR:
-                return nebulabrotRenderer.linearRender(renderingParameters.getPointsCount(),
-                renderingParameters.getMinimumIteration(), renderingParameters.getMaximumIteration(), threads);
-                
-            case QUADTREE:
-                return nebulabrotRenderer.quadTreeRender(renderingParameters.getPointsCount(),
-                renderingParameters.getMinimumIteration(), renderingParameters.getMaximumIteration(),
-                this.quadTreeManager.getQuadTreeRoot(), threads);
-                
-            default:
-                throw new NotImplemented();
-        }
-    }
-    
-    /**
-     * Equivalent to <code>rawRender</code> but additionally computes an image from the raw data.
-     * 
-     * @param renderingParameters
-     * @param computingMethod
-     * @return A {@link BufferedImage} of the rendering.
-     */
-    public BufferedImage pictureRender(RenderingParameters renderingParameters, ComputingMethod computingMethod)
-    {
-        RawMandelbrotData rawMandelbrotData = rawRender(renderingParameters, computingMethod);
-        BufferedImage bufferedImage = rawMandelbrotData.computeBufferedImage(renderingParameters.getColorationModel(),
-        0);
-        return bufferedImage;
-    }
-    
-    /**
-     * Get this project's parameters
-     * 
-     * @return An unmodifiable view of the parameters of this project.
-     */
-    public Map<ProjectKey, Object> getParameters()
-    {
-        return Collections.unmodifiableMap(parameters);
-    }
-    
-    public QuadTreePointsComputingSet createNewPointComputingSet(int blocks,
-    ComputingMethod computingMethod, RenderingParameters renderingParameters, String string)
-    {
-        switch (computingMethod)
-        {
-            case QUADTREE:
-                QuadTreePointsComputingSet pointComputingSet = new QuadTreePointsComputingSet(this, blocks,
-                renderingParameters);
-                int index = 0;
-                Path path = null;
-                do
-                {
-                    path = FileSystems.getDefault().getPath(projectFolder.toString(), "points", "" + index);
-                    ++index;
-                } while (path.toFile().exists());
-                computingSetPaths.put(pointComputingSet, path);
-                return pointComputingSet;
-                
-            default:
-                break;
-        }
-        
-        return null;
-    }
-    
     /**
      * Returns the output path associated to the given <code>quadTreePointsComputingSet</code>.
      * 
@@ -514,14 +332,9 @@ public class Project
         return path;
     }
     
-    public boolean useOpenCL()
-    {
-        return (boolean) parameters.get(ProjectKey.USE_OPENCL);
-    }
-
     public boolean useMultithreading()
     {
-        return (boolean) parameters.get(ProjectKey.USE_MULTITHREADING);
+        return projetInformation.computingInformation.getMaxThreadCount() > 1;
     }
     
 }

@@ -2,10 +2,9 @@ package net.lab0.nebula.exe;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.mgr.PointsBlockManager;
+import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.MultipleOutputJob;
-import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.Splitter;
 
 /**
  * Converts a {@link CoordinatesBlock} into as many {@link PointsBlock} as needed.
@@ -14,14 +13,13 @@ import net.lab0.tools.exec.PriorityExecutor;
  * 
  */
 public class CoordinatesToPointsBlockConverter
-extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
+extends Splitter<CoordinatesBlock, PointsBlock>
 {
     private CoordinatesBlock   block;
     private PointsBlock        pointsBlock;
     private final int          pointsBlockSize;
     private double             lastX;
     private double             lastY;
-    private PointsBlockManager pointsBlockManager;
     
     /**
      * 
@@ -36,13 +34,12 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
      * @param manager
      *            The {@link PointsBlockManager} to use to allocate the {@link PointsBlock}s
      */
-    public CoordinatesToPointsBlockConverter(PriorityExecutor executor, int priority,
-    JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, int pointsBlockSize, PointsBlockManager manager)
+    public CoordinatesToPointsBlockConverter(CascadingJob<?, CoordinatesBlock> parent,
+    JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, int pointsBlockSize)
     {
-        super(executor, priority, jobBuilder);
+        super(parent, jobBuilder);
         this.block = block;
         this.pointsBlockSize = pointsBlockSize;
-        this.pointsBlockManager = manager;
         lastX = block.minX;
         lastY = block.minY;
     }
@@ -57,7 +54,7 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
         int points = 0;
         double x = lastX;
         double y = lastY;
-        pointsBlock = pointsBlockManager.allocatePointsBlock(pointsBlockSize);
+        pointsBlock = new PointsBlock(pointsBlockSize);
         while (points < pointsBlockSize)
         {
             pointsBlock.real[points] = x;
@@ -85,13 +82,12 @@ extends MultipleOutputJob<CoordinatesBlock, PointsBlock>
          * returning
          */
         {
-            PointsBlock pointsBlock2 = pointsBlockManager.allocatePointsBlock(points);
+            PointsBlock pointsBlock2 = new PointsBlock(points);
             for (int i = 0; i < points; ++i)
             {
                 pointsBlock2.real[i] = pointsBlock.real[i];
                 pointsBlock2.imag[i] = pointsBlock.imag[i];
             }
-            pointsBlock.release();
             pointsBlock = pointsBlock2;
         }
         return pointsBlock;

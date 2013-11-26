@@ -4,6 +4,7 @@ import java.nio.file.Path;
 
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.WriterManager;
+import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.PriorityExecutor;
 
 /**
@@ -29,19 +30,19 @@ extends Writer<PointsBlock>
      * @param maximumIteration
      *            The maximum number of iteration a point must have to be written
      */
-    public PointsBlockWriter(PriorityExecutor executor, int priority, PointsBlock pointsBlock, Path ouputPath,
+    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath,
     WriterManager writerManager, long minimumIteration, long maximumIteration)
     {
-        super(executor, priority, pointsBlock, ouputPath);
+        super(parentJob, pointsBlock, ouputPath);
         this.writerManager = writerManager;
         this.minimumIteration = minimumIteration;
         this.maximumIteration = maximumIteration;
     }
     
-    public PointsBlockWriter(PriorityExecutor executor, int priority, PointsBlock pointsBlock, Path ouputPath,
+    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath,
     WriterManager writerManager)
     {
-        this(executor, priority, pointsBlock, ouputPath, writerManager, Long.MIN_VALUE, Long.MAX_VALUE);
+        this(parentJob, pointsBlock, ouputPath, writerManager, Long.MIN_VALUE, Long.MAX_VALUE);
     }
     
     @Override
@@ -49,7 +50,6 @@ extends Writer<PointsBlock>
     throws Exception
     {
         writerManager.write(data, outputPath, minimumIteration, maximumIteration);
-        data.release();
     }
     
 }

@@ -9,12 +9,13 @@ import java.util.List;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.mgr.PointsBlockManager;
+import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.Dump;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.SingleOutputGenerator;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,7 +26,6 @@ public class TestPointsBlockReader
     private static final Path         path          = FileSystems.getDefault().getPath("test", "points_block_reader",
                                                     "test_file.data");
     private static WriterManager      writerManager = WriterManager.getInstance();
-    private static PointsBlockManager manager       = new PointsBlockManager(10);
     public static List<PointsBlock>   dumpList      = Collections.synchronizedList(new ArrayList<PointsBlock>());
     
     private static final class PointsBlockWriterCreator
@@ -34,7 +34,7 @@ public class TestPointsBlockReader
         @Override
         public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
         {
-            return new PointsBlockWriter(parent.getExecutor(), parent.getPriority() + 1, output, path, writerManager);
+            return new PointsBlockWriter(parent, output, path, writerManager);
         }
     }
     
@@ -55,8 +55,10 @@ public class TestPointsBlockReader
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         // hopefully, there will be no rounding errors Powers of 2 are great :)
         CoordinatesBlock block = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 32d, 4.0 / 32d);
-        CoordinatesToPointsBlockConverter generator = new CoordinatesToPointsBlockConverter(executor, 0,
-        new PointsBlockWriterCreator(), block, 16 * 16, manager);
+        ToCoordinatesPointsBlockConverter toConverter = new ToCoordinatesPointsBlockConverter(
+        new PointsBlockWriterCreator(), 16 * 16);
+        SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(executor,
+        toConverter, block);
         executor.registerShutdownHook(new Runnable()
         {
             @Override
@@ -82,8 +84,7 @@ public class TestPointsBlockReader
     throws FileNotFoundException
     {
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
-        PointsBlockManager manager = new PointsBlockManager(10);
-        PointsBlockReader pointsBlockReader = new PointsBlockReader(executor, 0, new Dumper(), path, manager, 250);
+        PointsBlockReader pointsBlockReader = new PointsBlockReader(executor, new Dumper(), path, 250);
         executor.prestartAllCoreThreads();
         executor.submit(pointsBlockReader);
         try
@@ -97,10 +98,25 @@ public class TestPointsBlockReader
         }
         
         Assert.assertTrue(dumpList.size() == 5);
-        for (PointsBlock block : dumpList.subList(0, 4))
+        int block250 = 0;
+        int block24 = 0;
+        for (PointsBlock block : dumpList)
         {
-            Assert.assertTrue(block.size == 250);
+            switch (block.size)
+            {
+                case 24:
+                    block24++;
+                    break;
+                
+                case 250:
+                    block250++;
+                    break;
+                
+                default:
+                    break;
+            }
         }
-        Assert.assertEquals(4 * 6, dumpList.get(4).size);
+        Assert.assertEquals(4, block250);
+        Assert.assertEquals(1, block24);
     }
 }

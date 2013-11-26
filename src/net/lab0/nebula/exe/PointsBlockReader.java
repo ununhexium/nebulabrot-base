@@ -10,9 +10,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.mgr.PointsBlockManager;
+import net.lab0.tools.exec.Generator;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.MultipleOutputJob;
 import net.lab0.tools.exec.PriorityExecutor;
 
 /**
@@ -22,30 +21,33 @@ import net.lab0.tools.exec.PriorityExecutor;
  * 
  */
 public class PointsBlockReader
-extends MultipleOutputJob<Void, PointsBlock>
+extends Generator<DataInputStream, PointsBlock>
 {
-    private DataInputStream    dataInputStream;
-    private PointsBlockManager pointsBlockManager;
     private int                blockSize;
     
-    public PointsBlockReader(PriorityExecutor executor, int priority, JobBuilder<PointsBlock> jobBuilder,
-    Path inputPath, PointsBlockManager pointsBlockManager, int blockSize)
+    public PointsBlockReader(PriorityExecutor executor, JobBuilder<PointsBlock> jobBuilder,
+    Path inputPath, int blockSize)
     throws FileNotFoundException
     {
-        super(executor, priority, jobBuilder);
-        this.pointsBlockManager = pointsBlockManager;
-        File file = inputPath.toFile();
-        FileInputStream fileInputStream = new FileInputStream(file);
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-        this.dataInputStream = new DataInputStream(bufferedInputStream);
+        super(executor, jobBuilder, buildDataInputStream(inputPath));
         this.blockSize = blockSize;
     }
     
+    private static DataInputStream buildDataInputStream(Path inputPath)
+    throws FileNotFoundException
+    {
+        File file = inputPath.toFile();
+        FileInputStream fileInputStream = new FileInputStream(file);
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+        return new DataInputStream(bufferedInputStream);
+    }
+    
     @Override
-    public PointsBlock nextStep()
+    public PointsBlock generate(DataInputStream dataInputStream)
     throws IOException
     {
-        PointsBlock pointsBlock = pointsBlockManager.allocatePointsBlock(blockSize);
+        // ignore the path: not needed
+        PointsBlock pointsBlock = new PointsBlock(blockSize);
         
         int read = 0;
         try
@@ -76,14 +78,13 @@ extends MultipleOutputJob<Void, PointsBlock>
                  * reached the end of the file before the usual block size -> create a new block containing the points
                  * only that were read only.
                  */
-                PointsBlock tmp = pointsBlockManager.allocatePointsBlock(read);
+                PointsBlock tmp = new PointsBlock(read);
                 for (int i = 0; i < read; ++i)
                 {
                     tmp.real[i] = pointsBlock.real[i];
                     tmp.imag[i] = pointsBlock.imag[i];
                     tmp.iter[i] = pointsBlock.iter[i];
                 }
-                pointsBlock.release();
                 pointsBlock = tmp;
             }
         }

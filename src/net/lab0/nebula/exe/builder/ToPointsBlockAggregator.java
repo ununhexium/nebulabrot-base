@@ -27,7 +27,7 @@ implements JobBuilder<PointsBlock>
     @Override
     public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
     {
-        return new NebulaAggregator(parent.getExecutor(), parent.getPriority() + 1, output, aggregate, viewPort,
+        return new NebulaAggregator(parent, output, aggregate, viewPort,
         minimumIteration, maximumIteration);
     }
 }

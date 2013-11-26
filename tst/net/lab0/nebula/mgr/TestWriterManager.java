@@ -24,8 +24,6 @@ import org.junit.Test;
 
 public class TestWriterManager
 {
-    private PointsBlockManager pointsBlockManager = new PointsBlockManager(1);
-    
     /**
      * Tests net.lab0.nebula.mgr.WriterManager#write(PointsBlock, Path)
      */
@@ -33,7 +31,7 @@ public class TestWriterManager
     public void testWritePointsBlock()
     throws SerializationException, IOException
     {
-        PointsBlock block = new PointsBlock(1024, pointsBlockManager);
+        PointsBlock block = new PointsBlock(1024);
         
         double real = 0;
         double imag = 0;
@@ -78,7 +76,7 @@ public class TestWriterManager
     public void testWritePointsBlock2()
     throws SerializationException, IOException
     {
-        PointsBlock block = new PointsBlock(1024, pointsBlockManager);
+        PointsBlock block = new PointsBlock(1024);
         
         double real = 0;
         double imag = 0;
@@ -219,7 +217,7 @@ public class TestWriterManager
                 pathAsEnum[j] = PositionInParent.values()[randoms[j]];
             }
             
-            paths[i] = MandelbrotQuadTreeNode.positionToBitSetPath(pathAsEnum);
+            paths[i] = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(pathAsEnum).getPath();
             nodes[i] = new MandelbrotQuadTreeNode(i, paths[i], 100 * i, 200 * i);
             switch (i % 4)
             {

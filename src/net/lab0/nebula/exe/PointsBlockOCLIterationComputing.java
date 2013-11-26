@@ -6,10 +6,10 @@ import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.OpenCLManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
-import net.lab0.tools.exec.SingleOutputJob;
+import net.lab0.tools.exec.SimpleJob;
 
 public class PointsBlockOCLIterationComputing
-extends SingleOutputJob<PointsBlock, PointsBlock>
+extends SimpleJob<PointsBlock, PointsBlock>
 {
     private long                maximumIteration;
     private final OpenCLManager manager;

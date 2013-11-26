@@ -4,13 +4,13 @@ import java.nio.file.Path;
 
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.mgr.WriterManager;
-import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.CascadingJob;
 
 public class QuadTreeNodeWriter extends Writer<MandelbrotQuadTreeNode[]>
 {
-    public QuadTreeNodeWriter(PriorityExecutor executor, int priority, MandelbrotQuadTreeNode[] data, Path outputPath)
+    public QuadTreeNodeWriter(CascadingJob<?, MandelbrotQuadTreeNode[]> parentJob, MandelbrotQuadTreeNode[] data, Path outputPath)
     {
-        super(executor, priority, data, outputPath);
+        super(parentJob, data, outputPath);
     }
 
     @Override

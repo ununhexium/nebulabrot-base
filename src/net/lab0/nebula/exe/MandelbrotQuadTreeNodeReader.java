@@ -11,30 +11,35 @@ import java.util.BitSet;
 
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.enums.Status;
+import net.lab0.tools.exec.Generator;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.MultipleOutputJob;
 import net.lab0.tools.exec.PriorityExecutor;
 
 public class MandelbrotQuadTreeNodeReader
-extends MultipleOutputJob<Void, MandelbrotQuadTreeNode[]>
+extends Generator<DataInputStream, MandelbrotQuadTreeNode[]>
 {
-    private DataInputStream dataInputStream;
-    private int             blockSize;
+    private int blockSize;
     
-    public MandelbrotQuadTreeNodeReader(PriorityExecutor executor, int priority,
+    public MandelbrotQuadTreeNodeReader(PriorityExecutor executor,
     JobBuilder<MandelbrotQuadTreeNode[]> jobBuilder, Path inputPath, int blockSize)
     throws FileNotFoundException
     {
-        super(executor, priority, jobBuilder);
-        File file = inputPath.toFile();
-        FileInputStream fileInputStream = new FileInputStream(file);
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-        this.dataInputStream = new DataInputStream(bufferedInputStream);
+        super(executor, jobBuilder, buildDataInputStream(inputPath));
+        buildDataInputStream(inputPath);
         this.blockSize = blockSize;
     }
     
+    private static DataInputStream buildDataInputStream(Path inputPath)
+    throws FileNotFoundException
+    {
+        File file = inputPath.toFile();
+        FileInputStream fileInputStream = new FileInputStream(file);
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+        return new DataInputStream(bufferedInputStream);
+    }
+    
     @Override
-    public MandelbrotQuadTreeNode[] nextStep()
+    public MandelbrotQuadTreeNode[] generate(DataInputStream dataInputStream)
     throws Exception
     {
         MandelbrotQuadTreeNode[] nodes = new MandelbrotQuadTreeNode[blockSize];

@@ -6,11 +6,12 @@ import java.util.List;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.mgr.PointsBlockManager;
+import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.Dump;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.SingleOutputGenerator;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,9 +37,10 @@ public class TestLinearPointsBlockGenerator
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         //hopefully, there will be no rounding errors Powers of 2 are great :)
         CoordinatesBlock block = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 2048d, 4.0 / 2048d);
-        PointsBlockManager manager = new PointsBlockManager(10);
-        CoordinatesToPointsBlockConverter generator = new CoordinatesToPointsBlockConverter(executor, 0,
-        new TestJobBuilder(), block, 1024 * 1024, manager);
+        ToCoordinatesPointsBlockConverter toConverter = new ToCoordinatesPointsBlockConverter(new TestJobBuilder(), 1000*1000);
+        SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(executor, toConverter, block);
+//        CoordinatesToPointsBlockConverter coordsPointConverter = new CoordinatesToPointsBlockConverter(executor, 0,
+//        new TestJobBuilder(), block, 1024 * 1024, manager);
         executor.prestartAllCoreThreads();
         executor.submit(generator);
         try
@@ -54,10 +56,11 @@ public class TestLinearPointsBlockGenerator
     @Test
     public void pointsOutput()
     {
-        Assert.assertEquals(4, dumpList.size());
-        for (PointsBlock pb : dumpList)
+        Assert.assertEquals(5, dumpList.size());
+        for (int i=0; i<4; ++i)
         {
-            Assert.assertEquals(1024 * 1024, pb.size);
+//            System.out.println(dumpList.get(i).real[0]);
+            Assert.assertEquals(1000*1000, dumpList.get(i).size);
         }
     }
 }

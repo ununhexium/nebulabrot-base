@@ -5,12 +5,12 @@ import java.nio.file.Path;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
-import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
+import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
 import net.lab0.nebula.exe.builder.ToFile;
-import net.lab0.nebula.mgr.PointsBlockManager;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.SingleOutputGenerator;
 
 /**
  * The basics.
@@ -44,7 +44,6 @@ public class Example01
          * We now need to define the job that will split the area to compute into 64 block of 512*512 points. This job
          * need several parameters.
          */
-        CoordinatesToPointsBlockConverter converter = null;
         /*
          * The priority executor is the executor that will run this job. This must stay the same for all the execution
          * chain we are going to create. This is the priority executor that is in charge of the execution of the
@@ -74,18 +73,17 @@ public class Example01
         });
         
         /*
-         * The points block manager is the class in charge of the allocation and management of the points blocks
-         * objects. It avoid useless frequent allocation/free of the same memory array by allowing the points block to
-         * be reused after their life cycle. The reserve is the amount of blocks that should be kept referenced by the
-         * manager for a future use.
-         */
-        PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
-        
-        /*
          * Effectively create the converter with the previously created parameters.
          */
-        converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0, toFile, coordinatesBlock, blockSize,
-        pointsBlockManager);
+        ToCoordinatesPointsBlockConverter toCoordinatesConverter = new ToCoordinatesPointsBlockConverter(toFile,
+        blockSize);
+        
+        /*
+         * Create a single output source that will take place of the generator requested by the next step
+         */
+        SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(
+        priorityExecutor, toCoordinatesConverter, coordinatesBlock);
+        
         /*
          * We just created a basic chain: the input is a coordinates block that will be split into points block by the
          * converter and then written to a file by the points block writer.
@@ -95,7 +93,7 @@ public class Example01
          * Start the execution of the job. The call will start the job execution automatically.
          */
         priorityExecutor.prestartAllCoreThreads();
-        priorityExecutor.submit(converter);
+        priorityExecutor.submit(generator);
         /*
          * We now have to wait for the job to finish.
          */

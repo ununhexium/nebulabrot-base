@@ -1,13 +1,60 @@
 package net.lab0.nebula.data;
 
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
-import net.lab0.tools.Pair;
 
 public class MandelbrotQuadTreeNode
 {
+    public static class Coords
+    {
+        private double min;
+        private double max;
+        
+        public Coords(double min, double max)
+        {
+            super();
+            this.min = min;
+            this.max = max;
+        }
+        
+        public double getMin()
+        {
+            return min;
+        }
+        
+        public double getMax()
+        {
+            return max;
+        }
+    }
+    
+    public static class NodePath
+    {
+        private int    depth;
+        private BitSet path;
+        
+        public NodePath(int depth, BitSet path)
+        {
+            super();
+            this.depth = depth;
+            this.path = path;
+        }
+        
+        public int getDepth()
+        {
+            return depth;
+        }
+        
+        public BitSet getPath()
+        {
+            return path;
+        }
+    }
+    
     /**
      * The depth of this node. Root's depth = 0
      */
@@ -54,9 +101,9 @@ public class MandelbrotQuadTreeNode
         this.path = path;
     }
     
-    public MandelbrotQuadTreeNode(Pair<Integer, BitSet> path)
+    public MandelbrotQuadTreeNode(NodePath path)
     {
-        this(path.a, path.b);
+        this(path.getDepth(), path.getPath());
     }
     
     public MandelbrotQuadTreeNode(int depth, BitSet path, long minimumIteration, long maximumIteration)
@@ -75,9 +122,9 @@ public class MandelbrotQuadTreeNode
     /**
      * Computes the position of minX and maxX for this node using the path
      * 
-     * @return a Pair&lt;double,double&gt;: minX et maxX
+     * @return a {@link Coords}: minX et maxX
      */
-    public Pair<Double, Double> getX()
+    public Coords getX()
     {
         double minX = -2.0;
         double maxX = 2.0;
@@ -93,15 +140,15 @@ public class MandelbrotQuadTreeNode
                 maxX = (minX + maxX) / 2;
             }
         }
-        return new Pair<Double, Double>(minX, maxX);
+        return new Coords(minX, maxX);
     }
     
     /**
      * Computes the position of minY and maxY for this node using the path
      * 
-     * @return a Pair&lt;double,double&gt;: minY et maxY
+     * @return a Coords: minY et maxY
      */
-    public Pair<Double, Double> getY()
+    public Coords getY()
     {
         double minY = -2.0;
         double maxY = 2.0;
@@ -117,10 +164,27 @@ public class MandelbrotQuadTreeNode
                 minY = (minY + maxY) / 2;
             }
         }
-        return new Pair<Double, Double>(minY, maxY);
+        return new Coords(minY, maxY);
     }
     
-    public static Pair<Integer, BitSet> positionToDepthAndBitSetPath(PositionInParent... positions)
+    public static NodePath positionToDepthAndBitSetPath(String stringPath)
+    {
+        List<PositionInParent> positions = new ArrayList<>(stringPath.length());
+        for (char c : stringPath.toCharArray())
+        {
+            if (c != 'R')
+            {
+                positions.add(PositionInParent.values()[Integer.parseInt("" + c)]);
+            }
+            else
+            {
+                positions.add(PositionInParent.Root);
+            }
+        }
+        return positionToDepthAndBitSetPath(positions.toArray(new PositionInParent[0]));
+    }
+    
+    public static NodePath positionToDepthAndBitSetPath(PositionInParent... positions)
     {
         BitSet path = new BitSet(positions.length * 2);
         int index = 0;
@@ -165,6 +229,6 @@ public class MandelbrotQuadTreeNode
             }
             index += 2;
         }
-        return new Pair<Integer, BitSet>(positions.length - 1, path);
+        return new NodePath(positions.length - 1, path);
     }
 }

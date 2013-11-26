@@ -11,15 +11,15 @@ import net.lab0.nebula.color.GrayScaleColorModel;
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
-import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
 import net.lab0.nebula.exe.PointsBlockReader;
 import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
+import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
 import net.lab0.nebula.exe.builder.ToFile;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
-import net.lab0.nebula.mgr.PointsBlockManager;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.SingleOutputGenerator;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
 import net.lab0.tools.geom.RectangleInterface;
@@ -57,10 +57,12 @@ public class Example04
          * 3: Set a minimum iteration count criteria
          */
         JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath, 128);
-        PointsBlockManager pointsBlockManager = new PointsBlockManager(10);
         JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 1024);
-        CoordinatesToPointsBlockConverter converter = new CoordinatesToPointsBlockConverter(priorityExecutor, 0,
-        toCPUComp, coordinatesBlock, blockSize, pointsBlockManager);
+        JobBuilder<CoordinatesBlock> toCoordinatesBlockConverter = new ToCoordinatesPointsBlockConverter(toCPUComp,
+        blockSize);
+        SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(
+        priorityExecutor, toCoordinatesBlockConverter, coordinatesBlock);
+        
         priorityExecutor.registerShutdownHook(new Runnable()
         {
             @Override
@@ -70,7 +72,7 @@ public class Example04
             }
         });
         priorityExecutor.prestartAllCoreThreads();
-        priorityExecutor.submit(converter);
+        priorityExecutor.submit(generator);
         priorityExecutor.finishAndShutdown();
         System.out.println("The file is available at " + outputPath.toUri());
         
@@ -78,8 +80,7 @@ public class Example04
         RawMandelbrotData aggregate = new RawMandelbrotData(512, 512, 0);
         RectangleInterface viewPort = new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0));
         ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
-        PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, 0, toAggregator, outputPath,
-        pointsBlockManager, 1024 * 1024);
+        PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, toAggregator, outputPath, 1024 * 1024);
         priorityExecutor.submit(pointsBlockReader);
         priorityExecutor.finishAndShutdown();
         BufferedImage image = aggregate.computeBufferedImage(new GrayScaleColorModel(), 0);

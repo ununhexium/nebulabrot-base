@@ -350,6 +350,10 @@ public class WriterManager
         {
             throw new IllegalArgumentException("The file " + output + " already exists and is a directory.");
         }
+        if (!output.toFile().exists())
+        {
+            output.toFile().getParentFile().mkdirs();
+        }
         DataOutputStream outputStream = mappings.get(output);
         if (outputStream == null)
         {

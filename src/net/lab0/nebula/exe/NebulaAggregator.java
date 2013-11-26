@@ -3,7 +3,7 @@ package net.lab0.nebula.exe;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.tools.exec.AggregatorJob;
-import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.geom.RectangleInterface;
 
 public class NebulaAggregator
@@ -34,10 +34,10 @@ extends AggregatorJob<PointsBlock, RawMandelbrotData>
      */
     private long               maximumIteration;
     
-    public NebulaAggregator(PriorityExecutor executor, int priority, PointsBlock input, RawMandelbrotData aggregate,
+    public NebulaAggregator(CascadingJob<?, PointsBlock> parent, PointsBlock input, RawMandelbrotData aggregate,
     RectangleInterface viewPort, long minimumIteration, long maximumIteration)
     {
-        super(executor, priority, input, aggregate);
+        super(parent, input, aggregate);
         this.pixelHeight = aggregate.getPixelHeight();
         this.pixelWidth = aggregate.getPixelWidth();
         this.viewPort = viewPort;
@@ -66,7 +66,6 @@ extends AggregatorJob<PointsBlock, RawMandelbrotData>
                 computePoint(input.iter[i], data, input.real[i], input.imag[i]);
             }
         }
-        input.release();
     }
     
     /**

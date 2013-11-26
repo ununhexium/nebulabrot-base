@@ -54,7 +54,7 @@ implements JobBuilder<PointsBlock>
          * will be executed before the parents and avoid overflows due to a lot of child processes that will be executed
          * only when the parent finishes.
          */
-        return new PointsBlockWriter(parent.getExecutor(), parent.getPriority() + 1, output, outputPath, writerManager,
+        return new PointsBlockWriter(parent, output, outputPath, writerManager,
         minimumIteration, maximumIteration);
     }
     
