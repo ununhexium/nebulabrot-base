@@ -5,6 +5,7 @@ import java.util.List;
 
 import net.lab0.nebula.data.PointsBlock;
 
+//http://en.wikipedia.org/wiki/Object_pool_pattern
 public class PointsBlockManager
 {
     // available blocks sorted by ascending size
