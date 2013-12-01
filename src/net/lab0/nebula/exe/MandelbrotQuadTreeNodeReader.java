@@ -20,8 +20,8 @@ extends Generator<DataInputStream, MandelbrotQuadTreeNode[]>
 {
     private int blockSize;
     
-    public MandelbrotQuadTreeNodeReader(PriorityExecutor executor,
-    JobBuilder<MandelbrotQuadTreeNode[]> jobBuilder, Path inputPath, int blockSize)
+    public MandelbrotQuadTreeNodeReader(PriorityExecutor executor, JobBuilder<MandelbrotQuadTreeNode[]> jobBuilder,
+    Path inputPath, int blockSize)
     throws FileNotFoundException
     {
         super(executor, jobBuilder, buildDataInputStream(inputPath));

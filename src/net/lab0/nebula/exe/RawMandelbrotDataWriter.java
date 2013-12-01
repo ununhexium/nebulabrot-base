@@ -10,20 +10,17 @@ import net.lab0.tools.exec.CascadingJob;
 public class RawMandelbrotDataWriter
 extends Writer<RawMandelbrotData>
 {
-    private WriterManager writerManager;
-    
     public RawMandelbrotDataWriter(CascadingJob<?, RawMandelbrotData> parentJob, RawMandelbrotData rawMandelbrotData,
     Path ouputPath, WriterManager writerManager)
     {
         super(parentJob, rawMandelbrotData, ouputPath);
-        this.writerManager = writerManager;
     }
     
     @Override
     protected void save(RawMandelbrotData data, Path outputPath)
     throws SerializationException
     {
-        writerManager.write(data, outputPath);
+        WriterManager.getInstance().write(data, outputPath);
     }
     
 }

@@ -2,12 +2,12 @@ package net.lab0.nebula.exe;
 
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
-import net.lab0.tools.exec.AggregatorJob;
+import net.lab0.tools.exec.GathererJob;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.geom.RectangleInterface;
 
-public class NebulaAggregator
-extends AggregatorJob<PointsBlock, RawMandelbrotData>
+public class NebulaGatherer
+extends GathererJob<PointsBlock, RawMandelbrotData>
 {
     /**
      * The height of the rendering.
@@ -34,7 +34,7 @@ extends AggregatorJob<PointsBlock, RawMandelbrotData>
      */
     private long               maximumIteration;
     
-    public NebulaAggregator(CascadingJob<?, PointsBlock> parent, PointsBlock input, RawMandelbrotData aggregate,
+    public NebulaGatherer(CascadingJob<?, PointsBlock> parent, PointsBlock input, RawMandelbrotData aggregate,
     RectangleInterface viewPort, long minimumIteration, long maximumIteration)
     {
         super(parent, input, aggregate);

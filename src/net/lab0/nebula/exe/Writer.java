@@ -12,7 +12,7 @@ extends CascadingJob<T, Void>
     
     public Writer(CascadingJob<?, T> parentJob, T data, Path outputPath)
     {
-        super(parentJob.getExecutor(), parentJob.getPriority() + 1, null);
+        super(parentJob, null);
         this.data = data;
         this.outputPath = outputPath;
     }

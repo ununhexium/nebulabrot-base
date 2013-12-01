@@ -316,6 +316,40 @@ public class WriterManager
     }
     
     /**
+     * Same as net.lab0.nebula.mgr.WriterManager#write(MandelbrotQuadTreeNode[] dataArray, Path output) for a single
+     * element.
+     */
+    public void write(MandelbrotQuadTreeNode data, Path output)
+    throws SerializationException
+    {
+        try
+        {
+            lock.lock();
+            DataOutputStream out = getWriterFor(output);
+            
+            out.writeInt(data.depth);
+            byte[] bytes = data.path.toByteArray();
+            out.writeInt(bytes.length);
+            out.write(bytes);
+            out.writeByte(data.status.ordinal());
+            out.writeLong(data.minimumIteration);
+            out.writeLong(data.maximumIteration);
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new SerializationException("Error when trying to get the data ouput stream", e);
+        }
+        catch (IOException e)
+        {
+            throw new SerializationException("Error while writing the data", e);
+        }
+        finally
+        {
+            lock.unlock();
+        }
+    }
+    
+    /**
      * Use this method when there is nothing left ot write to that path. Releases the path (removes references to it,
      * allowing the GC to do its job.
      * 

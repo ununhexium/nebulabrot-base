@@ -7,10 +7,9 @@ import java.util.List;
 
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.PointsBlock;
+import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.PriorityExecutor;
 import net.lab0.tools.exec.SimpleJob;
-import net.lab0.tools.geom.RectangleInterface;
 
 import com.google.common.primitives.Doubles;
 
@@ -26,10 +25,10 @@ extends SimpleJob<MandelbrotQuadTreeNode, PointsBlock>
 {
     private BigDecimal         step;
     
-    public NodesToPointsPreparation(PriorityExecutor executor, int priority, JobBuilder<PointsBlock> jobBuilder,
+    public NodesToPointsPreparation(CascadingJob<?, MandelbrotQuadTreeNode> parent, JobBuilder<PointsBlock> jobBuilder,
     MandelbrotQuadTreeNode input)
     {
-        super(executor, priority, jobBuilder, input);
+        super(parent, jobBuilder, input);
     }
     
     @Override

@@ -32,7 +32,7 @@ implements JobBuilder<PointsBlock>
     @Override
     public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
     {
-        return new PointsBlockCPUIterationComputing(parent.getExecutor(), parent.getPriority() + 1, jobBuilder, output,
+        return new PointsBlockCPUIterationComputing(parent, jobBuilder, output,
         iteration);
     }
     

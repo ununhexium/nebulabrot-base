@@ -2,7 +2,7 @@ package net.lab0.nebula.exe.builder;
 
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
-import net.lab0.nebula.exe.NebulaAggregator;
+import net.lab0.nebula.exe.NebulaGatherer;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.geom.RectangleInterface;
@@ -27,7 +27,7 @@ implements JobBuilder<PointsBlock>
     @Override
     public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
     {
-        return new NebulaAggregator(parent, output, aggregate, viewPort,
+        return new NebulaGatherer(parent, output, aggregate, viewPort,
         minimumIteration, maximumIteration);
     }
 }

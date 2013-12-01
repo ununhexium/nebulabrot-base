@@ -2,8 +2,8 @@ package net.lab0.nebula.exe;
 
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.data.PointsBlock;
+import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.PriorityExecutor;
 import net.lab0.tools.exec.SimpleJob;
 
 public class PointsBlockCPUIterationComputing
@@ -11,10 +11,10 @@ extends SimpleJob<PointsBlock, PointsBlock>
 {
     private long maximumIteration;
     
-    public PointsBlockCPUIterationComputing(PriorityExecutor executor, int priority, JobBuilder<PointsBlock> jobBuilder,
+    public PointsBlockCPUIterationComputing(CascadingJob<?, PointsBlock> parent, JobBuilder<PointsBlock> jobBuilder,
     PointsBlock pointsBlock, long maximumIteration)
     {
-        super(executor, priority, jobBuilder, pointsBlock);
+        super(parent, jobBuilder, pointsBlock);
         this.maximumIteration = maximumIteration;
     }
     

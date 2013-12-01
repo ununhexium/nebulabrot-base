@@ -47,10 +47,6 @@ extends Splitter<CoordinatesBlock, PointsBlock>
     @Override
     public PointsBlock nextStep()
     {
-        if (lastY >= block.maxY)
-        {
-            return null;
-        }
         int points = 0;
         double x = lastX;
         double y = lastY;
@@ -91,6 +87,12 @@ extends Splitter<CoordinatesBlock, PointsBlock>
             pointsBlock = pointsBlock2;
         }
         return pointsBlock;
+    }
+
+    @Override
+    public boolean hasNext()
+    {
+        return lastY < block.maxY;
     }
     
 }

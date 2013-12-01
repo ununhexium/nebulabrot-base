@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.CascadingJob;
-import net.lab0.tools.exec.PriorityExecutor;
 
 /**
  * A job that will aggregate the points block and serialize them into a file. This step is the last step of a
@@ -17,7 +16,6 @@ import net.lab0.tools.exec.PriorityExecutor;
 public class PointsBlockWriter
 extends Writer<PointsBlock>
 {
-    private WriterManager writerManager;
     private long          minimumIteration;
     private long          maximumIteration;
     
@@ -30,26 +28,23 @@ extends Writer<PointsBlock>
      * @param maximumIteration
      *            The maximum number of iteration a point must have to be written
      */
-    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath,
-    WriterManager writerManager, long minimumIteration, long maximumIteration)
+    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath, long minimumIteration, long maximumIteration)
     {
         super(parentJob, pointsBlock, ouputPath);
-        this.writerManager = writerManager;
         this.minimumIteration = minimumIteration;
         this.maximumIteration = maximumIteration;
     }
     
-    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath,
-    WriterManager writerManager)
+    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath)
     {
-        this(parentJob, pointsBlock, ouputPath, writerManager, Long.MIN_VALUE, Long.MAX_VALUE);
+        this(parentJob, pointsBlock, ouputPath, Long.MIN_VALUE, Long.MAX_VALUE);
     }
     
     @Override
     protected void save(PointsBlock data, Path outputPath)
     throws Exception
     {
-        writerManager.write(data, outputPath, minimumIteration, maximumIteration);
+        WriterManager.getInstance().write(data, outputPath, minimumIteration, maximumIteration);
     }
     
 }

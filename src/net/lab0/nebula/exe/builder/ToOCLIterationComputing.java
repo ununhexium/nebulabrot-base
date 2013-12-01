@@ -34,8 +34,8 @@ implements JobBuilder<PointsBlock>
     @Override
     public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
     {
-        return new PointsBlockOCLIterationComputing(parent.getExecutor(), parent.getPriority() + 1, jobBuilder, output,
-        iteration, OpenCLManager.getInstance());
+        return new PointsBlockOCLIterationComputing(parent, jobBuilder, output,
+        iteration);
     }
     
 }
