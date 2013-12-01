@@ -14,7 +14,7 @@ import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exe.PointsBlockReader;
 import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
-import net.lab0.nebula.exe.builder.ToFile;
+import net.lab0.nebula.exe.builder.ToFilePointsBlock;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
@@ -44,10 +44,9 @@ public class Example03
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
         
-        final WriterManager writerManager = WriterManager.getInstance();
         Path basePath = ExamplesGlobals.createClearDirectory(Example03.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
-        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
+        JobBuilder<PointsBlock> toFile = new ToFilePointsBlock(outputPath);
         JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 1024);
         JobBuilder<CoordinatesBlock> toCoordinatesBlockConverter = new ToCoordinatesPointsBlockConverter(toCPUComp, blockSize);
         SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(priorityExecutor, toCoordinatesBlockConverter, coordinatesBlock);
@@ -57,7 +56,7 @@ public class Example03
             @Override
             public void run()
             {
-                writerManager.release(outputPath);
+                WriterManager.getInstance().release(outputPath);
             }
         });
         priorityExecutor.prestartAllCoreThreads();

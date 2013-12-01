@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
-import net.lab0.nebula.exe.builder.ToFile;
+import net.lab0.nebula.exe.builder.ToFilePointsBlock;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
@@ -55,10 +55,9 @@ public class Example01
          * The job builder is the class that will create the job that has to be executed for each of the created points
          * block. In this case, we want to output the result in a file. @see net.lab0.nebula.exe.builder.ToFile
          */
-        final WriterManager writerManager = WriterManager.getInstance();
         Path basePath = ExamplesGlobals.createClearDirectory(Example01.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
-        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
+        JobBuilder<PointsBlock> toFile = new ToFilePointsBlock(outputPath);
         /*
          * After the computation, we need to tell to the write manager that we won't write anything in the above file
          * anymore. We can do that by registering a hook instead of doing it manually after the executor ended.
@@ -68,7 +67,7 @@ public class Example01
             @Override
             public void run()
             {
-                writerManager.release(outputPath);
+                WriterManager.getInstance().release(outputPath);
             }
         });
         

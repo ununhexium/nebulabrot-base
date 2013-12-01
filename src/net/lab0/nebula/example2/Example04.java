@@ -14,7 +14,7 @@ import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exe.PointsBlockReader;
 import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
-import net.lab0.nebula.exe.builder.ToFile;
+import net.lab0.nebula.exe.builder.ToFilePointsBlock;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
@@ -46,8 +46,6 @@ public class Example04
         
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
-        
-        final WriterManager writerManager = WriterManager.getInstance();
         /*
          * 2: Change the target folder
          */
@@ -56,7 +54,7 @@ public class Example04
         /*
          * 3: Set a minimum iteration count criteria
          */
-        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath, 128);
+        JobBuilder<PointsBlock> toFile = new ToFilePointsBlock(outputPath, 128);
         JobBuilder<PointsBlock> toCPUComp = new ToCPUIterationComputing(toFile, 1024);
         JobBuilder<CoordinatesBlock> toCoordinatesBlockConverter = new ToCoordinatesPointsBlockConverter(toCPUComp,
         blockSize);
@@ -68,7 +66,7 @@ public class Example04
             @Override
             public void run()
             {
-                writerManager.release(outputPath);
+                WriterManager.getInstance().release(outputPath);
             }
         });
         priorityExecutor.prestartAllCoreThreads();

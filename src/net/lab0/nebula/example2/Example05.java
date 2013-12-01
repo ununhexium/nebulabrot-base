@@ -13,7 +13,7 @@ import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exe.PointsBlockReader;
 import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
-import net.lab0.nebula.exe.builder.ToFile;
+import net.lab0.nebula.exe.builder.ToFilePointsBlock;
 import net.lab0.nebula.exe.builder.ToOCLIterationComputing;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
 import net.lab0.nebula.mgr.WriterManager;
@@ -46,14 +46,12 @@ public class Example05
         
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
-        
-        final WriterManager writerManager = WriterManager.getInstance();
         /*
          * 2: Change the target folder
          */
         Path basePath = ExamplesGlobals.createClearDirectory(Example05.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
-        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath, -1);
+        JobBuilder<PointsBlock> toFile = new ToFilePointsBlock(outputPath, -1);
         /*
          * 3: We want to use the openCL computation facility
          */
@@ -67,7 +65,7 @@ public class Example05
             @Override
             public void run()
             {
-                writerManager.release(outputPath);
+                WriterManager.getInstance().release(outputPath);
             }
         });
         priorityExecutor.prestartAllCoreThreads();

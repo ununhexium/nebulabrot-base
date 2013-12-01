@@ -7,7 +7,7 @@ import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.nebula.exe.builder.ToCoordinatesPointsBlockConverter;
-import net.lab0.nebula.exe.builder.ToFile;
+import net.lab0.nebula.exe.builder.ToFilePointsBlock;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
@@ -37,16 +37,15 @@ public class Example02
         int threads = Runtime.getRuntime().availableProcessors();
         PriorityExecutor priorityExecutor = new PriorityExecutor(threads);
         
-        final WriterManager writerManager = WriterManager.getInstance();
         Path basePath = ExamplesGlobals.createClearDirectory(Example02.class);
         final Path outputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.data");
-        JobBuilder<PointsBlock> toFile = new ToFile(writerManager, outputPath);
+        JobBuilder<PointsBlock> toFile = new ToFilePointsBlock(outputPath);
         priorityExecutor.registerShutdownHook(new Runnable()
         {
             @Override
             public void run()
             {
-                writerManager.release(outputPath);
+                WriterManager.getInstance().release(outputPath);
             }
         });
         
