@@ -919,16 +919,13 @@ public class StatusQuadTreeNode
     
     public void getAllNodes(Collection<StatusQuadTreeNode> collection)
     {
+        collection.add(this);
         if (children != null)
         {
             for (StatusQuadTreeNode n : children)
             {
                 n.getAllNodes(collection);
             }
-        }
-        else
-        {
-            collection.add(this);
         }
     }
     
@@ -1145,12 +1142,8 @@ public class StatusQuadTreeNode
      */
     public int getTotalNodesCount()
     {
-        int total = 0;
-        if (children == null)
-        {
-            total += 1;
-        }
-        else
+        int total = 1;
+        if (children != null)
         {
             for (StatusQuadTreeNode child : children)
             {
@@ -1355,5 +1348,30 @@ public class StatusQuadTreeNode
         // useless to set value
         // this.flagedForComputing = false;
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + getPath().hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        StatusQuadTreeNode other = (StatusQuadTreeNode) obj;
+        if (!getPath().equals(other.getPath()))
+            return false;
+        return true;
+    }
+    
     
 }
