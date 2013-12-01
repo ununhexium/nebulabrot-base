@@ -1,6 +1,7 @@
 package net.lab0.nebula.data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
@@ -52,6 +53,55 @@ public class MandelbrotQuadTreeNode
         public BitSet getPath()
         {
             return path;
+        }
+    }
+    
+    /**
+     * Factory to create nodes directly
+     * 
+     * @author 116
+     * 
+     */
+    public static class Factory
+    {
+        /**
+         * Builds a node with net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(String
+         * stringPath)
+         */
+        public static MandelbrotQuadTreeNode buildNode(String stringPath)
+        {
+            return new MandelbrotQuadTreeNode(MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(stringPath));
+        }
+        
+        /**
+         * Builds a node with
+         * net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(PositionInParent...
+         * positions)
+         */
+        public static MandelbrotQuadTreeNode buildNode(PositionInParent... positions)
+        {
+            return new MandelbrotQuadTreeNode(MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(positions));
+        }
+        
+        /**
+         * Builds a node with
+         * net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(PositionInParent...
+         * positions) by concatenating the parent and child paths.
+         */
+        public static MandelbrotQuadTreeNode buildNode(PositionInParent[] parentPath, PositionInParent childPosition)
+        {
+            PositionInParent[] fullPath = Arrays.copyOf(parentPath, parentPath.length + 1);
+            fullPath[parentPath.length] = childPosition;
+            return new MandelbrotQuadTreeNode(MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(fullPath));
+        }
+        
+        /**
+         * Builds a root node. Equivalent to buildNode(PositionInParent.Root)
+         */
+        public static MandelbrotQuadTreeNode buildRoot()
+        {
+            return new MandelbrotQuadTreeNode(
+            MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(PositionInParent.Root));
         }
     }
     
@@ -108,11 +158,6 @@ public class MandelbrotQuadTreeNode
     
     public MandelbrotQuadTreeNode(int depth, BitSet path, long minimumIteration, long maximumIteration)
     {
-        if (path.size() < depth * 2)
-        {
-            throw new IllegalArgumentException("The path and the depth don't match: depth=" + depth + ", path.length="
-            + path.size());
-        }
         this.depth = depth;
         this.path = path;
         this.minimumIteration = minimumIteration;
@@ -165,6 +210,17 @@ public class MandelbrotQuadTreeNode
             }
         }
         return new Coords(minY, maxY);
+    }
+    
+    public MandelbrotQuadTreeNode[] split()
+    {
+        MandelbrotQuadTreeNode[] splitted = new MandelbrotQuadTreeNode[4];
+        PositionInParent[] positions = this.getPathAsEnum();
+        splitted[0] = MandelbrotQuadTreeNode.Factory.buildNode(positions, PositionInParent.TopLeft);
+        splitted[1] = MandelbrotQuadTreeNode.Factory.buildNode(positions, PositionInParent.TopRight);
+        splitted[2] = MandelbrotQuadTreeNode.Factory.buildNode(positions, PositionInParent.BottomLeft);
+        splitted[3] = MandelbrotQuadTreeNode.Factory.buildNode(positions, PositionInParent.BottomRight);
+        return splitted;
     }
     
     public static NodePath positionToDepthAndBitSetPath(String stringPath)
@@ -230,5 +286,84 @@ public class MandelbrotQuadTreeNode
             index += 2;
         }
         return new NodePath(positions.length - 1, path);
+    }
+    
+    public PositionInParent[] getPathAsEnum()
+    {
+        PositionInParent[] positions = new PositionInParent[depth + 1];
+        positions[0] = PositionInParent.Root;
+        for (int i = 1; i <= depth; ++i)
+        {
+            int val = 0;
+            if (path.get(2 * i))
+            {
+                val += 2;
+            }
+            if (path.get(2 * i + 1))
+            {
+                val += 1;
+            }
+            
+            switch (val)
+            {
+                case 0:
+                    positions[i] = PositionInParent.TopLeft;
+                    break;
+                case 1:
+                    positions[i] = PositionInParent.TopRight;
+                    break;
+                case 2:
+                    positions[i] = PositionInParent.BottomLeft;
+                    break;
+                case 3:
+                    positions[i] = PositionInParent.BottomRight;
+                    break;
+                
+                default:
+                    assert (false);
+                    break;
+            }
+        }
+        return positions;
+    }
+    
+    private String getPathAsString()
+    {
+        StringBuilder sb = new StringBuilder();
+        PositionInParent[] positions = getPathAsEnum();
+        for (PositionInParent p : positions)
+        {
+            switch (p)
+            {
+                case TopLeft:
+                    sb.append("0");
+                    break;
+                case TopRight:
+                    sb.append("1");
+                    break;
+                case BottomLeft:
+                    sb.append("2");
+                    break;
+                case BottomRight:
+                    sb.append("3");
+                    break;
+                case Root:
+                    sb.append("R");
+                    break;
+                
+                default:
+                    assert (false);
+                    break;
+            }
+        }
+        return sb.toString();
+    }
+    
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("depth=").append(depth).append(" - path=" + getPathAsString());
+        return sb.toString();
     }
 }
