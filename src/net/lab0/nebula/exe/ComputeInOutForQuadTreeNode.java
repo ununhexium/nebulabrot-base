@@ -4,9 +4,8 @@ import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.Coords;
 import net.lab0.nebula.enums.Status;
-import net.lab0.tools.Pair;
+import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.PriorityExecutor;
 import net.lab0.tools.exec.SimpleJob;
 
 public class ComputeInOutForQuadTreeNode
@@ -16,16 +15,16 @@ extends SimpleJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
     private int  sidePointsCount;
     private long iterationDifferenceLimit;
     
-    public ComputeInOutForQuadTreeNode(PriorityExecutor executor, int priority,
+    public ComputeInOutForQuadTreeNode(CascadingJob<?, MandelbrotQuadTreeNode> parent,
     JobBuilder<MandelbrotQuadTreeNode> jobBuilder, MandelbrotQuadTreeNode input, long maximumIteration,
     int sidePointsCount, long iterationDifferenceLimit)
     {
-        super(executor, priority, jobBuilder, input);
+        super(parent, jobBuilder, input);
         this.maximumIteration = maximumIteration;
         this.sidePointsCount = sidePointsCount;
         this.iterationDifferenceLimit = iterationDifferenceLimit;
     }
-    
+
     @Override
     public MandelbrotQuadTreeNode singleStep(MandelbrotQuadTreeNode input)
     {
