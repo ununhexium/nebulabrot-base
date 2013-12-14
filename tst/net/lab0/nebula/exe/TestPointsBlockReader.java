@@ -34,7 +34,7 @@ public class TestPointsBlockReader
         @Override
         public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
         {
-            return new PointsBlockWriter(parent, output, path, writerManager);
+            return new PointsBlockWriter(parent, output, path);
         }
     }
     

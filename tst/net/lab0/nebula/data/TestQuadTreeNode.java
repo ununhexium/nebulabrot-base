@@ -415,5 +415,4 @@ public class TestQuadTreeNode
         assertEquals(5, deep10QuadTreeNode.getMaxNodeDepth());
     }
     
-    // TODO : to be continued ...
 }

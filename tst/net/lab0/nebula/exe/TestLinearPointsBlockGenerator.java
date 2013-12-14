@@ -39,8 +39,6 @@ public class TestLinearPointsBlockGenerator
         CoordinatesBlock block = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 2048d, 4.0 / 2048d);
         ToCoordinatesPointsBlockConverter toConverter = new ToCoordinatesPointsBlockConverter(new TestJobBuilder(), 1000*1000);
         SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(executor, toConverter, block);
-//        CoordinatesToPointsBlockConverter coordsPointConverter = new CoordinatesToPointsBlockConverter(executor, 0,
-//        new TestJobBuilder(), block, 1024 * 1024, manager);
         executor.prestartAllCoreThreads();
         executor.submit(generator);
         try

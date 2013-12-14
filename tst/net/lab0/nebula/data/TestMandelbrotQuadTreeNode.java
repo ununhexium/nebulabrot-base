@@ -5,6 +5,7 @@ import java.util.BitSet;
 import static net.lab0.nebula.enums.PositionInParent.*;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
 import net.lab0.nebula.enums.PositionInParent;
+import net.lab0.nebula.enums.Status;
 import net.lab0.tools.Pair;
 
 import org.junit.Assert;
@@ -197,5 +198,75 @@ public class TestMandelbrotQuadTreeNode
         Assert.assertEquals(-1.0, node.getY().getMin(), 0.0);
         // maxY
         Assert.assertEquals(-0.5, node.getY().getMax(), 0.0);
+    }
+    
+    @Test
+    public void testGetPathAsEnum1()
+    {
+        MandelbrotQuadTreeNode node = MandelbrotQuadTreeNode.Factory.buildNode(PositionInParent.Root);
+        PositionInParent[] path = node.getPathAsEnum();
+        Assert.assertEquals(1, path.length);
+        Assert.assertEquals(PositionInParent.Root, path[0]);
+    }
+    
+    @Test
+    public void testGetPathAsEnum2()
+    {
+        MandelbrotQuadTreeNode node = MandelbrotQuadTreeNode.Factory.buildNode(PositionInParent.Root,
+        PositionInParent.TopLeft, PositionInParent.TopLeft, PositionInParent.TopLeft);
+        PositionInParent[] path = node.getPathAsEnum();
+        Assert.assertEquals(4, path.length);
+        Assert.assertEquals(PositionInParent.Root, path[0]);
+        Assert.assertEquals(PositionInParent.TopLeft, path[1]);
+        Assert.assertEquals(PositionInParent.TopLeft, path[2]);
+        Assert.assertEquals(PositionInParent.TopLeft, path[3]);
+    }
+    
+    @Test
+    public void testGetPathAsEnum3()
+    {
+        MandelbrotQuadTreeNode node = MandelbrotQuadTreeNode.Factory.buildNode(PositionInParent.Root,
+        PositionInParent.BottomRight, PositionInParent.BottomRight, PositionInParent.BottomRight);
+        PositionInParent[] path = node.getPathAsEnum();
+        Assert.assertEquals(4, path.length);
+        Assert.assertEquals(PositionInParent.Root, path[0]);
+        Assert.assertEquals(PositionInParent.BottomRight, path[1]);
+        Assert.assertEquals(PositionInParent.BottomRight, path[2]);
+        Assert.assertEquals(PositionInParent.BottomRight, path[3]);
+    }
+    
+    @Test
+    public void testGetPathAsEnum4()
+    {
+        MandelbrotQuadTreeNode node = MandelbrotQuadTreeNode.Factory.buildNode(Root, TopRight, BottomLeft,
+        BottomRight,TopLeft);
+        System.out.println(node);
+        PositionInParent[] path = node.getPathAsEnum();
+        Assert.assertEquals(5, path.length);
+        Assert.assertEquals(PositionInParent.Root, path[0]);
+        Assert.assertEquals(PositionInParent.TopRight, path[1]);
+        Assert.assertEquals(PositionInParent.BottomLeft, path[2]);
+        Assert.assertEquals(PositionInParent.BottomRight, path[3]);
+        Assert.assertEquals(PositionInParent.TopLeft, path[4]);
+    }
+    
+    @Test
+    public void testSplit()
+    {
+        MandelbrotQuadTreeNode node = MandelbrotQuadTreeNode.Factory.buildRoot();
+        MandelbrotQuadTreeNode[] split = node.split();
+        
+        Assert.assertEquals(4, split.length);
+        
+        Assert.assertEquals(PositionInParent.TopLeft, split[0].getPathAsEnum()[1]);
+        Assert.assertEquals(PositionInParent.TopRight, split[1].getPathAsEnum()[1]);
+        Assert.assertEquals(PositionInParent.BottomLeft, split[2].getPathAsEnum()[1]);
+        Assert.assertEquals(PositionInParent.BottomRight, split[3].getPathAsEnum()[1]);
+        
+        for (int i = 0; i < 4; ++i)
+        {
+            Assert.assertEquals(node.depth+1, split[i].depth);
+            Assert.assertEquals(Status.VOID, split[i].status);
+        }
     }
 }

@@ -11,6 +11,8 @@ import net.lab0.nebula.exe.ComputeInOutForQuadTreeNode;
 import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
 import net.lab0.nebula.exe.MandelbrotQuadTreeNodeSplitter;
 import net.lab0.nebula.exe.PointsBlockOCLIterationComputing;
+import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2;
+import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2.Parameters;
 import net.lab0.nebula.exe.PointsBlockWriter;
 import net.lab0.nebula.exe.QuadTreeNodeArrayWriter;
 import net.lab0.nebula.exe.QuadTreeNodeWriter;
@@ -86,7 +88,7 @@ public class BuilderFactory
         };
     }
     
-    public static JobBuilder<CoordinatesBlock> toCoordinatesToPointsBlockConverter(
+    public static synchronized JobBuilder<CoordinatesBlock> toCoordinatesToPointsBlockConverter(
     final JobBuilder<PointsBlock> jobBuilder, final int pointsBlockSize)
     {
         return new JobBuilder<CoordinatesBlock>()
@@ -100,7 +102,7 @@ public class BuilderFactory
         };
     }
     
-    public static JobBuilder<MandelbrotQuadTreeNode[]> toNodeSplitterAndConverter(
+    public static synchronized JobBuilder<MandelbrotQuadTreeNode[]> toNodeSplitterAndConverter(
     final JobBuilder<CoordinatesBlock> jobBuilder, final double step, final Predicate<MandelbrotQuadTreeNode> filter)
     {
         return new JobBuilder<MandelbrotQuadTreeNode[]>()
@@ -114,7 +116,7 @@ public class BuilderFactory
         };
     }
     
-    public static JobBuilder<PointsBlock> toOCLCompute(final JobBuilder<PointsBlock> jobBuilder,
+    public static synchronized JobBuilder<PointsBlock> toOCLCompute(final JobBuilder<PointsBlock> jobBuilder,
     final long maximumIteration)
     {
         return new JobBuilder<PointsBlock>()
@@ -127,7 +129,7 @@ public class BuilderFactory
         };
     }
     
-    public static JobBuilder<MandelbrotQuadTreeNode> toComputeInOut(
+    public static synchronized JobBuilder<MandelbrotQuadTreeNode> toComputeInOut(
     final JobBuilder<MandelbrotQuadTreeNode> jobBuilder, final long maximumIteration, final int sidePointsCount,
     final long iterationDifferenceLimit)
     {
@@ -144,4 +146,17 @@ public class BuilderFactory
         };
     }
     
+    public static synchronized JobBuilder<CoordinatesBlock> toOCLCompute2(final JobBuilder<PointsBlock> jobBuilder,
+    final Parameters parameters)
+    {
+        return new JobBuilder<CoordinatesBlock>()
+        {
+            @Override
+            public CascadingJob<CoordinatesBlock, ?> buildJob(CascadingJob<?, CoordinatesBlock> parent,
+            CoordinatesBlock output)
+            {
+                return new PointsBlockOCLIterationComputing2(parent, jobBuilder, output, parameters);
+            }
+        };
+    }
 }

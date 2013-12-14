@@ -2,8 +2,10 @@ package net.lab0.nebula.exe;
 
 import net.lab0.nebula.core.MandelbrotComputeRoutines;
 import net.lab0.nebula.data.PointsBlock;
+import net.lab0.nebula.exe.builder.ToCPUIterationComputing;
 import net.lab0.tools.exec.DevNull;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.exec.SingleOutputGenerator;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,7 +23,9 @@ public class TestPointsBlockCPUIterationComputing
         }
         PriorityExecutor priorityExecutor = new PriorityExecutor();
         int maxIter = 65536;
-        PointsBlockCPUIterationComputing job = new PointsBlockCPUIterationComputing(priorityExecutor, 0,
+        SingleOutputGenerator<PointsBlock> singleOutputGenerator = new SingleOutputGenerator<PointsBlock>(
+        priorityExecutor, new ToCPUIterationComputing(new DevNull<PointsBlock>(), maxIter), pointsBlock);
+        PointsBlockCPUIterationComputing job = new PointsBlockCPUIterationComputing(singleOutputGenerator,
         new DevNull<PointsBlock>(), pointsBlock, maxIter);
         priorityExecutor.execute(job);
         try
