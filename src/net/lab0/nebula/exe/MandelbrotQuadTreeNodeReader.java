@@ -57,9 +57,9 @@ extends Generator<DataInputStream, MandelbrotQuadTreeNode[]>
                 int statusOrdinal = dataInputStream.readByte();
                 long min = dataInputStream.readLong();
                 long max = dataInputStream.readLong();
+                Status status = Status.values()[statusOrdinal];
                 
-                nodes[read] = new MandelbrotQuadTreeNode(depth, BitSet.valueOf(buffer), min, max);
-                nodes[read].status = Status.values()[statusOrdinal];
+                nodes[read] = new MandelbrotQuadTreeNode(depth, BitSet.valueOf(buffer), min, max, status);
                 
                 read++;
             }

@@ -1,6 +1,6 @@
-package net.lab0.nebula.example2;
+package tries;
 
-public class Example06
+public class SegmentsCreator
 {
     public static void main(String[] args)
     {

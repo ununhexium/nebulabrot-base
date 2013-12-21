@@ -28,6 +28,7 @@ import org.tukaani.xz.LZMA2Options;
 import org.tukaani.xz.XZ;
 import org.tukaani.xz.XZOutputStream;
 
+@Deprecated
 public class XZWriter
 implements Runnable
 {

@@ -8,6 +8,7 @@ package net.lab0.nebula.data;
  * @author 116
  * 
  */
+@Deprecated
 public class SynchronizedCounter
 {
     private long count;

@@ -13,6 +13,7 @@ import net.lab0.nebula.listener.QuadTreeComputeListener;
  * @author 116@lab0.net
  * 
  */
+@Deprecated
 public abstract class AbstractQuadTreeComputeThread
 extends Thread
 {

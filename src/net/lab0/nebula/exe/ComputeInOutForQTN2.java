@@ -10,6 +10,7 @@ import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.SimpleJob;
 
+//TODO: finish + doc
 public class ComputeInOutForQTN2
 extends SimpleJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
 {

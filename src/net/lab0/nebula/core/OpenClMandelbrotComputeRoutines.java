@@ -188,7 +188,7 @@ public class OpenClMandelbrotComputeRoutines
         mandelbrotKernel.setArg(1, yMemory);
         mandelbrotKernel.setArg(2, resultMemory);
         mandelbrotKernel.setArg(3, blockSize);
-        mandelbrotKernel.setArg(4, maximumIteration);
+        mandelbrotKernel.setArg(4, maximumIteration);//TODO:return a long
         
         // Create a buffer of pointers defining the multi-dimensional size of the number of work units to execute
         globalWorkSize = BufferUtils.createPointerBuffer(dimensions);

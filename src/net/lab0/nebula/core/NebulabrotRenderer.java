@@ -30,6 +30,7 @@ import org.tukaani.xz.XZInputStream;
  * @author 116
  * 
  */
+@Deprecated
 public class NebulabrotRenderer
 {
     /**
@@ -456,8 +457,7 @@ public class NebulabrotRenderer
                                             return;
                                         }
                                         
-                                        int increments = computePoint(minIter, maxIter, data, real, img);
-                                        // frequency.add(new Pair<StatusQuadTreeNode, Integer>(finalNode, increments));
+                                        computePoint(minIter, maxIter, data, real, img);
                                     }
                                     
                                     img += stepY;
@@ -511,46 +511,6 @@ public class NebulabrotRenderer
         {
             Thread.currentThread().interrupt();
         }
-        
-        // Collections.sort(frequency, new Comparator<Pair<StatusQuadTreeNode, Integer>>()
-        // {
-        // @Override
-        // public int compare(Pair<StatusQuadTreeNode, Integer> o1, Pair<StatusQuadTreeNode, Integer> o2)
-        // {
-        // return o2.b - o1.b;
-        // }
-        // });
-        
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
-        long total = 0;
-        // for (Pair<StatusQuadTreeNode, Integer> p : frequency)
-        // {
-        // total += p.b;
-        // if (p.b > max)
-        // {
-        // max = p.b;
-        // }
-        // if (p.b < min)
-        // {
-        // min = p.b;
-        // }
-        // }
-        
-        System.out.println("min=" + min + " max=" + max);
-        int dX = 1; // decile
-        int index = 0;
-        long cumul = 0;
-        // for (Pair<StatusQuadTreeNode, Integer> p : frequency)
-        // {
-        // cumul += p.b;
-        // index++;
-        // if (cumul >= (dX * total / 20.0d))
-        // {
-        // System.out.println("D" + dX + " @ " + index);
-        // dX++;
-        // }
-        // }
         
         fireFinishedOrStop(raw);
         return raw;

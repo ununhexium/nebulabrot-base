@@ -15,6 +15,7 @@ import net.lab0.nebula.exception.NoMoreNodesToCompute;
  * @author 116
  * 
  */
+@Deprecated
 public class CPUQuadTreeComputeThread
 extends AbstractQuadTreeComputeThread
 {

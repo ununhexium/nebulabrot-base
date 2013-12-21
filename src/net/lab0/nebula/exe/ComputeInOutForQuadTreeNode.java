@@ -8,6 +8,12 @@ import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.SimpleJob;
 
+/**
+ * Computes a node to determine its {@link Status} in the mandelbrot set.
+ * 
+ * @author 116
+ * 
+ */
 public class ComputeInOutForQuadTreeNode
 extends SimpleJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
 {
@@ -24,7 +30,7 @@ extends SimpleJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
         this.sidePointsCount = sidePointsCount;
         this.iterationDifferenceLimit = iterationDifferenceLimit;
     }
-
+    
     @Override
     public MandelbrotQuadTreeNode singleStep(MandelbrotQuadTreeNode input)
     {
@@ -40,8 +46,8 @@ extends SimpleJob<MandelbrotQuadTreeNode, MandelbrotQuadTreeNode>
     }
     
     /**
-     * Tests if this node is completely inside the mandelbrot's set. The node is considered inside the Mandelbrot set is
-     * all edge points are inside the mandelbrot set.
+     * Tests if this node is completely inside the mandelbrot's set. The node is considered inside the Mandelbrot set if
+     * all edge points are inside the Mandelbrot set.
      */
     private boolean isInsideMandelbrotSet(MandelbrotQuadTreeNode node, int sidePointsCount, long maxIter)
     {

@@ -25,8 +25,6 @@ public class BinaryQuadTreeToXmlAndSerialized
         Path output = FileSystems.getDefault().getPath("R:", "dev", "nebula", "tree", "xml",
         "p256i65536d5D16binNoIndex");
         
-        Thread.sleep(10000);
-        
         QuadTreeManager manager = new QuadTreeManager(input, new ConsoleQuadTreeManagerListener());
         System.out.println("loaded");
         // manager.exportToXML(output);
@@ -56,7 +54,7 @@ public class BinaryQuadTreeToXmlAndSerialized
             toWrite.minimumIteration = node.getMin();
             toWrite.status = node.status;
             sum += 1;
-            writerManager.write(toWrite, paths.get(toWrite.depth));
+            writerManager.write(toWrite, paths.get(toWrite.nodePath.depth));
             index++;
             if (index > arraySize)
             {

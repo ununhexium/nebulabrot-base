@@ -38,7 +38,7 @@ import nu.xom.ValidityException;
 
 /**
  * 
- * Contains the raw computation of a mandelbrot / nebulabrot set.
+ * Contains the raw computation of a Mandelbrot / nebulabrot set.
  * 
  * The values are stored as Java integers (int). The minimum values for pixelWidth and pixelHeight is 1.
  * 

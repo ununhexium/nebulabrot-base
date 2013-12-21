@@ -12,8 +12,8 @@ package net.lab0.nebula.enums;
 // do NOT modify
 public enum Status
 {
-    BROWSED,
-    INSIDE,
-    OUTSIDE,
-    VOID, ;
+    BROWSED,// do NOT modify
+    INSIDE,// do NOT modify
+    OUTSIDE,// do NOT modify
+    VOID, ;// do NOT modify
 }

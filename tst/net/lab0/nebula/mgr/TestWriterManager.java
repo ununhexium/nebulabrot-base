@@ -218,22 +218,23 @@ public class TestWriterManager
             }
             
             paths[i] = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(pathAsEnum).getPath();
-            nodes[i] = new MandelbrotQuadTreeNode(i, paths[i], 100 * i, 200 * i);
+            Status status = null;
             switch (i % 4)
             {
                 case 0:
-                    nodes[i].status = Status.BROWSED;
+                    status = Status.BROWSED;
                     break;
                 case 1:
-                    nodes[i].status = Status.INSIDE;
+                    status = Status.INSIDE;
                     break;
                 case 2:
-                    nodes[i].status = Status.OUTSIDE;
+                    status = Status.OUTSIDE;
                     break;
                 case 3:
-                    nodes[i].status = Status.VOID;
+                    status = Status.VOID;
                     break;
             }
+            nodes[i] = new MandelbrotQuadTreeNode(i, paths[i], 100 * i, 200 * i, status);
         }
         
         WriterManager writerManager = WriterManager.getInstance();

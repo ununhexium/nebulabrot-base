@@ -2,6 +2,8 @@ package net.lab0.nebula.exe;
 
 import java.nio.IntBuffer;
 
+import com.google.common.base.Predicate;
+
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.OpenCLManager;
@@ -9,24 +11,28 @@ import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.Splitter;
 
+/**
+ * Scatters a {@link CoordinatesBlock} and computes the iterations of the resulting points using CPU computing power.
+ * Outputs the points validated by a filter.
+ * 
+ * @author 116
+ * 
+ */
 public class PointsBlockOCLIterationComputing2
 extends Splitter<CoordinatesBlock, PointsBlock>
 {
     public static class Parameters
     {
-        // inclusive
-        public long maximumIteration;
-        // inclusive
-        public long minimumIteration;
-        public int  pointsOnSides;
-        public int  blocks;
+        public long            maximumIteration;
+        public Predicate<Long> filter;
+        public int             pointsOnSides;
+        public int             blocks;
         
         /**
          * 
-         * @param maximumIteration
-         *            inclusive
-         * @param minimumIteration
-         *            inclusive
+         * @param filter
+         *            if the value returned by the filter is true, the points is output. The points is discarded
+         *            otherwise.
          * @param pointsOnSides
          *            points on each side of the square
          * @param blocks
@@ -35,7 +41,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
          * @throws IllegalArgumentException
          *             if pointsOnSide is not a multiple of blocks
          */
-        public Parameters(long maximumIteration, long minimumIteration, int pointsOnSides, int blocks)
+        public Parameters(long maximumIteration, Predicate<Long> filter, int pointsOnSides, int blocks)
         {
             super();
             
@@ -46,7 +52,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
             }
             
             this.maximumIteration = maximumIteration;
-            this.minimumIteration = minimumIteration;
+            this.filter = filter;
             this.pointsOnSides = pointsOnSides;
             this.blocks = blocks;
         }
@@ -96,7 +102,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
         while (result.hasRemaining())
         {
             int iterations = result.get();
-            if (iterations >= parameters.minimumIteration && iterations <= parameters.maximumIteration)
+            if (parameters.filter.apply((long) iterations))
             {
                 returned.real[currentDstIndex] = x[currentSrcIndex];
                 returned.imag[currentDstIndex] = y[currentSrcIndex];
@@ -114,7 +120,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
         while (result.hasRemaining())
         {
             int iterations = result.get();
-            if (iterations >= parameters.minimumIteration && iterations <= parameters.maximumIteration)
+            if (parameters.filter.apply((long) iterations))
             {
                 returnedPointsCount++;
             }

@@ -6,6 +6,12 @@ import net.lab0.tools.exec.GathererJob;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.geom.RectangleInterface;
 
+/**
+ * Gathers {@link PointsBlock}s into a {@link RawMandelbrotData}
+ * 
+ * @author 116
+ *
+ */
 public class NebulaGatherer
 extends GathererJob<PointsBlock, RawMandelbrotData>
 {

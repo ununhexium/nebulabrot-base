@@ -290,8 +290,8 @@ public class WriterManager
             
             for (MandelbrotQuadTreeNode n : dataArray)
             {
-                out.writeInt(n.depth);
-                byte[] bytes = n.path.toByteArray();
+                out.writeInt(n.nodePath.depth);
+                byte[] bytes = n.nodePath.path.toByteArray();
                 out.writeInt(bytes.length);
                 out.write(bytes);
                 out.writeByte(n.status.ordinal());
@@ -327,8 +327,8 @@ public class WriterManager
             lock.lock();
             DataOutputStream out = getWriterFor(output);
             
-            out.writeInt(data.depth);
-            byte[] bytes = data.path.toByteArray();
+            out.writeInt(data.nodePath.depth);
+            byte[] bytes = data.nodePath.path.toByteArray();
             out.writeInt(bytes.length);
             out.write(bytes);
             out.writeByte(data.status.ordinal());

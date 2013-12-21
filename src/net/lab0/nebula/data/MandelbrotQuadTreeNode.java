@@ -8,8 +8,21 @@ import java.util.List;
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
 
+/**
+ * A quad-tree node specifically design for the computation of the Mandelbrot set. Assumes that the root node has the
+ * coordinates x=[-2.0;2.0], y=[-2.0,2.0].
+ * 
+ * @author 116
+ * 
+ */
 public class MandelbrotQuadTreeNode
 {
+    /**
+     * The min/max coordinates. Replacement for the general Pair&lt;Double,Double&gt; class.
+     * 
+     * @author 116
+     * 
+     */
     public static class Coords
     {
         private double min;
@@ -33,14 +46,71 @@ public class MandelbrotQuadTreeNode
         }
     }
     
+    /**
+     * Represent the path of a node in the quad tree.
+     * 
+     * @author 116
+     * 
+     */
     public static class NodePath
     {
-        private int    depth;
-        private BitSet path;
+        /**
+         * The depth of the node. Root's depth = 0.
+         */
+        public final int    depth;
+        /**
+         * The path of the node. The first 2 bits of this array (root node position) are undefined. The bits must be
+         * considered by groups of 2. The value of the grouping indicates the position of the node in its parent. The
+         * grouping ordinal value (0-based) is the depth at which it applies.
+         * 
+         * <table>
+         * <tbody>
+         * <tr>
+         * <td></td>
+         * <td>Left</td>
+         * <td>Right</td>
+         * </tr>
+         * <tr>
+         * <td>Top</td>
+         * <td>00</td>
+         * <td>01</td>
+         * </tr>
+         * <tr>
+         * <td>Bottom</td>
+         * <td>10</td>
+         * <td>11</td>
+         * </tr>
+         * </tbody>
+         * </table>
+         * 
+         */
         
+        // +--+--+
+        // |00|01|
+        // +--+--+
+        // |10|11|
+        // +--+--+
+        public final BitSet path;
+        
+        /**
+         * Creates a node with the given parameters
+         * 
+         * @param depth
+         *            The depth of the node. Must be positive.
+         * @param path
+         *            The path of the node. Not <code>null</code>.
+         */
         public NodePath(int depth, BitSet path)
         {
             super();
+            if (depth < 0)
+            {
+                throw new IllegalArgumentException("The depth=" + depth + " must be positive or 0.");
+            }
+            if (path == null)
+            {
+                throw new IllegalArgumentException("The path must not be null.");
+            }
             this.depth = depth;
             this.path = path;
         }
@@ -57,7 +127,7 @@ public class MandelbrotQuadTreeNode
     }
     
     /**
-     * Factory to create nodes directly
+     * A Factory to create nodes easily.
      * 
      * @author 116
      * 
@@ -65,8 +135,8 @@ public class MandelbrotQuadTreeNode
     public static class Factory
     {
         /**
-         * Builds a node with net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(String
-         * stringPath)
+         * Builds a node with {@link net.lab0.nebula.data.MandelbrotQuadTreeNode#positionToDepthAndBitSetPath(String)
+         * positionToDepthAndBitSetPath(String)}
          */
         public static MandelbrotQuadTreeNode buildNode(String stringPath)
         {
@@ -106,62 +176,66 @@ public class MandelbrotQuadTreeNode
     }
     
     /**
-     * The depth of this node. Root's depth = 0
+     * The minimum number of iterations this node has (estimation). This value makes sense only when the status of the
+     * node is {@link Status}<code>.OUTSIDE</code>.
      */
-    public final int    depth;
+    public long     minimumIteration = -1;
     /**
-     * The path of this node. The first 2 bits of this array are undefined.
-     * 
-     * <pre>
-     * +--+--+
-     * |00|01|
-     * +--+--+
-     * |10|11|
-     * +--+--+
-     * </pre>
+     * The maximum number of iterations this node has (estimation). This value can be bound by the maximum iteration
+     * value that was used during computation.
      */
-    public final BitSet path;
+    public long     maximumIteration = -1;
+    public Status   status           = Status.VOID;
+    public NodePath nodePath;
     
-    public long         minimumIteration = -1;
-    public long         maximumIteration = -1;
-    public Status       status           = Status.VOID;
-    
+    /**
+     * 
+     * @param depth
+     *            The depth of the node. <code>depth</code>>=0
+     */
     public MandelbrotQuadTreeNode(int depth)
     {
-        if (depth < 0)
-        {
-            throw new IllegalArgumentException("The depth must be positive or 0. depth=" + depth);
-        }
-        this.depth = depth;
-        this.path = new BitSet(depth * 2);
+        this.nodePath = new NodePath(depth, new BitSet(depth * 2));
     }
     
+    /**
+     * 
+     * @param depth
+     *            The depth of the node. <code>depth</code>>=0
+     * @param path
+     *            The path of the node. Not <code>null</code>.
+     */
     protected MandelbrotQuadTreeNode(int depth, BitSet path)
     {
-        if (depth < 0)
-        {
-            throw new IllegalArgumentException("The depth must be positive or 0. depth=" + depth);
-        }
-        if (path.size() < depth * 2)
-        {
-            throw new IllegalArgumentException("The path and the depth don't match: depth=" + depth + ", path.length="
-            + path.size() + ". The path size must be at least depth*2");
-        }
-        this.depth = depth;
-        this.path = path;
+        this.nodePath = new NodePath(depth, BitSet.valueOf(path.toLongArray()));
     }
     
+    /**
+     * Same as <code>MandelbrotQuadTreeNode(path.getDepth(), path.getPath())</code>
+     */
     public MandelbrotQuadTreeNode(NodePath path)
     {
+        // use that constructor to check the values and copy the BitSet
         this(path.getDepth(), path.getPath());
     }
     
-    public MandelbrotQuadTreeNode(int depth, BitSet path, long minimumIteration, long maximumIteration)
+    /**
+     * Creates a fully initialized node.
+     * 
+     * @param depth
+     *            >=0
+     * @param path
+     *            not null.
+     * @param minimumIteration
+     * @param maximumIteration
+     * @param status
+     */
+    public MandelbrotQuadTreeNode(int depth, BitSet path, long minimumIteration, long maximumIteration, Status status)
     {
-        this.depth = depth;
-        this.path = path;
+        this.nodePath = new NodePath(depth, BitSet.valueOf(path.toLongArray()));
         this.minimumIteration = minimumIteration;
         this.maximumIteration = maximumIteration;
+        this.status = status;
     }
     
     /**
@@ -173,10 +247,10 @@ public class MandelbrotQuadTreeNode
     {
         double minX = -2.0;
         double maxX = 2.0;
-        for (int i = 1; i <= depth; ++i)
+        for (int i = 1; i <= nodePath.depth; ++i)
         {
             // the current position in path is indicated by the bits depth*2 and depth*2+1 in path[]
-            if (path.get(2 * i + 1)) // at the left
+            if (nodePath.path.get(2 * i + 1)) // at the left
             {
                 minX = (minX + maxX) / 2;
             }
@@ -197,10 +271,10 @@ public class MandelbrotQuadTreeNode
     {
         double minY = -2.0;
         double maxY = 2.0;
-        for (int i = 1; i <= depth; ++i)
+        for (int i = 1; i <= nodePath.depth; ++i)
         {
             // the current position in path is indicated by the bits depth*2 and depth*2+1 in path[]
-            if (path.get(2 * i)) // at the bottom
+            if (nodePath.path.get(2 * i)) // at the bottom
             {
                 maxY = (minY + maxY) / 2;
             }
@@ -212,6 +286,11 @@ public class MandelbrotQuadTreeNode
         return new Coords(minY, maxY);
     }
     
+    /**
+     * Splits the current node into 4 sub-nodes.
+     * 
+     * @return An array containing the 4 sub-nodes.
+     */
     public MandelbrotQuadTreeNode[] split()
     {
         MandelbrotQuadTreeNode[] splitted = new MandelbrotQuadTreeNode[4];
@@ -223,7 +302,14 @@ public class MandelbrotQuadTreeNode
         return splitted;
     }
     
-    public static NodePath positionToDepthAndBitSetPath(String stringPath)
+    /**
+     * Converts the {@link String} to an array of {@link PositionInParent} to create the node's path.
+     * 
+     * @param stringPath
+     *            The path to convert. Format must be R[1-4]*. Not check is made before the conversion.
+     * @return A list of positions.
+     */
+    private static List<PositionInParent> convertStringToPath(String stringPath)
     {
         List<PositionInParent> positions = new ArrayList<>(stringPath.length());
         for (char c : stringPath.toCharArray())
@@ -237,16 +323,37 @@ public class MandelbrotQuadTreeNode
                 positions.add(PositionInParent.Root);
             }
         }
-        return positionToDepthAndBitSetPath(positions.toArray(new PositionInParent[0]));
+        return positions;
     }
     
+    /**
+     * Helper method to create a node from its String path.
+     * 
+     * @param stringPath
+     *            The path to convert. Format must be <code>R[0-3]*</code>. Not check is made before the conversion.
+     * @return
+     */
+    public static NodePath positionToDepthAndBitSetPath(String stringPath)
+    {
+        List<PositionInParent> positions = convertStringToPath(stringPath);
+        return positionToDepthAndBitSetPath(positions.toArray(new PositionInParent[positions.size()]));
+    }
+    
+    /**
+     * Creates a node from an array of {@link PositionInParent}.
+     * 
+     * @param positions
+     *            The positions of the node in its parents, from root to itself. The ROOT position must be used exactly
+     *            once: at the first position.
+     * @return The {@link NodePath} equivalent to the given path.
+     */
     public static NodePath positionToDepthAndBitSetPath(PositionInParent... positions)
     {
         BitSet path = new BitSet(positions.length * 2);
         int index = 0;
         if (positions.length == 0)
         {
-            throw new IllegalArgumentException("The path must contain at least 1 element:the root");
+            throw new IllegalArgumentException("The path must contain at least 1 element: the root");
         }
         if (positions[0] != PositionInParent.Root)
         {
@@ -288,18 +395,22 @@ public class MandelbrotQuadTreeNode
         return new NodePath(positions.length - 1, path);
     }
     
+    /**
+     * 
+     * @return The path converted to a series of {@link PositionInParent}
+     */
     public PositionInParent[] getPathAsEnum()
     {
-        PositionInParent[] positions = new PositionInParent[depth + 1];
+        PositionInParent[] positions = new PositionInParent[nodePath.depth + 1];
         positions[0] = PositionInParent.Root;
-        for (int i = 1; i <= depth; ++i)
+        for (int i = 1; i <= nodePath.depth; ++i)
         {
             int val = 0;
-            if (path.get(2 * i))
+            if (nodePath.path.get(2 * i))
             {
                 val += 2;
             }
-            if (path.get(2 * i + 1))
+            if (nodePath.path.get(2 * i + 1))
             {
                 val += 1;
             }
@@ -327,6 +438,10 @@ public class MandelbrotQuadTreeNode
         return positions;
     }
     
+    /**
+     * 
+     * @return The path converted to a {@link String} using the <code>R[0-3]*</code> format.
+     */
     private String getPathAsString()
     {
         StringBuilder sb = new StringBuilder();
@@ -363,7 +478,7 @@ public class MandelbrotQuadTreeNode
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("depth=").append(depth).append(" - path=" + getPathAsString());
+        sb.append("depth=").append(nodePath.depth).append(" - path=" + getPathAsString());
         return sb.toString();
     }
 }

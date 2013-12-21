@@ -6,6 +6,12 @@ import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.SimpleJob;
 
+/**
+ * Computes the iterations of a {@link PointsBlock} using CPU computing power.
+ * 
+ * @author 116
+ * 
+ */
 public class PointsBlockCPUIterationComputing
 extends SimpleJob<PointsBlock, PointsBlock>
 {

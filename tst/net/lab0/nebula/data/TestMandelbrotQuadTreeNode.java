@@ -1,12 +1,16 @@
 package net.lab0.nebula.data;
 
+import static net.lab0.nebula.enums.PositionInParent.BottomLeft;
+import static net.lab0.nebula.enums.PositionInParent.BottomRight;
+import static net.lab0.nebula.enums.PositionInParent.Root;
+import static net.lab0.nebula.enums.PositionInParent.TopLeft;
+import static net.lab0.nebula.enums.PositionInParent.TopRight;
+
 import java.util.BitSet;
 
-import static net.lab0.nebula.enums.PositionInParent.*;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
-import net.lab0.tools.Pair;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -17,7 +21,7 @@ public class TestMandelbrotQuadTreeNode
     public void testMandelbrotQuadTreeNodeDepth1()
     {
         MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(0);
-        Assert.assertEquals(0, node.depth);
+        Assert.assertEquals(0, node.nodePath.depth);
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -31,16 +35,16 @@ public class TestMandelbrotQuadTreeNode
     public void testMandelbrotQuadTreeNodeDepth3()
     {
         MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(Short.MAX_VALUE);
-        Assert.assertEquals(Short.MAX_VALUE, node.depth);
+        Assert.assertEquals(Short.MAX_VALUE, node.nodePath.depth);
     }
     
     @Test
     public void testMandelbrotQuadTreeNodeDepthPath()
     {
         MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(0, new BitSet(2));
-        Assert.assertEquals(0, node.depth);
-        Assert.assertNotNull(node.path);
-        Assert.assertTrue(node.path.size() >= 2);
+        Assert.assertEquals(0, node.nodePath.depth);
+        Assert.assertNotNull(node.nodePath.path);
+        Assert.assertTrue(node.nodePath.path.size() >= 2);
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -63,9 +67,9 @@ public class TestMandelbrotQuadTreeNode
         BitSet path = new BitSet(4);
         path.set(0, 4, true);
         MandelbrotQuadTreeNode node = new MandelbrotQuadTreeNode(1, path);
-        Assert.assertNotNull(node.path);
-        Assert.assertTrue(node.path.size() >= 2);
-        Assert.assertEquals(path, node.path.get(0, 4));
+        Assert.assertNotNull(node.nodePath.path);
+        Assert.assertTrue(node.nodePath.path.size() >= 2);
+        Assert.assertEquals(path, node.nodePath.path.get(0, 4));
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -265,7 +269,7 @@ public class TestMandelbrotQuadTreeNode
         
         for (int i = 0; i < 4; ++i)
         {
-            Assert.assertEquals(node.depth+1, split[i].depth);
+            Assert.assertEquals(node.nodePath.depth+1, split[i].nodePath.depth);
             Assert.assertEquals(Status.VOID, split[i].status);
         }
     }

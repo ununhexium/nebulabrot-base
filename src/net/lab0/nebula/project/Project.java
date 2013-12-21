@@ -2,10 +2,12 @@ package net.lab0.nebula.project;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
@@ -13,15 +15,18 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.QuadTreePointsComputingSet;
-import net.lab0.nebula.data.RootQuadTreeNode;
-import net.lab0.nebula.enums.Indexing;
+import net.lab0.nebula.data.MandelbrotQuadTreeNode;
+import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
+import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
-import net.lab0.tools.quadtree.QuadTreeNode;
-import net.lab0.tools.quadtree.QuadTreeRoot;
+import net.lab0.nebula.exception.SerializationException;
+import net.lab0.nebula.listener.GeneralListener;
+import net.lab0.nebula.listener.QuadTreeManagerListener;
+import net.lab0.nebula.mgr.WriterManager;
+import net.lab0.tools.FileUtils;
+import net.lab0.tools.HumanReadable;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
@@ -38,17 +43,17 @@ public class Project
     /**
      * The path to the project's folder.
      */
-    private Path                                    projectFolder;
+    private Path              projectFolder;
+    
+    /**
+     * <code>true</code> if the created project is a new project (created from an empty folder)
+     */
+    private boolean           newProject;
     
     /**
      * The parameters of this project
      */
-    private ProjetInformation                       projetInformation;
-    
-    private Map<String, QuadTreePointsComputingSet> computingSets     = new HashMap<>();
-    private Map<QuadTreePointsComputingSet, Path>   computingSetPaths = new HashMap<>();
-    
-    private QuadTreeManager                         quadTreeManager;
+    private ProjetInformation projetInformation = new ProjetInformation();
     
     /**
      * Tries to load a project if it exists or create a new one if it doesn't.
@@ -61,6 +66,7 @@ public class Project
      * @throws ProjectException
      *             If the given path doesn't point to a directory.
      * @throws JAXBException
+     *             If there is an error while parsing the project's files.
      */
     public Project(Path projectFolder)
     throws ProjectException, JAXBException, NonEmptyFolderException
@@ -89,6 +95,8 @@ public class Project
             // there is no file -> new project
             if (folder.list().length == 0)
             {
+                newProject = true;
+                projetInformation.creationDate = new Date();
                 saveProjectsParameters();
             }
             // the is already something going on in this folder -> can't do anything
@@ -101,7 +109,6 @@ public class Project
         // load the project's properties by overriding the default properties.
         else
         {
-            System.out.println("Load an existing project");
             load();
         }
     }
@@ -172,169 +179,132 @@ public class Project
         return file;
     }
     
-    /**
-     * Enables OpenCL in computation where available.
-     */
-    public void enableOpenCL()
-    {
-        projetInformation.computingInformation.enableOpenCL();
-    }
-    
-    /**
-     * Disables OpenCL in computation where available.
-     */
-    public void disableOpenCL()
-    {
-        projetInformation.computingInformation.disableOpenCL();
-    }
-    
-    /**
-     * Enables multithreading in computation where available.
-     */
-    public void enableMultithreading(int threads)
-    {
-        projetInformation.computingInformation.setMaxThreadCount(threads);
-    }
-    
-    /**
-     * Disables multithreading in computation where available.
-     */
-    public void disableMultithreading()
-    {
-        projetInformation.computingInformation.setMaxThreadCount(1);
-    }
-    
-    /**
-     * Creates a new {@link QuadTreeRoot} with the given parameters.
-     * 
-     * @param minX
-     *            the QuadTreeRoot minimum X value
-     * @param maxX
-     *            the QuadTreeRoot maximum X value
-     * @param minY
-     *            the QuadTreeRoot minimum Y value
-     * @param maxY
-     *            the QuadTreeRoot maximum Y value
-     * @param pointsPerSide
-     *            the number of points to test on a side of a {@link QuadTreeNode}
-     * @param maxIteration
-     *            The maximum number of iterations to do when computing the Mandelbrot formula.
-     * @param diffIterLimit
-     *            The maximum number of iteration allowed for a node to be still considered as not containing the
-     *            Mandelbrot set.
-     * @param maxDepth
-     *            The maximum depth this QuadTree can have.
-     * @return A {@link QuadTreeManager} linked to a new {@link QuadTreeRoot} created with the above parameters.
-     * @throws IOException
-     *             If an error happens when trying to create the folder containing this new quadtree.
-     */
-    public QuadTreeManager newQuadTree(double minX, double maxX, double minY, double maxY, int pointsPerSide,
-    int maxIteration, int diffIterLimit, int maxDepth)
-    throws IOException
-    {
-        RootQuadTreeNode root = new RootQuadTreeNode(minX, maxX, minY, maxY);
-        QuadTreeManager quadTreeManager = new QuadTreeManager(root, pointsPerSide, maxIteration, diffIterLimit,
-        maxDepth);
-        this.addQuadTree(quadTreeManager);
-        return quadTreeManager;
-    }
-    
-    /**
-     * Adds a new QuadTree to this project.
-     * 
-     * @throws IOException
-     *             If an error happens when trying to create the folder containing this new quadtree.
-     */
-    private void addQuadTree(QuadTreeManager quadTreeManager)
-    throws IOException
-    {
-        File tree = new File(projectFolder.toFile(), "tree");
-        if (!tree.isDirectory())
-        {
-            tree.delete();
-        }
-        if (!tree.exists())
-        {
-            tree.mkdirs();
-        }
-        
-        // find the folder for the tree we are going to add
-        int index = 0;
-        File newTree;
-        do
-        {
-            newTree = new File(tree, Integer.toString(index));
-        } while (newTree.exists());
-        newTree.mkdir();
-        this.quadTreeManager = quadTreeManager;
-    }
-    
-    /**
-     * Saves the QuadTree managed by this <code>manager</code> in this project.
-     * 
-     * @param manager
-     *            The manager holding the quadtree you want to save.
-     * @throws IOException
-     *             If here was an error while saving the file.
-     */
-    public void save(QuadTreeManager manager, Indexing indexation)
-    throws IOException
-    {
-        File tree = new File(projectFolder.toFile(), "tree");
-        manager.saveToBinaryFile(tree.toPath(), indexation);
-    }
-    
-    /**
-     * Loads the existing quad tree manager if it exists or create a new one if it doesn't.
-     * 
-     * @return a {@link QuadTreeManager}
-     */
-    public QuadTreeManager getQuadTreeManager()
-    {
-        if (quadTreeManager == null)
-        {
-            reloadQuadTree();
-        }
-        return quadTreeManager;
-    }
-    
-    /**
-     * tries to reload the quadtree from the disk
-     */
-    public void reloadQuadTree()
-    {
-        File tree = new File(projectFolder.toFile(), "tree");
-        try
-        {
-            quadTreeManager = new QuadTreeManager(tree.toPath(), null);
-        }
-        catch (ClassNotFoundException | NoSuchAlgorithmException | ParsingException | IOException
-        | InvalidBinaryFileException e)
-        {
-            throw new RuntimeException("No quadtree to load", e); // TODO: that's ugly
-        }
-    }
-    
     public boolean useOpenCL()
     {
-        return projetInformation.computingInformation.useOpenCL();
-    }
-        
-    /**
-     * Returns the output path associated to the given <code>quadTreePointsComputingSet</code>.
-     * 
-     * @param quadTreePointsComputingSet
-     * @return The output folder in which the <code>quadTreePointsComputingSet</code> will put its results.
-     */
-    public Path getOutputFolder(QuadTreePointsComputingSet quadTreePointsComputingSet)
-    {
-        Path path = computingSetPaths.get(quadTreePointsComputingSet);
-        return path;
+        return projetInformation.computingInformation.useOpenCL == true;
     }
     
     public boolean useMultithreading()
     {
-        return projetInformation.computingInformation.getMaxThreadCount() > 1;
+        return projetInformation.computingInformation.maxThreadCount > 1;
     }
     
+    public boolean isNewProject()
+    {
+        return newProject;
+    }
+    
+    public ProjetInformation getProjetInformation()
+    {
+        return projetInformation;
+    }
+    
+    /**
+     * Imports the quad tree at the given location in this project.
+     * 
+     * @param input
+     *            The index file of the quad tree to import
+     * @param managerListener
+     *            Optional. The listener to attach when reading the file.
+     * @param generalListener
+     *            Optional. A listener for the progress of the import.
+     * @throws ProjectException
+     */
+    @SuppressWarnings("deprecation")
+    public void importQuadTree(Path input, int maxDepth, QuadTreeManagerListener managerListener,
+    GeneralListener generalListener)
+    throws ProjectException
+    {
+        try
+        {
+            net.lab0.nebula.core.QuadTreeManager manager = new net.lab0.nebula.core.QuadTreeManager(input,
+            managerListener);
+            
+            int nodesCounts = manager.getQuadTreeRoot().getTotalNodesCount();
+            List<StatusQuadTreeNode> nodes = new ArrayList<>(nodesCounts);
+            manager.getQuadTreeRoot().getAllNodes(nodes);
+            
+            maxDepth = Math.min(manager.getQuadTreeRoot().getMaxNodeDepth(), maxDepth);
+            
+            if (generalListener != null)
+            {
+                generalListener.print("Quad tree loaded. The maximum depth is " + maxDepth);
+            }
+            
+            // prepare the paths
+            List<Path> paths = new ArrayList<>(maxDepth);
+            Path basePath = FileSystems.getDefault().getPath(getProjectFolder(), "quadtree");
+            int suffix = FileUtils.getNextAvailablePath(basePath, "");
+            Path folder = FileSystems.getDefault().getPath(basePath.toString(), "" + suffix);
+            folder.toFile().mkdirs();
+            for (int i = 0; i <= maxDepth; ++i)
+            {
+                paths.add(FileSystems.getDefault().getPath(folder.toString(), "depth_" + i + ".data"));
+            }
+            
+            extractAndSave(nodes, maxDepth, paths, generalListener);
+            
+            QuadTreeInformation information = new QuadTreeInformation();
+            information.id = suffix;
+            information.maximumIterationCount = manager.getMaxIter();
+            information.maximumIterationDifference = manager.getDiffIterLimit();
+            information.pointsCountPerSide = manager.getPointsPerSide();
+            projetInformation.dataPathInformation.quadTrees.add(information);
+        }
+        catch (ClassNotFoundException | NoSuchAlgorithmException | ParsingException | IOException
+        | InvalidBinaryFileException | SerializationException e)
+        {
+            throw new ProjectException("Error while importing", e);
+        }
+    }
+    
+    /**
+     * Extracts the node from the list and saves then at the appropriate path.
+     * 
+     * @param nodes
+     *            The nodes to extract
+     * @param maxDepth
+     *            The maximum depth (inclusive) to consider for the extraction
+     * @param paths
+     *            The paths for the different depths.
+     * @param generalListener
+     *            The listener for general info output
+     * @throws SerializationException
+     *             If an error happens when writing the data.
+     */
+    private void extractAndSave(List<StatusQuadTreeNode> nodes, int maxDepth, List<Path> paths,
+    GeneralListener generalListener)
+    throws SerializationException
+    {
+        // for console listener
+        int blockSize = 65536;
+        int index = 0;
+        
+        int sum = 0;
+        for (StatusQuadTreeNode node : nodes)
+        {
+            NodePath path = MandelbrotQuadTreeNode.positionToDepthAndBitSetPath(node.getPath());
+            MandelbrotQuadTreeNode toWrite = new MandelbrotQuadTreeNode(path);
+            toWrite.maximumIteration = node.getMax();
+            toWrite.minimumIteration = node.getMin();
+            toWrite.status = node.status;
+            sum += 1;
+            WriterManager.getInstance().write(toWrite, paths.get(toWrite.nodePath.depth));
+            index++;
+            if (index > blockSize)
+            {
+                if (generalListener != null)
+                {
+                    generalListener.print("" + HumanReadable.humanReadableNumber(sum) + " / "
+                    + HumanReadable.humanReadableNumber(nodes.size()) + " " + 100f * (float) sum / (float) nodes.size()
+                    + "%");
+                }
+                index = 0;
+            }
+        }
+        for (int i = 0; i <= maxDepth; ++i)
+        {
+            WriterManager.getInstance().release(paths.get(i));
+        }
+    }
 }

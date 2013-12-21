@@ -9,7 +9,6 @@ import org.junit.runners.Suite.SuiteClasses;
     TestMandelbrotComputeRoutines.class,
     TestOpenClMandelbrotComputeRoutines.class,
     TestQuadTreeSaveLoad.class,
-    TestRendering.class,
 })
 public class AllCore
 {

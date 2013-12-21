@@ -1,20 +1,21 @@
 package net.lab0.nebula.project;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.Date;
+
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "project")
 public class ProjetInformation
 {
-    private static int LAST_VERSION = 1;
+    public static final int           LAST_VERSION         = 1;
     
-    @XmlAttribute(name = "version")
-    private int        version      = LAST_VERSION;
+    public int                        version              = LAST_VERSION;
     
-    @XmlAttribute(name = "name")
-    private String     name = "";
+    public String                     name                 = "";
+
+    public Date                       creationDate;
     
-    public final ComputingInformation computingInformation = null;
+    public final ComputingInformation computingInformation = new ComputingInformation();
     
-    
+    public final DataPathInformation dataPathInformation = new DataPathInformation();
 }
