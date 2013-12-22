@@ -218,17 +218,19 @@ public class Project
         try
         {
             net.lab0.nebula.core.QuadTreeManager manager = new net.lab0.nebula.core.QuadTreeManager(input,
-            managerListener);
+            managerListener, maxDepth);
             
             int nodesCounts = manager.getQuadTreeRoot().getTotalNodesCount();
             List<StatusQuadTreeNode> nodes = new ArrayList<>(nodesCounts);
             manager.getQuadTreeRoot().getAllNodes(nodes);
             
+            // real max depth can be lower than the given parameter: checking that here
             maxDepth = Math.min(manager.getQuadTreeRoot().getMaxNodeDepth(), maxDepth);
             
             if (generalListener != null)
             {
-                generalListener.print("Quad tree loaded. The maximum depth is " + maxDepth);
+                generalListener.print("Quad tree loaded. The maximum depth is " + maxDepth + ". It has " + nodes.size()
+                + " nodes.");
             }
             
             // prepare the paths

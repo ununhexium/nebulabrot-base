@@ -1,10 +1,9 @@
 package net.lab0.nebula.enums;
 
-import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.project.Project;
 
 /**
- * Indicates whether the {@link QuadTreeManager} of a {@link Project} has to use indexing when saving a quadtree.
+ * Indicates whether the {@link net.lab0.nebula.core.QuadTreeManager} of a {@link Project} has to use indexing when saving a quad tree.
  * 
  * @author 116@lab0.net
  * 

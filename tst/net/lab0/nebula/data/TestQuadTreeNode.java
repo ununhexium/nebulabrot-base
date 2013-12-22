@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Set;
 
 import net.lab0.nebula.core.QuadTreeManager;
-import net.lab0.nebula.data.StatusQuadTreeNode;
-import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
 import nu.xom.Element;
@@ -30,6 +28,7 @@ import org.junit.Test;
  * 
  * @author 116@lab0.net
  */
+@SuppressWarnings("deprecation")
 public class TestQuadTreeNode
 {
     private static QuadTreeManager manager;

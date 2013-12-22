@@ -3,7 +3,6 @@ package net.lab0.nebula.exe.builder;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.exe.PointsBlockCPUIterationComputing;
 import net.lab0.nebula.exe.PointsBlockOCLIterationComputing;
-import net.lab0.nebula.mgr.OpenCLManager;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 

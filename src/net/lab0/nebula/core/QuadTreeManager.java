@@ -187,6 +187,18 @@ public class QuadTreeManager
         this(inputFolder, listener, Integer.MAX_VALUE);
     }
     
+    /**
+     * Loads a quad tree and cuts it at <code>maxDepthy</code>. The indicated depth is kept in the quad tree.
+     * 
+     * @param inputFolder
+     * @param listener Optional.
+     * @param maxLoadDepth
+     * @throws ParsingException
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @throws InvalidBinaryFileException
+     * @throws NoSuchAlgorithmException
+     */
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
     throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
@@ -300,6 +312,7 @@ public class QuadTreeManager
         {
             temporaryRoot = recursivelyConvertToQuadTreeWithoutIndexes(digestInputStream);
         }
+        fireLoadingOfCurrentFileProgress(bytesRead, currentReadFileSize);
         
         String fileDigest = MyString.getHexString(digestInputStream.getMessageDigest().digest());
         if (!fileDigest.equalsIgnoreCase(checksum.getAttributeValue("value")))

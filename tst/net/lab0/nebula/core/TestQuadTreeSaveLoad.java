@@ -7,7 +7,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
-import net.lab0.nebula.core.QuadTreeManager;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.enums.Indexing;
@@ -29,6 +28,7 @@ import org.junit.runners.JUnit4;
  * @author 116@lab0.net
  * 
  */
+@SuppressWarnings("deprecation")
 @RunWith(JUnit4.class)
 public class TestQuadTreeSaveLoad
 {

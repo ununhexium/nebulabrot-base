@@ -30,6 +30,7 @@ import org.junit.Test;
  * 
  * @author 116@lab0.net
  */
+@SuppressWarnings("deprecation")
 public class TestStatusQuadTreeNode
 {
     private static QuadTreeManager manager;

@@ -17,6 +17,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+@SuppressWarnings("deprecation")
 public class TestRawMandelbrotData
 {
     private static NebulabrotRenderer nebulabrotRenderer;
