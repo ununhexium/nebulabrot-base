@@ -2,23 +2,24 @@ package net.lab0.nebula.exe.builder;
 
 import java.nio.file.Path;
 
-import com.google.common.base.Predicate;
-
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.exe.ComputeInOutForQuadTreeNode;
 import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
+import net.lab0.nebula.exe.MandelbrotQTNChunkWriter;
 import net.lab0.nebula.exe.MandelbrotQuadTreeNodeSplitter;
 import net.lab0.nebula.exe.PointsBlockOCLIterationComputing;
 import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2;
-import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2.Parameters;
 import net.lab0.nebula.exe.PointsBlockWriter;
 import net.lab0.nebula.exe.QuadTreeNodeArrayWriter;
 import net.lab0.nebula.exe.QuadTreeNodeWriter;
 import net.lab0.nebula.exe.SplitNodeAndConvertToCoordinatesBlock;
+import net.lab0.nebula.project.PointsComputingParameters;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
+
+import com.google.common.base.Predicate;
 
 public class BuilderFactory
 {
@@ -147,7 +148,7 @@ public class BuilderFactory
     }
     
     public static synchronized JobBuilder<CoordinatesBlock> toOCLCompute2(final JobBuilder<PointsBlock> jobBuilder,
-    final Parameters parameters)
+    final PointsComputingParameters parameters)
     {
         return new JobBuilder<CoordinatesBlock>()
         {
@@ -156,6 +157,20 @@ public class BuilderFactory
             CoordinatesBlock output)
             {
                 return new PointsBlockOCLIterationComputing2(parent, jobBuilder, output, parameters);
+            }
+        };
+    }
+    
+    public static synchronized JobBuilder<MandelbrotQuadTreeNode[]> toSingleOutputMandelbrotQTNArray(
+    final Path baseOutputPath, final String baseFileName)
+    {
+        return new JobBuilder<MandelbrotQuadTreeNode[]>()
+        {
+            @Override
+            public CascadingJob<MandelbrotQuadTreeNode[], ?> buildJob(CascadingJob<?, MandelbrotQuadTreeNode[]> parent,
+            MandelbrotQuadTreeNode[] output)
+            {
+                return new MandelbrotQTNChunkWriter(parent, output, baseOutputPath, baseFileName);
             }
         };
     }

@@ -11,10 +11,9 @@ import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exe.MandelbrotQuadTreeNodeReader;
-import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2;
-import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2.Parameters;
 import net.lab0.nebula.exe.builder.BuilderFactory;
 import net.lab0.nebula.mgr.WriterManager;
+import net.lab0.nebula.project.PointsComputingParameters;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
 
@@ -43,16 +42,8 @@ public class ComputePoints
         JobBuilder<PointsBlock> toFile = BuilderFactory.toPointsBlocksFile(pointBlocksOutput, 64, Long.MAX_VALUE);
         System.out.println("outputing results to " + pointBlocksOutput);
         
-        Predicate<Long> filterPoints = new Predicate<Long>()
-        {
-            @Override
-            public boolean apply(Long input)
-            {
-                long i = input;
-                return (i < maxIter && i>= minIter);
-            }
-        };
-        PointsBlockOCLIterationComputing2.Parameters parameters = new Parameters(maxIter, filterPoints, 128, 1);
+        PointsComputingParameters parameters = new PointsComputingParameters(0, maxIter, 1L << (2 * (maxDepth + 7)));
+
         double step = 4.0 / (double) (1L << (maxDepth)) / 16d;
         for (int i = 0; i <= maxDepth; ++i)
         {

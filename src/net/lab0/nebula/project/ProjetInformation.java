@@ -4,6 +4,9 @@ import java.util.Date;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+/**
+ * Meta information about a project. This is the root of all the project's information.
+ */
 @XmlRootElement(name = "project")
 public class ProjetInformation
 {
@@ -12,10 +15,12 @@ public class ProjetInformation
     public int                        version              = LAST_VERSION;
     
     public String                     name                 = "";
-
+    
     public Date                       creationDate;
     
     public final ComputingInformation computingInformation = new ComputingInformation();
     
-    public final DataPathInformation dataPathInformation = new DataPathInformation();
+    public final QuadTreesInformation quadTreesInformation = new QuadTreesInformation();
+    
+    public final PointsInformation    pointsInformation    = new PointsInformation();
 }

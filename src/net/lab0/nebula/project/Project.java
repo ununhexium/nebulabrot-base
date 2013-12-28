@@ -1,13 +1,15 @@
 package net.lab0.nebula.project;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
@@ -15,20 +17,31 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
+import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.StatusQuadTreeNode;
+import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
 import net.lab0.nebula.exception.SerializationException;
+import net.lab0.nebula.exe.MandelbrotQuadTreeNodeReader;
+import net.lab0.nebula.exe.builder.BuilderFactory;
 import net.lab0.nebula.listener.GeneralListener;
 import net.lab0.nebula.listener.QuadTreeManagerListener;
 import net.lab0.nebula.mgr.WriterManager;
 import net.lab0.tools.FileUtils;
 import net.lab0.tools.HumanReadable;
+import net.lab0.tools.exec.JobBuilder;
+import net.lab0.tools.exec.PriorityExecutor;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
+import com.google.common.io.PatternFilenameFilter;
 
 /**
  * Stores and loads the parameters of a project.
@@ -179,21 +192,19 @@ public class Project
         return file;
     }
     
-    public boolean useOpenCL()
-    {
-        return projetInformation.computingInformation.useOpenCL == true;
-    }
-    
-    public boolean useMultithreading()
-    {
-        return projetInformation.computingInformation.maxThreadCount > 1;
-    }
-    
+    /**
+     * @return <code>true</code> if this project was newly created (If there was no project in the project's folder
+     *         before a call to the constructor of project)
+     */
     public boolean isNewProject()
     {
         return newProject;
     }
     
+    /**
+     * 
+     * @return The project's information root node.
+     */
     public ProjetInformation getProjetInformation()
     {
         return projetInformation;
@@ -235,13 +246,13 @@ public class Project
             
             // prepare the paths
             List<Path> paths = new ArrayList<>(maxDepth);
-            Path basePath = FileSystems.getDefault().getPath(getProjectFolder(), "quadtree");
+            Path basePath = getQuadTreeFolderPath();
             int suffix = FileUtils.getNextAvailablePath(basePath, "");
-            Path folder = FileSystems.getDefault().getPath(basePath.toString(), "" + suffix);
+            Path folder = basePath.resolve("" + suffix);
             folder.toFile().mkdirs();
             for (int i = 0; i <= maxDepth; ++i)
             {
-                paths.add(FileSystems.getDefault().getPath(folder.toString(), "depth_" + i + ".data"));
+                paths.add(folder.resolve("d_" + i + ".data"));
             }
             
             extractAndSave(nodes, maxDepth, paths, generalListener);
@@ -251,13 +262,57 @@ public class Project
             information.maximumIterationCount = manager.getMaxIter();
             information.maximumIterationDifference = manager.getDiffIterLimit();
             information.pointsCountPerSide = manager.getPointsPerSide();
-            projetInformation.dataPathInformation.quadTrees.add(information);
+            information.maxDepth = manager.getQuadTreeRoot().getMaxNodeDepth();
+            information.nodesCount = manager.getQuadTreeRoot().getTotalNodesCount();
+            projetInformation.quadTreesInformation.quadTrees.add(information);
         }
         catch (ClassNotFoundException | NoSuchAlgorithmException | ParsingException | IOException
         | InvalidBinaryFileException | SerializationException e)
         {
             throw new ProjectException("Error while importing", e);
         }
+    }
+    
+    /**
+     * @return The path to the folder containing the quad trees.
+     */
+    private Path getQuadTreeFolderPath()
+    {
+        return projectFolder.resolve("quadtree");
+    }
+    
+    /**
+     * @return The path to the folder containing the quad tree with the given id.
+     */
+    private Path getQuadTreeFolderPath(int treeId)
+    {
+        return getQuadTreeFolderPath().resolve("" + treeId);
+    }
+    
+    /**
+     * @return The path to the folder containing the chunks of the given <code>chunckSize</code> size of the quad tree
+     *         with the given id.
+     */
+    private Path getQuadTreeFolderSplitPath(int treeId, int blockSize)
+    {
+        return getQuadTreeFolderPath(treeId).resolve("s_" + blockSize);
+    }
+    
+    /**
+     * @return The path to the folder that contains all the point data
+     */
+    private Path getPointsFolderPath()
+    {
+        return projectFolder.resolve("point");
+    }
+    
+    /**
+     * @param pointSetId
+     * @return The path to the folder containing the points' set with the given id.
+     */
+    private Path getPointsFolderPath(int pointSetId)
+    {
+        return getPointsFolderPath().resolve("" + pointSetId);
     }
     
     /**
@@ -279,7 +334,7 @@ public class Project
     throws SerializationException
     {
         // for console listener
-        int blockSize = 65536;
+        int blockSize = 1024;
         int index = 0;
         
         int sum = 0;
@@ -308,5 +363,232 @@ public class Project
         {
             WriterManager.getInstance().release(paths.get(i));
         }
+    }
+    
+    /**
+     * Split the node of the quad tree with the id <code>id</code> into blocks of node with at most
+     * <code>blockSize</code> nodes per file.
+     * 
+     * @param treeId
+     *            The id of the tree that will be used
+     * @param blockSize
+     *            The size of the split blocks
+     * @throws ProjectException
+     *             If it doesn't pass the tree id validation. If the blocks of that size already exist.
+     * @throws FileNotFoundException
+     */
+    public void splitNodes(int treeId, int blockSize)
+    throws ProjectException, FileNotFoundException
+    {
+        QuadTreeInformation tree = getProjetInformation().quadTreesInformation.getById(treeId);
+        
+        if (tree == null)
+        {
+            throw new ProjectException("The tree id " + treeId + " is invalid.");
+        }
+        if (tree.blockSizes.contains(blockSize))
+        {
+            throw new ProjectException("The tree already has a split by " + blockSize + ".");
+        }
+        
+        Path source = getQuadTreeFolderPath().resolve("" + treeId);
+        Path dest = getQuadTreeFolderSplitPath(treeId, blockSize);
+        if (dest.toFile().exists())
+        {
+            if (dest.toFile().isDirectory())
+            {
+                throw new ProjectException("A split already exists at " + dest.toFile().getAbsolutePath());
+            }
+            if (dest.toFile().isFile())
+            {
+                throw new ProjectException("A is already a file there: " + dest.toFile().getAbsolutePath());
+            }
+        }
+        
+        for (File f : source.toFile().listFiles(new PatternFilenameFilter("d_[0-9]+\\.data")))
+        {
+            PriorityExecutor executor = new PriorityExecutor(1);
+            String fileNameWithoutExtension = f.getName().split("\\.")[0];
+            Path outputPath = dest.resolve(fileNameWithoutExtension);
+            MandelbrotQuadTreeNodeReader reader = new MandelbrotQuadTreeNodeReader(executor,
+            BuilderFactory.toSingleOutputMandelbrotQTNArray(outputPath, "c"), f.toPath(), blockSize);
+            executor.execute(reader);
+            try
+            {
+                executor.finishAndShutdown();
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        tree.blockSizes.add(blockSize);
+    }
+    
+    /**
+     * Computes the points using a quad tree.
+     * 
+     * @param parameters
+     * @throws FileNotFoundException
+     * @throws ProjectException
+     *             If the specified tree id is invalid.
+     * @throws InterruptedException
+     */
+    public void computePoints(final PointsComputingParameters parameters)
+    throws FileNotFoundException, ProjectException, InterruptedException
+    {
+        checkValidity(parameters);
+        
+        Map<Integer, List<Path>> fileAtDepth = createFilesListByDepth(parameters);
+        
+        // get the next available output folder
+        int nextIndex = FileUtils.getNextAvailablePath(getPointsFolderPath(), "");
+        Path pointsBaseOutputFolder = getPointsFolderPath(nextIndex);
+        pointsBaseOutputFolder.toFile().mkdirs();
+        
+        int treeId = parameters.getTreeId();
+        QuadTreeInformation tree = getProjetInformation().quadTreesInformation.getById(treeId);
+        int maxDepth = Math.min(tree.maxDepth, parameters.getMaxDepth());
+        
+        Predicate<MandelbrotQuadTreeNode> filter = new Predicate<MandelbrotQuadTreeNode>()
+        {
+            @Override
+            public boolean apply(MandelbrotQuadTreeNode node)
+            {
+                if (node.nodePath.depth == parameters.getMaxDepth())
+                {
+                    if (node.status == Status.BROWSED)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return node.status == Status.OUTSIDE
+                        && node.maximumIteration > parameters.getMinimumIteration();
+                    }
+                }
+                else
+                {
+                    return node.status == Status.OUTSIDE && node.maximumIteration > parameters.getMinimumIteration();
+                }
+            }
+        };
+        
+        int chunkId = 0;
+        for (int depth = 0; depth <= maxDepth; ++depth)
+        {
+            List<Path> filesToUse = fileAtDepth.get(depth);
+            for (Path p : filesToUse)
+            {
+                double step = parameters.getStep(depth);
+                Path pointBlocksOutput = pointsBaseOutputFolder.resolve("c_" + chunkId + ".data");
+                System.out.println("outputing results to " + pointBlocksOutput);
+                
+                compute(parameters, filter, p, step, pointBlocksOutput);
+                
+                chunkId++;
+            }
+        }
+        
+        getProjetInformation().pointsInformation.pointsComputingParameters.add(new PointInformation(nextIndex,
+        parameters));
+    }
+    
+    private void compute(final PointsComputingParameters parameters, Predicate<MandelbrotQuadTreeNode> filter,
+    Path input, double step, final Path output)
+    throws FileNotFoundException, InterruptedException
+    {
+        PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
+        
+        JobBuilder<PointsBlock> toFile = //
+        BuilderFactory.toPointsBlocksFile(output, 64, Long.MAX_VALUE);
+        
+        JobBuilder<CoordinatesBlock> toConverter = //
+        BuilderFactory.toOCLCompute2(toFile, parameters);
+        
+        JobBuilder<MandelbrotQuadTreeNode[]> splitAndConvert = //
+        BuilderFactory.toNodeSplitterAndConverter(toConverter, step, filter);
+        
+        MandelbrotQuadTreeNodeReader reader = //
+        new MandelbrotQuadTreeNodeReader(executor, splitAndConvert, input, parameters.getBlockSize());
+        
+        executor.execute(reader);
+        executor.registerShutdownHook(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                WriterManager.getInstance().release(output);
+            }
+        });
+        executor.finishAndShutdown();
+    }
+    
+    /**
+     * 
+     * @param parameters
+     * @throws ProjectException
+     *             If the specified tree id is invalid.
+     */
+    private void checkValidity(PointsComputingParameters parameters)
+    throws ProjectException
+    {
+        int treeId = parameters.getTreeId();
+        QuadTreeInformation tree = getProjetInformation().quadTreesInformation.getById(treeId);
+        
+        if (tree == null)
+        {
+            throw new ProjectException("There is no tree with the id " + treeId);
+        }
+        
+        if (parameters.isBlockSizeSpecified())
+        {
+            int blockSize = parameters.getBlockSize();
+            if (!tree.blockSizes.contains(blockSize))
+            {
+                throw new ProjectException("The requested block size (" + blockSize + ") is not available.");
+            }
+        }
+    }
+    
+    /**
+     * @return The list of files that will be used for each depth.
+     */
+    private Map<Integer, List<Path>> createFilesListByDepth(PointsComputingParameters parameters)
+    throws ProjectException
+    {
+        int treeId = parameters.getTreeId();
+        QuadTreeInformation tree = getProjetInformation().quadTreesInformation.getById(treeId);
+        int maxDepth = Math.min(tree.maxDepth, parameters.getMaxDepth());
+        
+        Map<Integer, List<Path>> filesByDepth = new HashMap<>();
+        
+        if (!parameters.isBlockSizeSpecified())
+        {
+            for (int depth = 0; depth <= maxDepth; ++depth)
+            {
+                Path file = getQuadTreeFolderPath(treeId).resolve("d_" + depth + ".data");
+                filesByDepth.put(depth, Lists.newArrayList(file));
+            }
+        }
+        else
+        {
+            int blockSize = parameters.getBlockSize();
+            
+            Path blocksFolder = getQuadTreeFolderSplitPath(treeId, blockSize);
+            for (int depth = 0; depth <= maxDepth; ++depth)
+            {
+                Path depthFolder = blocksFolder.resolve("d_" + depth);
+                List<Path> paths = new ArrayList<>();
+                for (File f : depthFolder.toFile().listFiles(new PatternFilenameFilter("c_[0-9]+\\.data")))
+                {
+                    paths.add(f.toPath());
+                }
+                filesByDepth.put(depth, paths);
+            }
+        }
+        
+        return filesByDepth;
     }
 }

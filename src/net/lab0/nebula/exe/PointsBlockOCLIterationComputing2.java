@@ -2,14 +2,13 @@ package net.lab0.nebula.exe;
 
 import java.nio.IntBuffer;
 
-import com.google.common.base.Predicate;
-
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.OpenCLManager;
+import net.lab0.nebula.project.PointsComputingParameters;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
-import net.lab0.tools.exec.Splitter;
+import net.lab0.tools.exec.SimpleJob;
 
 /**
  * Scatters a {@link CoordinatesBlock} and computes the iterations of the resulting points using CPU computing power.
@@ -19,77 +18,43 @@ import net.lab0.tools.exec.Splitter;
  * 
  */
 public class PointsBlockOCLIterationComputing2
-extends Splitter<CoordinatesBlock, PointsBlock>
+extends SimpleJob<CoordinatesBlock, PointsBlock>
 {
-    public static class Parameters
-    {
-        public long            maximumIteration;
-        public Predicate<Long> filter;
-        public int             pointsOnSides;
-        public int             blocks;
-        
-        /**
-         * 
-         * @param filter
-         *            if the value returned by the filter is true, the points is output. The points is discarded
-         *            otherwise.
-         * @param pointsOnSides
-         *            points on each side of the square
-         * @param blocks
-         *            number of blocks to split the computation into
-         * 
-         * @throws IllegalArgumentException
-         *             if pointsOnSide is not a multiple of blocks
-         */
-        public Parameters(long maximumIteration, Predicate<Long> filter, int pointsOnSides, int blocks)
-        {
-            super();
-            
-            if (pointsOnSides % blocks != 0)
-            {
-                throw new IllegalArgumentException("pointsOnSides=" + pointsOnSides + " must be a multiple of "
-                + blocks);
-            }
-            
-            this.maximumIteration = maximumIteration;
-            this.filter = filter;
-            this.pointsOnSides = pointsOnSides;
-            this.blocks = blocks;
-        }
-        
-    }
-    
-    private CoordinatesBlock block;
-    private int              stepIndex;
-    private Parameters       parameters;
+    private PointsComputingParameters parameters;
     
     public PointsBlockOCLIterationComputing2(CascadingJob<?, CoordinatesBlock> parent,
-    JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, Parameters parameters)
+    JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, PointsComputingParameters parameters)
     {
-        super(parent, jobBuilder);
-        this.block = block;
+        super(parent, jobBuilder, block);
         this.parameters = parameters;
     }
     
     @Override
-    public PointsBlock nextStep()
-    throws Exception
+    public PointsBlock singleStep(CoordinatesBlock block)
     {
-        double step = (block.maxX - block.minX) / parameters.pointsOnSides;
-        int sliceSize = parameters.pointsOnSides * parameters.pointsOnSides / parameters.blocks;
+        long pointsOnSides = parameters.getPointsPerSideAtRootLevel();
+        double step = 4.0 / pointsOnSides;
+        // assume that this block is a square
+        int points = (int) ((block.maxX - block.minX) / step);
+        if (points > Math.sqrt(Integer.MAX_VALUE))
+        {
+            throw new IllegalArgumentException("There are too many points on the side of a node: " + points);
+        }
+        int sliceSize = points * points;
         double[] x = new double[sliceSize];
         double[] y = new double[sliceSize];
         
-        fillArrays(step, parameters.pointsOnSides / parameters.blocks, x, y);
+        fillArrays(block, step, points, x, y);
         
-        IntBuffer result = OpenCLManager.getInstance().compute(x, y, parameters.maximumIteration);
+        IntBuffer result = OpenCLManager.getInstance().compute(x, y, parameters.getMaximumIteration());
         result.rewind();
         
         int returnedPointsCount = getValidPoints(result);
         
+//        System.out.println(returnedPointsCount);
+        
         PointsBlock returned = copyValidPoints(x, y, result, returnedPointsCount);
         
-        stepIndex++;
         return returned;
     }
     
@@ -102,7 +67,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
         while (result.hasRemaining())
         {
             int iterations = result.get();
-            if (parameters.filter.apply((long) iterations))
+            if (parameters.getFilter().apply((long) iterations))
             {
                 returned.real[currentDstIndex] = x[currentSrcIndex];
                 returned.imag[currentDstIndex] = y[currentSrcIndex];
@@ -120,7 +85,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
         while (result.hasRemaining())
         {
             int iterations = result.get();
-            if (parameters.filter.apply((long) iterations))
+            if (parameters.getFilter().apply((long) iterations))
             {
                 returnedPointsCount++;
             }
@@ -128,26 +93,18 @@ extends Splitter<CoordinatesBlock, PointsBlock>
         return returnedPointsCount;
     }
     
-    private void fillArrays(double step, int sliceSize, double[] x, double[] y)
+    private void fillArrays(CoordinatesBlock block, double step, int pointsOnSides, double[] x,
+    double[] y)
     {
-        int kStart = stepIndex * sliceSize;
-        int kEnd = (stepIndex + 1) * sliceSize;
-        for (int k = kStart; k < kEnd; ++k)
+        for (int k = 0; k < pointsOnSides; ++k)
         {
-            int kBase = k - kStart;
             double yCurrent = block.minY + step * k;
-            for (int j = 0; j < parameters.pointsOnSides; ++j)
+            for (int j = 0; j < pointsOnSides; ++j)
             {
-                int index = kBase * parameters.pointsOnSides + j;
+                int index = k * pointsOnSides + j;
                 x[index] = block.minX + j * step;
                 y[index] = yCurrent;
             }
         }
-    }
-    
-    @Override
-    public boolean hasNext()
-    {
-        return stepIndex < parameters.blocks;
     }
 }
