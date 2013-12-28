@@ -542,6 +542,13 @@ public class Project
             throw new ProjectException("There is no tree with the id " + treeId);
         }
         
+        /*
+         * ensuring that the max depth parameter doesn't exceed the maximum possible value because it would result in no
+         * computation.
+         */
+        int maxDepth = Math.min(tree.maxDepth, parameters.getMaxDepth());
+        parameters.setMaxDepth(maxDepth);
+        
         if (parameters.isBlockSizeSpecified())
         {
             int blockSize = parameters.getBlockSize();

@@ -51,8 +51,6 @@ extends SimpleJob<CoordinatesBlock, PointsBlock>
         
         int returnedPointsCount = getValidPoints(result);
         
-//        System.out.println(returnedPointsCount);
-        
         PointsBlock returned = copyValidPoints(x, y, result, returnedPointsCount);
         
         return returned;

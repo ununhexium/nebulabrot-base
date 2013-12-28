@@ -90,22 +90,6 @@ public class WriterManager
         try
         {
             lock.lock();
-            // need to check that all the array have the same size for the following operations
-            if (!pointsBlock.isConsistent())
-            {
-                StringBuilder sb = new StringBuilder("The given points block is inconsistent: (size=");
-                sb.append(pointsBlock.size);
-                sb.append(", real.length=");
-                sb.append(pointsBlock.real.length);
-                sb.append(", imag.length=");
-                sb.append(pointsBlock.imag.length);
-                sb.append(", iter.length=");
-                sb.append(pointsBlock.iter.length);
-                sb.append(")");
-                
-                throw new IllegalArgumentException(sb.toString());
-            }
-            
             DataOutputStream out = getWriterFor(output);
             
             for (int i = 0; i < pointsBlock.size; ++i)

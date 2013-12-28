@@ -5,6 +5,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
+import net.lab0.nebula.color.ColorationModel;
+import net.lab0.nebula.color.GrayScaleColorModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
@@ -37,16 +39,38 @@ public class TestRawMandelbrotData
         new Point(2.0, 2.0)));
         // compute on a least 1 and at most N-1 CPUs to let other applications run smoothly
         originalData = nebulabrotRenderer.linearRender(pointsCount, minIter, maxIter, 1);
-        originalData.addAdditionnalInformation("aKey", "aValue");
         originalData.save(path);
+    }
+    
+    @Test
+    public void testRawMandelbrotData1()
+    {
+        new RawMandelbrotData(10, 10, 1024);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testRawMandelbrotData2()
+    {
+        new RawMandelbrotData(10, 0, 1024);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testRawMandelbrotData3()
+    {
+        new RawMandelbrotData(0, 10, 1024);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testRawMandelbrotData4()
+    {
+        new RawMandelbrotData(0, 0, 1024);
     }
     
     @Test
     public void testSave()
     throws IOException
     {
-        originalData.addAdditionnalInformation("aKey", "aValue");
-        originalData.save(path);
+        originalData.save(path.resolve("someDirToBeCreated"));
     }
     
     @Test
@@ -60,7 +84,6 @@ public class TestRawMandelbrotData
         Assert.assertEquals(originalData.getMinIter(), data.getMinIter());
         Assert.assertEquals(originalData.getMaxIter(), data.getMaxIter());
         Assert.assertEquals(originalData.getPointsCount(), data.getPointsCount());
-        Assert.assertEquals("aValue", data.getAdditionnalInformation("aKey"));
         int[][] array = data.getData();
         int[][] originalArray = originalData.getData();
         
@@ -71,5 +94,26 @@ public class TestRawMandelbrotData
                 Assert.assertEquals("Missmatch@(" + x + ";" + y + ")", originalArray[x][y], array[x][y]);
             }
         }
+    }
+    
+    @Test
+    /**
+     * Doesn't really check that the output is correct. Only check that it runs smoothly.
+     */
+    public void testSaveAsTiles()
+    throws IOException
+    {
+        ColorationModel colorationModel = new GrayScaleColorModel();
+        originalData.saveAsTiles(colorationModel, path.resolve("some new folder").toFile(), 32);
+    }
+    
+    @Test
+    /**
+     * Only testing the run, not the output.
+     */
+    public void testComputeBufferedImage()
+    {
+        ColorationModel colorationModel = new GrayScaleColorModel();
+        originalData.computeBufferedImage(colorationModel, 1);
     }
 }

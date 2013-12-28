@@ -1,13 +1,13 @@
-
 package net.lab0.nebula.color;
 
 /**
- * A linear gray scale coloration.
+ * A linear gray scale coloration. Works with 1 channel.
+ * 
  * @see ColorationModel for details.
  * 
  * @since 1.0
  * @author 116@lab0.net
- *
+ * 
  */
 public class GrayScaleColorModel
 implements ColorationModel
@@ -44,11 +44,12 @@ implements ColorationModel
         
         float rgb = 0;
         PointValues v = values[0];
-        //note : it is important to start with the *255f in order to avoid the integer division that would always return 0
+        // note : it is important to start with the *255f in order to avoid the integer division that would always
+        // return 0
         rgb = 255f * (v.value - v.minIter) / (v.maxIter - v.minIter + 1);
         vector[0] = vector[1] = vector[2] = rgb;
     }
-
+    
     @Override
     public int getChannelsCount()
     {

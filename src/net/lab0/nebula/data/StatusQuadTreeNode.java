@@ -90,44 +90,6 @@ public class StatusQuadTreeNode
     }
     
     /**
-     * Creates a quad tree node from an xml element. If parent is null, the created node will be a root node.
-     * 
-     * @param nodeElement
-     *            the xml node
-     * @param parent
-     *            the parent node
-     */
-    public StatusQuadTreeNode(Element nodeElement, StatusQuadTreeNode parent)
-    {
-        this.parent = parent;
-        
-        String statusString = nodeElement.getAttributeValue("status");
-        this.status = Status.valueOf(statusString);
-        
-        if (this.status == Status.OUTSIDE)
-        {
-            this.min = Integer.parseInt(nodeElement.getAttributeValue("min"));
-            this.max = Integer.parseInt(nodeElement.getAttributeValue("max"));
-        }
-        
-        Elements childNodes = nodeElement.getChildElements("node");
-        if (childNodes.size() > 0)
-        {
-            this.splitNode();
-            for (int i = 0; i < childNodes.size(); ++i)
-            {
-                StatusQuadTreeNode childNode = new StatusQuadTreeNode(childNodes.get(i), this);
-                String positionInParentString = childNodes.get(i).getAttributeValue("pos");
-                PositionInParent positionInParent = PositionInParent.valueOf(positionInParentString);
-                if (isChildNode(positionInParent))
-                {
-                    this.children[positionInParent.ordinal()] = childNode;
-                }
-            }
-        }
-    }
-    
-    /**
      * Splits this node. Creates 4 children, initialized with the appropriate fields' values and a VOID status
      */
     public void splitNode()
@@ -142,18 +104,6 @@ public class StatusQuadTreeNode
                 children[i] = new StatusQuadTreeNode(this);
             }
         }
-    }
-    
-    /**
-     * Returns true if this is a child node position.
-     * 
-     * @param position
-     * @return <code>true</code> if child node position. <code>false</code> if <code>this</code> is a root indicator
-     *         which must be equivalent to say that <code>this</code> is a root node.
-     */
-    private boolean isChildNode(PositionInParent position)
-    {
-        return position != PositionInParent.Root;
     }
     
     private double getCenterY()

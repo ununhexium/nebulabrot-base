@@ -52,7 +52,6 @@ public class RawMandelbrotData
     private int[/* X */][/* Y */] data;
     
     private long                  pointsCount;
-    private Map<String, String>   additional = new HashMap<>();
     
     /**
      * Creates a raw mandelbrot data store with the given parameters
@@ -107,15 +106,6 @@ public class RawMandelbrotData
         Element informationNode = indexRoot.getFirstChildElement("information");
         this.pointsCount = Long.parseLong(informationNode.getAttributeValue("pointsCount"));
         
-        // loading misc infos
-        Element additionalNode = informationNode.getFirstChildElement("additional");
-        Elements entries = additionalNode.getChildElements("entry");
-        for (int i = 0; i < entries.size(); ++i)
-        {
-            Element entry = entries.get(i);
-            additional.put(entry.getAttributeValue("key"), entry.getAttributeValue("value"));
-        }
-        
         File rawData = FileSystems.getDefault()
         .getPath(inputDirectoryPath.toString(), serializedFileNode.getAttributeValue("path")).toFile();
         
@@ -145,9 +135,8 @@ public class RawMandelbrotData
             String digest = MyString.getHexString(digestInputStream.getMessageDigest().digest());
             if (!digest.equals(checksum.getAttributeValue("value")))
             {
-                System.out.println(digest + " VS "
+                throw new InvalidBinaryFileException("The checksum is incorrect: " + digest + " VS "
                 + MyString.getHexString(digestInputStream.getMessageDigest().digest()));
-                throw new InvalidBinaryFileException("The checksum is incorrect.");
             }
         }
     }
@@ -171,9 +160,7 @@ public class RawMandelbrotData
         }
         catch (NoSuchAlgorithmException e)
         {
-            // should not happen
-            e.printStackTrace();
-            return;
+            throw new RuntimeException("This should not happen", e);
         }
         
         File outputFolder = outputDirectoryPath.toFile();
@@ -216,17 +203,6 @@ public class RawMandelbrotData
             Element information = new Element("information");
             information.addAttribute(new Attribute("pointsCount", Long.toString(pointsCount)));
             
-            // additional information in the index
-            Element additionnalNode = new Element("additional");
-            for (Entry<String, String> e : this.additional.entrySet())
-            {
-                Element entryNode = new Element("entry");
-                entryNode.addAttribute(new Attribute("key", e.getKey()));
-                entryNode.addAttribute(new Attribute("value", e.getValue()));
-                additionnalNode.appendChild(entryNode);
-            }
-            
-            information.appendChild(additionnalNode);
             indexRoot.appendChild(information);
             
             // creation of the digest in the index
@@ -492,22 +468,6 @@ public class RawMandelbrotData
         return bufferedImage;
     }
     
-    public void addAdditionnalInformation(String key, String value)
-    {
-        this.additional.put(key, value);
-    }
-    
-    /**
-     * 
-     * @param key
-     *            the key to access a piece of information
-     * @return the value if the key exists, <code>null</code> otherwise
-     */
-    public String getAdditionnalInformation(String key)
-    {
-        return this.additional.get(key);
-    }
-    
     public int getPixelWidth()
     {
         return pixelWidth;
@@ -558,46 +518,5 @@ public class RawMandelbrotData
     public long getPointsCount()
     {
         return pointsCount;
-    }
-    
-    public Map<String, String> getComments()
-    {
-        return additional;
-    }
-    
-    public DiffReport diff(RawMandelbrotData raw2)
-    {
-        if (this.getPixelHeight() != raw2.getPixelHeight() || this.getPixelWidth() != raw2.getPixelWidth())
-        {
-            throw new IllegalArgumentException("The two raws must have the same size");
-        }
-        
-        long total = 0;
-        long total2 = 0;
-        int maxDifference = 0;
-        long totalDifference = 0;
-        long differences = 0;
-        int[][] data = this.getData();
-        int[][] data2 = raw2.getData();
-        for (int x = 0; x < this.getPixelWidth(); ++x)
-        {
-            for (int y = 0; y < this.getPixelHeight(); ++y)
-            {
-                total += data[x][y];
-                total2 += data2[x][y];
-                if (data[x][y] != data2[x][y])
-                {
-                    int diff = Math.abs(data[x][y] - data2[x][y]);
-                    totalDifference += diff;
-                    differences++;
-                    if (diff > maxDifference)
-                    {
-                        maxDifference = diff;
-                    }
-                }
-            }
-        }
-        
-        return new DiffReport(total, total2, maxDifference, totalDifference, differences);
     }
 }

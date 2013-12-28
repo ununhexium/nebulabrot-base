@@ -30,7 +30,7 @@ public class QuadTreeComputing
         
         // case depth == 0
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors() + 1);
-        MandelbrotQuadTreeNode root = MandelbrotQuadTreeNode.Factory.buildRoot();
+        MandelbrotQuadTreeNode root = MandelbrotQuadTreeNode.buildRoot();
         JobBuilder<MandelbrotQuadTreeNode> toWriter = BuilderFactory.toFile(outputPath);
         JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(toWriter, maxIteration, 128,
         5);
