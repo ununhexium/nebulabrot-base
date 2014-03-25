@@ -67,11 +67,10 @@ public class TestPointsBlockReader
                 writerManager.release(path);
             }
         });
-        executor.prestartAllCoreThreads();
-        executor.submit(generator);
+        executor.execute(generator);
         try
         {
-            executor.finishAndShutdown();
+            executor.waitForFinish();
         }
         catch (InterruptedException e)
         {
@@ -85,11 +84,10 @@ public class TestPointsBlockReader
     {
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         PointsBlockReader pointsBlockReader = new PointsBlockReader(executor, new Dumper(), path, 250);
-        executor.prestartAllCoreThreads();
-        executor.submit(pointsBlockReader);
+        executor.execute(pointsBlockReader);
         try
         {
-            executor.finishAndShutdown();
+            executor.waitForFinish();
         }
         catch (InterruptedException e)
         {

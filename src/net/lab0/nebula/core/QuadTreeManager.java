@@ -181,6 +181,10 @@ public class QuadTreeManager
         this.computedNodes = new SynchronizedCounter(0);
     }
     
+    @SuppressWarnings("javadoc")
+    /**
+     * @see QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener, int maxLoadDepth)
+     */
     public QuadTreeManager(Path inputFolder, QuadTreeManagerListener listener)
     throws ParsingException, IOException, ClassNotFoundException, InvalidBinaryFileException, NoSuchAlgorithmException
     {
@@ -191,8 +195,11 @@ public class QuadTreeManager
      * Loads a quad tree and cuts it at <code>maxDepthy</code>. The indicated depth is kept in the quad tree.
      * 
      * @param inputFolder
-     * @param listener Optional.
+     *            The folder in which we will look for the index.xml file.
+     * @param listener
+     *            Optional.
      * @param maxLoadDepth
+     *            The deepest node to load, inclusive. Nodes beyond this depth will be discarded.
      * @throws ParsingException
      * @throws IOException
      * @throws ClassNotFoundException
@@ -574,11 +581,12 @@ public class QuadTreeManager
     /**
      * Saves the quad tree in a custom binary format.
      * 
-     * @see recursivelyConvertToBinaryFileWithIndexes and recursivelyConvertToBinaryFileWithoutIndexes methods for file
+     * @see #recursivelyConvertToBinaryFileWithIndexes and recursivelyConvertToBinaryFileWithoutIndexes methods for file
      *      specs
      * 
      * 
      * @param outputDirectoryPath
+     * @param indexing
      * @throws IOException
      */
     public void saveToBinaryFile(Path outputDirectoryPath, Indexing indexing)

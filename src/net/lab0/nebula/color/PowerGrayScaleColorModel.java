@@ -3,6 +3,7 @@ package net.lab0.nebula.color;
 /**
  * 
  * Gray with exponentiated scale. Makes intermediates zones [1-254] brighter than the @See GrayScaleColorModel if the
+ * 
  * @see ColorationModel for details.
  * 
  * @author 116@lab0.net
@@ -13,6 +14,11 @@ implements ColorationModel
 {
     private double power = 1.0;
     
+    /**
+     * @param power
+     *            The value of the power to use for the rendering. This parameter is similar to the gamma of a screen or
+     *            an image.
+     */
     public PowerGrayScaleColorModel(double power)
     {
         this.power = power;
@@ -51,9 +57,9 @@ implements ColorationModel
          * 
          * </pre>
          */
-
+        
         PointValues v = values[0];
-        //warning : do not change this 1.0d or this will become an int divison and it will always be 0
+        // warning : do not change this 1.0d or this will become an int divison and it will always be 0
         float rgb = (float) (255f * Math.pow((v.value - v.minIter) / (v.maxIter - v.minIter + 1.0d), power));
         vector[0] = vector[1] = vector[2] = rgb;
     }

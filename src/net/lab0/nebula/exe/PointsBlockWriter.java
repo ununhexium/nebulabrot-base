@@ -16,19 +16,27 @@ import net.lab0.tools.exec.CascadingJob;
 public class PointsBlockWriter
 extends Writer<PointsBlock>
 {
-    private long          minimumIteration;
-    private long          maximumIteration;
+    private long minimumIteration;
+    private long maximumIteration;
     
     /**
      * Writes points if the number of iterations IT it has is such as <code>minimumIteration</code> <= IT <=
      * <code>maximumIteration</code>.
+     * 
+     * @param parentJob
+     *            The parent job
+     * @param pointsBlock
+     *            The block to compute
+     * @param ouputPath
+     *            Where the block will be saved
      * 
      * @param minimumIteration
      *            The minimum number of iteration a point must have to be written
      * @param maximumIteration
      *            The maximum number of iteration a point must have to be written
      */
-    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath, long minimumIteration, long maximumIteration)
+    public PointsBlockWriter(CascadingJob<?, PointsBlock> parentJob, PointsBlock pointsBlock, Path ouputPath,
+    long minimumIteration, long maximumIteration)
     {
         super(parentJob, pointsBlock, ouputPath);
         this.minimumIteration = minimumIteration;

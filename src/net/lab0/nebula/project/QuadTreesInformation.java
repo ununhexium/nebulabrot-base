@@ -25,6 +25,8 @@ public class QuadTreesInformation
     }
     
     /**
+     * @param treeId
+     *            The id of the tree you want to get
      * @return The quad tree information related to the tree with the given id.
      */
     public QuadTreeInformation getById(int treeId)

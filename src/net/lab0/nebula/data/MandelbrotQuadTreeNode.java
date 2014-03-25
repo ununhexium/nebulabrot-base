@@ -127,8 +127,11 @@ public class MandelbrotQuadTreeNode
     }
     
     /**
-     * Builds a node with {@link net.lab0.nebula.data.MandelbrotQuadTreeNode#positionToDepthAndBitSetPath(String)
-     * positionToDepthAndBitSetPath(String)}
+     * @param stringPath
+     *            The path to the node.
+     * @return Builds a node with
+     *         {@link net.lab0.nebula.data.MandelbrotQuadTreeNode#positionToDepthAndBitSetPath(String)
+     *         positionToDepthAndBitSetPath(String)}
      */
     public static MandelbrotQuadTreeNode buildNode(String stringPath)
     {
@@ -136,8 +139,11 @@ public class MandelbrotQuadTreeNode
     }
     
     /**
-     * Builds a node with
-     * net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(PositionInParent... positions)
+     * @param positions
+     *            The path to the node.
+     * @return Builds a node with
+     *         net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(PositionInParent...
+     *         positions)
      */
     public static MandelbrotQuadTreeNode buildNode(PositionInParent... positions)
     {
@@ -145,9 +151,13 @@ public class MandelbrotQuadTreeNode
     }
     
     /**
-     * Builds a node with
-     * net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(PositionInParent... positions)
-     * by concatenating the parent and child paths.
+     * @param parentPath
+     *            The path of the parent node.
+     * @param childPosition
+     *            The position of this node in its parent
+     * @return Builds a node with
+     *         net.lab0.nebula.data.MandelbrotQuadTreeNode.Factory#positionToDepthAndBitSetPath(PositionInParent...
+     *         positions) by concatenating the parent and child paths.
      */
     public static MandelbrotQuadTreeNode buildNode(PositionInParent[] parentPath, PositionInParent childPosition)
     {
@@ -157,7 +167,7 @@ public class MandelbrotQuadTreeNode
     }
     
     /**
-     * Builds a root node. Equivalent to buildNode(PositionInParent.Root)
+     * @return Builds a root node. Equivalent to buildNode(PositionInParent.Root)
      */
     public static MandelbrotQuadTreeNode buildRoot()
     {
@@ -191,6 +201,9 @@ public class MandelbrotQuadTreeNode
     
     /**
      * Same as <code>MandelbrotQuadTreeNode(path.getDepth(), path.getPath())</code>
+     * 
+     * @param path
+     *            The path to the node
      */
     public MandelbrotQuadTreeNode(NodePath path)
     {
@@ -206,8 +219,11 @@ public class MandelbrotQuadTreeNode
      * @param path
      *            not null.
      * @param minimumIteration
+     *            The minimum number of iterations in this node.
      * @param maximumIteration
+     *            The maximum number of iterations in this node.
      * @param status
+     *            The status of this node
      */
     public MandelbrotQuadTreeNode(int depth, BitSet path, long minimumIteration, long maximumIteration, Status status)
     {
@@ -310,7 +326,7 @@ public class MandelbrotQuadTreeNode
      * 
      * @param stringPath
      *            The path to convert. Format must be <code>R[0-3]*</code>. Not check is made before the conversion.
-     * @return
+     * @return A {@link NodePath} representing the given stringPath
      */
     public static NodePath positionToDepthAndBitSetPath(String stringPath)
     {

@@ -1,14 +1,13 @@
 package net.lab0.nebula.data;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
+import net.lab0.nebula.All;
 import net.lab0.nebula.color.ColorationModel;
 import net.lab0.nebula.color.GrayScaleColorModel;
 import net.lab0.nebula.core.NebulabrotRenderer;
-import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;
@@ -27,8 +26,7 @@ public class TestRawMandelbrotData
     private static int                minIter     = 64;
     private static int                maxIter     = 128;
     private static long               pointsCount = resolution * resolution * maxIter;
-    private static Path               path        = FileSystems.getDefault()
-                                                  .getPath(".", "test_folder", "rawRendering");
+    private static Path               path        = All.getTestFolderPath(TestRawMandelbrotData.class);
     private static RawMandelbrotData  originalData;
     
     @BeforeClass

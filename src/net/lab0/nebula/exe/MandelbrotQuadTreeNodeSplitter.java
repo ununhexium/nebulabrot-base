@@ -18,7 +18,7 @@ extends Splitter<MandelbrotQuadTreeNode[], MandelbrotQuadTreeNode>
         public boolean doWeSplitIt(MandelbrotQuadTreeNode node);
     }
     
-    private SplittingCriterion       splittingCriteria;
+    private SplittingCriterion       splittingCriterion;
     private MandelbrotQuadTreeNode[] input;
     private MandelbrotQuadTreeNode[] tmpSubNodes;
     private int                      currentNodeIndex;
@@ -33,7 +33,7 @@ extends Splitter<MandelbrotQuadTreeNode[], MandelbrotQuadTreeNode>
             throw new IllegalArgumentException("The length of the input must be positive");
         }
         this.input = input;
-        this.splittingCriteria = splittingCriteria;
+        this.splittingCriterion = splittingCriteria;
     }
     
     @Override
@@ -42,7 +42,7 @@ extends Splitter<MandelbrotQuadTreeNode[], MandelbrotQuadTreeNode>
     {
         if (currentSubNodeIndex == 4 || tmpSubNodes == null)
         {
-            while (currentNodeIndex < input.length && !splittingCriteria.doWeSplitIt(input[currentNodeIndex]))
+            while (currentNodeIndex < input.length && !splittingCriterion.doWeSplitIt(input[currentNodeIndex]))
             {
                 currentNodeIndex++;
                 // skip until there is a node to split

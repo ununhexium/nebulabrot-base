@@ -36,7 +36,7 @@ public class QuadTreeComputing
         5);
         SingleOutputGenerator<MandelbrotQuadTreeNode> rootNodeGenerator = new SingleOutputGenerator<MandelbrotQuadTreeNode>(
         executor, toComputeInOut, root);
-        executor.submit(rootNodeGenerator);
+        executor.execute(rootNodeGenerator);
         executor.registerShutdownHook(new Runnable()
         {
             @Override
@@ -45,7 +45,7 @@ public class QuadTreeComputing
                 WriterManager.getInstance().release(outputPath);
             }
         });
-        executor.finishAndShutdown();
+        executor.waitForFinish();
         
         Thread.sleep(1000);
         
@@ -55,16 +55,6 @@ public class QuadTreeComputing
             System.out.println("depth=" + depth);
             // executor
             executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors() * 3 / 2);
-            executor.setThreadFactory(new ThreadFactory()
-            {
-                @Override
-                public Thread newThread(Runnable r)
-                {
-                    Thread thread = new Thread(r, "Priority TPE");
-                    thread.setPriority(Thread.MIN_PRIORITY);
-                    return thread;
-                }
-            });
             
             // source
             Path inputPath = FileSystems.getDefault().getPath(parent.toString(), String.valueOf(depth - 1) + ".data");
@@ -88,7 +78,7 @@ public class QuadTreeComputing
             toComputeInOut, splitBrowsedNodes);
             MandelbrotQuadTreeNodeReader reader = new MandelbrotQuadTreeNodeReader(executor, toQTNSplitter, inputPath,
             1024);
-            executor.submit(reader);
+            executor.execute(reader);
             executor.registerShutdownHook(new Runnable()
             {
                 @Override
@@ -97,7 +87,7 @@ public class QuadTreeComputing
                     WriterManager.getInstance().release(outputPath2);
                 }
             });
-            executor.finishAndShutdown();
+            executor.waitForFinish();
             
             // execution chain
             

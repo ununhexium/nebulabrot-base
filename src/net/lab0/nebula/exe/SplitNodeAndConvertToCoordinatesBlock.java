@@ -1,13 +1,13 @@
 package net.lab0.nebula.exe;
 
-import com.google.common.base.Predicate;
-
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.Coords;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.Splitter;
+
+import com.google.common.base.Predicate;
 
 public class SplitNodeAndConvertToCoordinatesBlock
 extends Splitter<MandelbrotQuadTreeNode[], CoordinatesBlock>

@@ -18,10 +18,12 @@ import net.lab0.nebula.exe.SplitNodeAndConvertToCoordinatesBlock;
 import net.lab0.nebula.project.PointsComputingParameters;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
+import net.lab0.tools.exec.JobBuilderFactory;
 
 import com.google.common.base.Predicate;
 
 public class BuilderFactory
+extends JobBuilderFactory //that's just to have all the methods in 1 class
 {
     public static synchronized JobBuilder<MandelbrotQuadTreeNode[]> arrayToFile(final Path outputPath)
     {

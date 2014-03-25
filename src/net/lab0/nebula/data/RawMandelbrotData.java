@@ -17,9 +17,6 @@ import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
@@ -31,7 +28,6 @@ import nu.xom.Attribute;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.Element;
-import nu.xom.Elements;
 import nu.xom.ParsingException;
 import nu.xom.Serializer;
 import nu.xom.ValidityException;
@@ -54,12 +50,10 @@ public class RawMandelbrotData
     private long                  pointsCount;
     
     /**
-     * Creates a raw mandelbrot data store with the given parameters
+     * Creates a raw Mandelbrot data store with the given parameters
      * 
      * @param pixelWidth
      * @param pixelHeight
-     * @param minIter
-     * @param maxIter
      * @param pointsCount
      */
     public RawMandelbrotData(int pixelWidth, int pixelHeight, long pointsCount)
@@ -76,7 +70,14 @@ public class RawMandelbrotData
     }
     
     /**
-     * Reads its data from the files in the <code>inputDirectoryPath</code> folder
+     * 
+     * @param inputDirectoryPath
+     *            Reads its data from the files in the <code>inputDirectoryPath</code> folder
+     * @throws ValidityException 
+     * @throws ParsingException 
+     * @throws IOException 
+     * @throws NoSuchAlgorithmException 
+     * @throws InvalidBinaryFileException 
      */
     public RawMandelbrotData(Path inputDirectoryPath)
     throws ValidityException, ParsingException, IOException, NoSuchAlgorithmException, InvalidBinaryFileException
@@ -325,7 +326,7 @@ public class RawMandelbrotData
     }
     
     /**
-     * Sub sub methd for tiles computaion.
+     * Sub sub method for tiles computation.
      * 
      * @param colorationModel
      * @param tilesFolder

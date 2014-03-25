@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Stopwatch;
-
 import net.lab0.tools.HumanReadable;
 import net.lab0.tools.Pair;
+
+import com.google.common.base.Stopwatch;
 
 /**
  * This class contains the usual routines used when computing the Mandelbrot set. The optimX suffix indicate that the
@@ -136,6 +136,15 @@ public class MandelbrotComputeRoutines
     /**
      * Same as <code>computeIterationsCountReference()</code> with an optimization to test if inside or outside every 2
      * iterations.
+     * 
+     * @param real
+     *            The real part coordinate of the point to compute.
+     * @param img
+     *            The imaginary part coordinate of the point to compute.
+     * @param maxIter
+     *            The maximum number of iterations to do.
+     * 
+     * @return The number of iterations. This quantity is even.
      */
     public static long computeIterationsCountOptim2(double real, double img, long maxIter)
     {
@@ -205,6 +214,15 @@ public class MandelbrotComputeRoutines
     /**
      * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 2
      * iterations.
+     * 
+     * @param real
+     *            The real part coordinate of the point to compute.
+     * @param img
+     *            The imaginary part coordinate of the point to compute.
+     * @param maxIter
+     *            The maximum number of iterations to do.
+     * @return <code>true</code> if the point is outside the set.
+     * 
      */
     public static boolean isOutsideMandelbrotSetOptim2(double real, double img, long maxIter)
     {
@@ -235,6 +253,14 @@ public class MandelbrotComputeRoutines
     /**
      * Same as <code>isOutsideMandelbrotSet()</code> with an optimization to test if inside or outside every 4
      * iterations.
+     * 
+     * @param real
+     *            The real part coordinate of the point to compute.
+     * @param img
+     *            The imaginary part coordinate of the point to compute.
+     * @param maxIter
+     *            The maximum number of iterations to do.
+     * @return <code>true</code> if the point is outside the set.
      */
     public static boolean isOutsideMandelbrotSetOptim4(double real, double img, long maxIter)
     {
@@ -268,6 +294,10 @@ public class MandelbrotComputeRoutines
         return iter < maxIter;
     }
     
+    /**
+     * @param args
+     *            not used.
+     */
     public static void main(String[] args)
     {
         System.out.println("Start");
@@ -334,7 +364,8 @@ public class MandelbrotComputeRoutines
                                    // point operations in 1 loop
         stopWatch.stop();
         System.out.println("Computing power: ~"
-        + HumanReadable.humanReadableNumber(1000L * totalIterationCount / stopWatch.elapsed(TimeUnit.MILLISECONDS)) + "flops");
+        + HumanReadable.humanReadableNumber(1000L * totalIterationCount / stopWatch.elapsed(TimeUnit.MILLISECONDS))
+        + "flops");
         stopWatch.reset();
     }
 }

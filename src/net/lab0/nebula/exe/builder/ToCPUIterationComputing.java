@@ -21,6 +21,7 @@ implements JobBuilder<PointsBlock>
      * 
      * @param jobBuilder
      *            the next job builder that will be used at the {@link PointsBlockCPUIterationComputing} creation time.
+     * @param iteration 
      */
     public ToCPUIterationComputing(JobBuilder<PointsBlock> jobBuilder, long iteration)
     {

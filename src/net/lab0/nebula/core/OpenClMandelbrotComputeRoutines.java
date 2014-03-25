@@ -65,6 +65,8 @@ public class OpenClMandelbrotComputeRoutines
     
     /**
      * Initializes the OpenCL context
+     * 
+     * @throws LWJGLException
      */
     private void initializeCL()
     throws LWJGLException
@@ -89,25 +91,21 @@ public class OpenClMandelbrotComputeRoutines
     /**
      * Creates the kernel.
      * 
+     * @param source
+     *            the source file to load.
+     * 
      * @throws LWJGLException
      *             If there is an error related to the source file reading while creating the kernel.
      */
     private void createKernel(String source)
     throws LWJGLException
     {
-        try
-        {
-            mandelbrotProgram = CL10.clCreateProgramWithSource(context, loadText(source), null);
-            // Build the OpenCL program, store it on the specified device
-            int error = CL10.clBuildProgram(mandelbrotProgram, devices.get(0), "", null);
-            // Check for any OpenCL errors
-            Util.checkCLError(error);
-            mandelbrotKernel = CL10.clCreateKernel(mandelbrotProgram, "mandelbrot", null);
-        }
-        catch (URISyntaxException | IOException e)
-        {
-            throw new LWJGLException("Error while reading the CL source file " + source, e);
-        }
+        mandelbrotProgram = CL10.clCreateProgramWithSource(context, loadText(source), null);
+        // Build the OpenCL program, store it on the specified device
+        int error = CL10.clBuildProgram(mandelbrotProgram, devices.get(0), "", null);
+        // Check for any OpenCL errors
+        Util.checkCLError(error);
+        mandelbrotKernel = CL10.clCreateKernel(mandelbrotProgram, "mandelbrot", null);
     }
     
     /**
@@ -206,34 +204,42 @@ public class OpenClMandelbrotComputeRoutines
      * Reads a file an converts it to a string.
      * 
      * @param name
+     *            The name of the file to load
+     * @throw RuntimeException If there was an IO or URI error. These exceptions should not happen as the loaded
+     *        resource is within the app jar.
      * @return The content of the file as a <code>String</code>.
-     * @throws URISyntaxException
-     * @throws IOException
      */
     public String loadText(String name)
-    throws URISyntaxException, IOException
     {
-        String resultString = null;
-        // Get the file containing the OpenCL kernel source code
-        File clSourceFile = new File(OpenClMandelbrotComputeRoutines.class.getClassLoader().getResource(name).toURI());
-        
-        try (
-            // Create a buffered file reader for the source file
-            BufferedReader br = new BufferedReader(new FileReader(clSourceFile));)
+        try
         {
-            // Read the file's source code line by line and store it in a string builder
-            String line = null;
-            StringBuilder result = new StringBuilder();
-            while ((line = br.readLine()) != null)
+            String resultString = null;
+            // Get the file containing the OpenCL kernel source code
+            File clSourceFile = new File(OpenClMandelbrotComputeRoutines.class.getClassLoader().getResource(name)
+            .toURI());
+            
+            try (
+                // Create a buffered file reader for the source file
+                BufferedReader br = new BufferedReader(new FileReader(clSourceFile));)
             {
-                result.append(line);
-                result.append("\n");
+                // Read the file's source code line by line and store it in a string builder
+                String line = null;
+                StringBuilder result = new StringBuilder();
+                while ((line = br.readLine()) != null)
+                {
+                    result.append(line);
+                    result.append("\n");
+                }
+                // Convert the string builder into a string containing the source code to return
+                resultString = result.toString();
             }
-            // Convert the string builder into a string containing the source code to return
-            resultString = result.toString();
+            
+            // Return the string read from the OpenCL kernel source code file
+            return resultString;
         }
-        
-        // Return the string read from the OpenCL kernel source code file
-        return resultString;
+        catch (URISyntaxException | IOException e)
+        {
+            throw new RuntimeException("Error while reading the CL source file " + name, e);
+        }
     }
 }

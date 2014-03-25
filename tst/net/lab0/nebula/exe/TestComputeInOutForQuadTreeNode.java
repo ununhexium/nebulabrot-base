@@ -13,17 +13,20 @@ import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
 import net.lab0.nebula.enums.PositionInParent;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exe.builder.BuilderFactory;
-import net.lab0.tools.exec.DevNull;
 import net.lab0.tools.exec.JobBuilder;
+import net.lab0.tools.exec.JobBuilderFactory.DevNull;
 import net.lab0.tools.exec.PriorityExecutor;
 import net.lab0.tools.exec.SingleOutputGenerator;
-import net.lab0.tools.exec.ToDump;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
 public class TestComputeInOutForQuadTreeNode
 {
+    public static JobBuilder<MandelbrotQuadTreeNode> devNull = BuilderFactory.toDevNull();
+    
     @Test
     public void testComputeInOutForQuadTreeNode1()
     throws InterruptedException
@@ -35,14 +38,13 @@ public class TestComputeInOutForQuadTreeNode
         
         Assert.assertEquals(Status.VOID, node.status);
         
-        JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(
-        new DevNull<MandelbrotQuadTreeNode>(), 65536, 256, 4);
+        JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(devNull, 65536, 256, 4);
         SingleOutputGenerator<MandelbrotQuadTreeNode> generator = new SingleOutputGenerator<MandelbrotQuadTreeNode>(
         executor, toComputeInOut, node);
-        ComputeInOutForQuadTreeNode job = new ComputeInOutForQuadTreeNode(generator, new ToDump<>(nodesList), node,
-        65536, 256, 4);
-        executor.submit(job);
-        executor.finishAndShutdown();
+        ComputeInOutForQuadTreeNode job = new ComputeInOutForQuadTreeNode(generator,
+        BuilderFactory.toDumper(nodesList), node, 65536, 256, 4);
+        executor.execute(job);
+        executor.waitForFinish();
         
         MandelbrotQuadTreeNode node2 = nodesList.get(0);
         
@@ -66,14 +68,15 @@ public class TestComputeInOutForQuadTreeNode
         
         Assert.assertEquals(Status.VOID, node.status);
         
-        JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(
-        new DevNull<MandelbrotQuadTreeNode>(), 65536, 256, 4);
+        List<MandelbrotQuadTreeNode> list = Lists.newArrayList();
+        
+        JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(devNull, 65536L, 256, 4L);
         SingleOutputGenerator<MandelbrotQuadTreeNode> generator = new SingleOutputGenerator<MandelbrotQuadTreeNode>(
         executor, toComputeInOut, node);
-        ComputeInOutForQuadTreeNode job = new ComputeInOutForQuadTreeNode(generator, new ToDump<>(nodesList), node,
-        65536, 256, 4);
-        executor.submit(job);
-        executor.finishAndShutdown();
+        ComputeInOutForQuadTreeNode job = new ComputeInOutForQuadTreeNode(generator,
+        BuilderFactory.toDumper(nodesList), node, 65536, 256, 4);
+        executor.execute(job);
+        executor.waitForFinish();
         
         MandelbrotQuadTreeNode node2 = nodesList.get(0);
         
@@ -97,14 +100,13 @@ public class TestComputeInOutForQuadTreeNode
         
         Assert.assertEquals(Status.VOID, node.status);
         
-        JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(
-        new DevNull<MandelbrotQuadTreeNode>(), 65536, 256, 4);
+        JobBuilder<MandelbrotQuadTreeNode> toComputeInOut = BuilderFactory.toComputeInOut(devNull, 65536, 256, 4);
         SingleOutputGenerator<MandelbrotQuadTreeNode> generator = new SingleOutputGenerator<MandelbrotQuadTreeNode>(
         executor, toComputeInOut, node);
-        ComputeInOutForQuadTreeNode job = new ComputeInOutForQuadTreeNode(generator, new ToDump<>(nodesList), node,
-        65536, 256, 4);
-        executor.submit(job);
-        executor.finishAndShutdown();
+        ComputeInOutForQuadTreeNode job = new ComputeInOutForQuadTreeNode(generator,
+        BuilderFactory.toDumper(nodesList), node, 65536, 256, 4);
+        executor.execute(job);
+        executor.waitForFinish();
         
         MandelbrotQuadTreeNode node2 = nodesList.get(0);
         

@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -45,8 +44,6 @@ import com.google.common.io.PatternFilenameFilter;
 
 /**
  * Stores and loads the parameters of a project.
- * 
- * @see ProjectKey for the available properties.
  * 
  * @author 116@lab0.net
  * 
@@ -130,8 +127,6 @@ public class Project
      * Saves the parameters of this project in /path/pto/project/folder/<code>project.xml</code>.
      * 
      * @throws JAXBException
-     * 
-     * @throws ConfigurationException
      */
     public synchronized void saveProjectsParameters()
     throws JAXBException
@@ -215,6 +210,7 @@ public class Project
      * 
      * @param input
      *            The index file of the quad tree to import
+     * @param maxDepth The maximum depth to use when loading the quadtree
      * @param managerListener
      *            Optional. The listener to attach when reading the file.
      * @param generalListener
@@ -415,7 +411,7 @@ public class Project
             executor.execute(reader);
             try
             {
-                executor.finishAndShutdown();
+                executor.waitForFinish();
             }
             catch (InterruptedException e)
             {
@@ -522,7 +518,7 @@ public class Project
                 WriterManager.getInstance().release(output);
             }
         });
-        executor.finishAndShutdown();
+        executor.waitForFinish();
     }
     
     /**

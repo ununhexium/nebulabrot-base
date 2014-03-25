@@ -2,8 +2,8 @@ package net.lab0.nebula.exe;
 
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.RawMandelbrotData;
-import net.lab0.tools.exec.GathererJob;
 import net.lab0.tools.exec.CascadingJob;
+import net.lab0.tools.exec.GathererJob;
 import net.lab0.tools.geom.RectangleInterface;
 
 /**

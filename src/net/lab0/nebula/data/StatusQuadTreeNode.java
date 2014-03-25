@@ -12,7 +12,6 @@ import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exception.InconsistentTreeStructure;
 import nu.xom.Attribute;
 import nu.xom.Element;
-import nu.xom.Elements;
 
 /**
  * The nodes used for the computation of the quad tree. The root node has a depth of 0.
@@ -73,14 +72,8 @@ public class StatusQuadTreeNode
     /**
      * Creates a node with the given parameters. If parent is null, them this will be a root node.
      * 
-     * @param minX
-     * @param maxX
-     * @param minY
-     * @param maxY
      * @param parent
      *            the parent node
-     * @param positionInParent
-     *            only used if parent is not null
      */
     public StatusQuadTreeNode(StatusQuadTreeNode parent)
     {
@@ -472,7 +465,7 @@ public class StatusQuadTreeNode
     /**
      * Get a node for the given path. This method should be (but is not required to be) called on the root of the tree.
      * The node is searched in the whole tree containing this node, starting by the root node and must therefore start
-     * with an R. For relative path, use {@link getSubnodeByPath}.
+     * with an R. For relative path, use {@link #getSubnodeByRelativePath(String)}.
      * 
      * @param path
      *            The path of the node to get.
@@ -676,7 +669,7 @@ public class StatusQuadTreeNode
     }
     
     /**
-     * Removes the falg indicating that the node is being computed.
+     * Removes the flag indicating that the node is being computed.
      */
     public synchronized void unFlagForComputing()
     {
@@ -686,6 +679,9 @@ public class StatusQuadTreeNode
         }
     }
     
+    /**
+     * @return <code>true</code> when this node was marked as computed.
+     */
     public boolean isFlagedForComputing()
     {
         return flagedForComputing;
@@ -810,12 +806,13 @@ public class StatusQuadTreeNode
     /**
      * Adds all nodes and subnodes contained in the rectangle defined by the 2 given points in <code>collection</code>
      * 
-     * @param rectMaxX
-     * @param rectMaxY
-     * @param rectMinX
-     * @param rectMinY
+     * @param p1
+     *            A corner of the rectangle.
+     * @param p2
+     *            The opposite corner of this rectangle.
+     * 
      * @param collection
-     *            la collection contenant le rﾃｩsultat
+     *            The collection containing the result
      */
     public void getNodesOverlappingRectangle(Point2D.Double p1, Point2D.Double p2,
     Collection<StatusQuadTreeNode> collection)
@@ -867,6 +864,10 @@ public class StatusQuadTreeNode
         }
     }
     
+    /**
+     * @param collection
+     *            The collection in which the nodes will be put
+     */
     public void getAllNodes(Collection<StatusQuadTreeNode> collection)
     {
         collection.add(this);
@@ -950,6 +951,9 @@ public class StatusQuadTreeNode
         return ret;
     }
     
+    /**
+     * @return <code>true</code> if this node is a leaf node
+     */
     public boolean isLeafNode()
     {
         return children == null;
@@ -966,7 +970,10 @@ public class StatusQuadTreeNode
      * test that all fields are exactly the same. Doesn't test parents.
      * 
      * @param other
-     * @return
+     *            The node to compare to.
+     * @param testFlag
+     *            if <code>true</code>, also tests the computing flag
+     * @return <code>true</code> if the nodes are the same
      */
     public boolean testIsExactlyTheSameAs(StatusQuadTreeNode other, boolean testFlag)
     {
@@ -1078,6 +1085,9 @@ public class StatusQuadTreeNode
         }
     }
     
+    /**
+     * @return a complete string describing of this node
+     */
     public String completeToString()
     {
         return "QuadTreeNode [parent=" + parent + ", children=" + Arrays.toString(children) + ", minX=" + getMinX()
@@ -1253,6 +1263,8 @@ public class StatusQuadTreeNode
      * TopLeft = 0, TopRight = 1, BottomLeft = 2, BottomRight = 3, Root = undef
      * 
      * @return the position of this node in the parent node.
+     * @throws InconsistentTreeStructure
+     *             when the node has a parent but the parent doesn't contain this node
      * 
      */
     public PositionInParent getPositionInParent()
@@ -1298,7 +1310,7 @@ public class StatusQuadTreeNode
         // useless to set value
         // this.flagedForComputing = false;
     }
-
+    
     @Override
     public int hashCode()
     {
@@ -1307,7 +1319,7 @@ public class StatusQuadTreeNode
         result = prime * result + getPath().hashCode();
         return result;
     }
-
+    
     @Override
     public boolean equals(Object obj)
     {
@@ -1322,6 +1334,5 @@ public class StatusQuadTreeNode
             return false;
         return true;
     }
-    
     
 }

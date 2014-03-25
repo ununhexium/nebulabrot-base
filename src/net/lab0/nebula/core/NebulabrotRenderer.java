@@ -157,7 +157,7 @@ public class NebulabrotRenderer
      *            The minimum number of iterations the points on the grid need to have to be utilized.
      * @param maxIter
      *            The maximum number of iterations the points on the grid need to have to be utilized.
-     * @param thread
+     * @param threads
      *            The maximum number of threads to use for this computation.
      * 
      * @return a {@link RawMandelbrotData} of the computed points

@@ -16,6 +16,7 @@ public class PointsComputingParameters
      * 
      * @param treeId
      *            The id of the tree that must be used.
+     * @param maximumIteration 
      * @param pointsPerSideAtRootLevel
      *            The number of points on the side of the root node expressed as a power of 2.
      * @throws IllegalArgumentException

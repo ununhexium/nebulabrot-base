@@ -80,7 +80,7 @@ public class ComputePoints
             1024 * 1024);
             
             executor.execute(reader);
-            executor.finishAndShutdown();
+            executor.waitForFinish();
         }
         
         WriterManager.getInstance().release(pointBlocksOutput);

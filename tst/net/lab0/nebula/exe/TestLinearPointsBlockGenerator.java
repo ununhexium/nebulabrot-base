@@ -3,6 +3,7 @@ package net.lab0.nebula.exe;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
@@ -17,6 +18,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+@SuppressWarnings("javadoc")
 public class TestLinearPointsBlockGenerator
 {
     public static List<PointsBlock> dumpList = Collections.synchronizedList(new ArrayList<PointsBlock>());
@@ -33,22 +35,15 @@ public class TestLinearPointsBlockGenerator
     
     @BeforeClass
     public static void beforeClass()
+    throws InterruptedException
     {
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         //hopefully, there will be no rounding errors Powers of 2 are great :)
         CoordinatesBlock block = new CoordinatesBlock(-2.0, 2.0, -2.0, 2.0, 4.0 / 2048d, 4.0 / 2048d);
         ToCoordinatesPointsBlockConverter toConverter = new ToCoordinatesPointsBlockConverter(new TestJobBuilder(), 1000*1000);
         SingleOutputGenerator<CoordinatesBlock> generator = new SingleOutputGenerator<CoordinatesBlock>(executor, toConverter, block);
-        executor.prestartAllCoreThreads();
-        executor.submit(generator);
-        try
-        {
-            executor.finishAndShutdown();
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
+        executor.execute(generator);
+        executor.waitForFinish();
     }
     
     @Test

@@ -7,6 +7,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 
+import net.lab0.nebula.All;
 import net.lab0.nebula.data.RootQuadTreeNode;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.enums.Indexing;
@@ -32,7 +33,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class TestQuadTreeSaveLoad
 {
-    private static final Path      testFolder      = FileSystems.getDefault().getPath(".", "test_folder");
+    private static final Path      testFolder      = All.getTestFolderPath(TestQuadTreeSaveLoad.class);
     private static int             i               = 0;
     
     private static QuadTreeManager quadTreeManager = null;

@@ -1,7 +1,6 @@
 package net.lab0.nebula.example2;
 
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
@@ -32,8 +31,12 @@ import net.lab0.tools.geom.RectangleInterface;
  */
 public class Example04
 {
+    /**
+     * @param args not used
+     * @throws Exception because I don't care
+     */
     public static void main(String[] args)
-    throws InterruptedException, IOException
+    throws Exception
     {
         /*
          * Same as example 3 except 3 lines
@@ -69,9 +72,8 @@ public class Example04
                 WriterManager.getInstance().release(outputPath);
             }
         });
-        priorityExecutor.prestartAllCoreThreads();
-        priorityExecutor.submit(generator);
-        priorityExecutor.finishAndShutdown();
+        priorityExecutor.execute(generator);
+        priorityExecutor.waitForFinish();
         System.out.println("The file is available at " + outputPath.toUri());
         
         priorityExecutor = new PriorityExecutor(threads);
@@ -79,8 +81,8 @@ public class Example04
         RectangleInterface viewPort = new Rectangle(new Point(-2.0, -2.0), new Point(2.0, 2.0));
         ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
         PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, toAggregator, outputPath, 1024 * 1024);
-        priorityExecutor.submit(pointsBlockReader);
-        priorityExecutor.finishAndShutdown();
+        priorityExecutor.execute(pointsBlockReader);
+        priorityExecutor.waitForFinish();
         BufferedImage image = aggregate.computeBufferedImage(new GrayScaleColorModel(), 0);
         Path imageOutputPath = FileSystems.getDefault().getPath(basePath.toString(), "out.png");
         ImageIO.write(image, "png", imageOutputPath.toFile());

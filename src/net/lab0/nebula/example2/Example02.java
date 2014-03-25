@@ -26,6 +26,9 @@ import net.lab0.tools.exec.SingleOutputGenerator;
  */
 public class Example02
 {
+    /**
+     * @param args not used
+     */
     public static void main(String[] args)
     {
         /*
@@ -59,14 +62,13 @@ public class Example02
         /*
          * Start the execution of the job. The call will start the job execution automatically.
          */
-        priorityExecutor.prestartAllCoreThreads();
-        priorityExecutor.submit(generator);
+        priorityExecutor.execute(generator);
         /*
          * We now have to wait for the job to finish.
          */
         try
         {
-            priorityExecutor.finishAndShutdown();
+            priorityExecutor.waitForFinish();
         }
         catch (InterruptedException e)
         {

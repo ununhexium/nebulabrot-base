@@ -22,6 +22,7 @@ implements JobBuilder<PointsBlock>
      * 
      * @param jobBuilder
      *            the next job builder that will be used at the {@link PointsBlockCPUIterationComputing} creation time.
+     * @param iteration
      */
     public ToOCLIterationComputing(JobBuilder<PointsBlock> jobBuilder, long iteration)
     {
@@ -33,8 +34,7 @@ implements JobBuilder<PointsBlock>
     @Override
     public CascadingJob<PointsBlock, ?> buildJob(CascadingJob<?, PointsBlock> parent, PointsBlock output)
     {
-        return new PointsBlockOCLIterationComputing(parent, jobBuilder, output,
-        iteration);
+        return new PointsBlockOCLIterationComputing(parent, jobBuilder, output, iteration);
     }
     
 }

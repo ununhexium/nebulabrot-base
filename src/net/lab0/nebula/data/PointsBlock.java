@@ -19,8 +19,6 @@ public class PointsBlock
      * 
      * @param size
      *            The size this PointsBlock will have.
-     * @param manager
-     *            The manager of this PointsBlock.
      */
     public PointsBlock(int size)
     {
@@ -35,8 +33,6 @@ public class PointsBlock
      * 
      * @param size
      *            The size this PointsBlock will have.
-     * @param manager
-     *            The manager of this PointsBlock.
      * @param real
      *            The reals array
      * @param imag

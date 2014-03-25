@@ -26,6 +26,8 @@ public class TestWriterManager
 {
     /**
      * Tests net.lab0.nebula.mgr.WriterManager#write(PointsBlock, Path)
+     * @throws SerializationException 
+     * @throws IOException 
      */
     @Test
     public void testWritePointsBlock()
@@ -71,6 +73,8 @@ public class TestWriterManager
     
     /**
      * Tests net.lab0.nebula.mgr.WriterManager#write(PointsBlock, Path, long, long)
+     * @throws SerializationException 
+     * @throws IOException 
      */
     @Test
     public void testWritePointsBlock2()

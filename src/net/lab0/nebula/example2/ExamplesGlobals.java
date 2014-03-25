@@ -15,6 +15,9 @@ import net.lab0.tools.FileUtils;
  */
 public class ExamplesGlobals
 {
+    /**
+     * The directory to use to run the examples
+     */
     public static final Path baseDirectory = FileSystems.getDefault().getPath("R:", "dev", "nebula", "example");
     
     /**

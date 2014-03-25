@@ -1,7 +1,6 @@
 package net.lab0.nebula.example2;
 
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
@@ -32,8 +31,12 @@ import net.lab0.tools.geom.RectangleInterface;
  */
 public class Example03
 {
+    /**
+     * @param args not used
+     * @throws Exception because I don't care
+     */
     public static void main(String[] args)
-    throws InterruptedException, IOException
+    throws Exception
     {
         /*
          * Same as example 2
@@ -59,9 +62,8 @@ public class Example03
                 WriterManager.getInstance().release(outputPath);
             }
         });
-        priorityExecutor.prestartAllCoreThreads();
-        priorityExecutor.submit(generator);
-        priorityExecutor.finishAndShutdown();
+        priorityExecutor.execute(generator);
+        priorityExecutor.wait();
         System.out.println("The file is available at " + outputPath.toUri());
         
         // Example 03
@@ -88,8 +90,8 @@ public class Example03
         /*
          * Do the computation
          */
-        priorityExecutor.submit(pointsBlockReader);
-        priorityExecutor.finishAndShutdown();
+        priorityExecutor.execute(pointsBlockReader);
+        priorityExecutor.waitForFinish();
         /*
          * Graphic rendering
          */

@@ -1,8 +1,8 @@
 package net.lab0.nebula.mgr;
 
-import org.lwjgl.LWJGLException;
-
 import net.lab0.nebula.core.OpenClMandelbrotComputeRoutines;
+
+import org.lwjgl.LWJGLException;
 
 public class OpenCLManager
 extends OpenClMandelbrotComputeRoutines

@@ -15,24 +15,22 @@ import net.lab0.tools.exec.Splitter;
 public class CoordinatesToPointsBlockConverter
 extends Splitter<CoordinatesBlock, PointsBlock>
 {
-    private CoordinatesBlock   block;
-    private PointsBlock        pointsBlock;
-    private final int          pointsBlockSize;
-    private double             lastX;
-    private double             lastY;
+    private CoordinatesBlock block;
+    private PointsBlock      pointsBlock;
+    private final int        pointsBlockSize;
+    private double           lastX;
+    private double           lastY;
     
     /**
      * 
-     * @param executor
-     *            The executor in which this job has to be executed
+     * @param parent
+     *            The parent job
+     * @param jobBuilder
+     *            The builder of the next job.
      * @param block
      *            The {@link CoordinatesBlock} to convert
      * @param pointsBlockSize
      *            The amount of points for each {@link PointsBlock}
-     * @param priority
-     *            The priority of this task.
-     * @param manager
-     *            The {@link PointsBlockManager} to use to allocate the {@link PointsBlock}s
      */
     public CoordinatesToPointsBlockConverter(CascadingJob<?, CoordinatesBlock> parent,
     JobBuilder<PointsBlock> jobBuilder, CoordinatesBlock block, int pointsBlockSize)
@@ -88,7 +86,7 @@ extends Splitter<CoordinatesBlock, PointsBlock>
         }
         return pointsBlock;
     }
-
+    
     @Override
     public boolean hasNext()
     {

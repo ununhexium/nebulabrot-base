@@ -2,6 +2,9 @@ package net.lab0.nebula.exception;
 
 public class NotImplemented extends RuntimeException {
 
+    /**
+     * av U n ID wat dis iz ?
+     */
 	private static final long serialVersionUID = 1L;
 
 	public NotImplemented() {

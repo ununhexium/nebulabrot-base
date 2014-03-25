@@ -9,7 +9,8 @@ import net.lab0.nebula.exception.NoMoreNodesToCompute;
 
 /**
  * 
- * Thread to compute the {@link StatusQuadTreeNode}s' status of the given {@link QuadTreeManager} using CPU only computation power.
+ * Thread to compute the {@link StatusQuadTreeNode}s' status of the given {@link QuadTreeManager} using CPU only
+ * computation power.
  * 
  * @since 1.0
  * @author 116
@@ -22,7 +23,8 @@ extends AbstractQuadTreeComputeThread
     /**
      * 
      * @param quadTreeManager
-     *            The {@link QuadTreeManager} to use for this computation. It will hold the results in its {@link RootQuadTreeNode}
+     *            The {@link QuadTreeManager} to use for this computation. It will hold the results in its
+     *            {@link RootQuadTreeNode}
      * @param maxNodesToCompute
      *            The maximum quantity of node to compute before automatically stopping this thread.
      * @param computedNodes
@@ -31,8 +33,8 @@ extends AbstractQuadTreeComputeThread
      *            The amount of nodes to retrieve after each call to {@link QuadTreeManager}.getNextNodeToCompute().
      */
     // TODO: remove the computeBlockSizeParameter and find automatically an appropriate one or give a fixed one ?
-    public CPUQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes,
-    int computeBlockSize)
+    public CPUQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute,
+    SynchronizedCounter computedNodes, int computeBlockSize)
     {
         super(quadTreeManager, maxNodesToCompute, computedNodes, computeBlockSize);
     }
@@ -47,14 +49,16 @@ extends AbstractQuadTreeComputeThread
             try
             {
                 // retrieves the next "computeBlockSize" nodes to compute from the quad tree manager
-                List<StatusQuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(), this.computeBlockSize);
+                List<StatusQuadTreeNode> nodes = quadTreeManager.getNextNodeToCompute(quadTreeManager.getMaxDepth(),
+                this.computeBlockSize);
                 
                 if (!nodes.isEmpty())
                 {
                     computeNodes(nodes);
                 }
                 else
-                // if there is nothing to compute : active wait because i'm lazy to do it better and it is more or Less ok.
+                // if there is nothing to compute : active wait because i'm lazy to do it better and it is more or Less
+                // ok.
                 {
                     try
                     {
@@ -79,7 +83,7 @@ extends AbstractQuadTreeComputeThread
     /**
      * Computes the INSIDE/OUTSIDE/BROWSED attributes of a node.
      * 
-     * @param nodes 
+     * @param nodes
      */
     private void computeNodes(List<StatusQuadTreeNode> nodes)
     {
@@ -112,15 +116,4 @@ extends AbstractQuadTreeComputeThread
         fireNodesGroupComputeTime((end - start));
         fireNodesLeftToCompute(maxNodesToCompute.getValue());
     }
-    
-    public int getComputeBlockSize()
-    {
-        return computeBlockSize;
-    }
-    
-    public void setComputeBlockSize(int computeBlockSize)
-    {
-        this.computeBlockSize = computeBlockSize;
-    }
-    
 }

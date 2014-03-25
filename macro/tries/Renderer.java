@@ -37,8 +37,8 @@ public class Renderer
             ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
             PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, toAggregator,
             pointBlocksOutput, 1024 * 1024);
-            priorityExecutor.submit(pointsBlockReader);
-            priorityExecutor.finishAndShutdown();
+            priorityExecutor.execute(pointsBlockReader);
+            priorityExecutor.waitForFinish();
             
             System.out.println("Writing image");
             Path imageOutputPath = FileSystems.getDefault().getPath(pointsBlocksBase.toString(), "image"+String.format("%07d", i)+".png");

@@ -27,8 +27,8 @@ public class TestGrayScaleColorModel
     {
         PointValues values = new PointValues();
         values.minIter = 123;
-        values.maxIter = 687;
-        values.value = 687;
+        values.maxIter = 6870;
+        values.value = 6870;
         
         float[] vector = new float[3];
         model.computeColorForPoint(vector, values);
@@ -45,13 +45,13 @@ public class TestGrayScaleColorModel
         values.maxIter = 687;
         values.value = 500;
         
-        float expected = (float) ((float) 500 / (687 - 123));
+        float expected = 255f* ((float) (500-123) / (687 - 123));
         
         float[] vector = new float[3];
         model.computeColorForPoint(vector, values);
-        Assert.assertEquals(expected, vector[0], 0.1f);
-        Assert.assertEquals(expected, vector[1], 0.1f);
-        Assert.assertEquals(expected, vector[2], 0.1f);
+        Assert.assertEquals(expected, vector[0], 1.0f);
+        Assert.assertEquals(expected, vector[1], 1.0f);
+        Assert.assertEquals(expected, vector[2], 1.0f);
     }
     
     @Test

@@ -42,6 +42,9 @@ public class WriterManager
         
     }
     
+    /**
+     * @return The instance of the write manager
+     */
     public static synchronized WriterManager getInstance()
     {
         if (instance == null)
@@ -53,6 +56,10 @@ public class WriterManager
     
     /**
      * Equivalent of net.lab0.nebula.mgr.WriterManager#write(pointsBlock, output, Long.MIN_VALUE, Long.MAX_VALUE)
+     * 
+     * @param pointsBlock
+     * @param output
+     * @throws SerializationException
      */
     public void write(PointsBlock pointsBlock, Path output)
     throws SerializationException
@@ -195,7 +202,7 @@ public class WriterManager
      *      8 bytes, double, the 'stepY' (net.lab0.nebula.data.CoordinatesBlock.stepY).
      * </pre>
      * 
-     * @param data
+     * @param dataArray
      *            The array of coordinates block to write.
      * @param output
      *            The location where the data must be written
@@ -253,7 +260,7 @@ public class WriterManager
      *      8 bytes, long, the 'maximumIteration' (net.lab0.nebula.data.MandelbrotQuadTreeNode.maximumIteration).
      * </pre>
      * 
-     * @param data
+     * @param dataArray
      *            The array of coordinates block to write.
      * @param output
      *            The location where the data must be written
@@ -302,6 +309,10 @@ public class WriterManager
     /**
      * Same as net.lab0.nebula.mgr.WriterManager#write(MandelbrotQuadTreeNode[] dataArray, Path output) for a single
      * element.
+     * 
+     * @param data
+     * @param output
+     * @throws SerializationException
      */
     public void write(MandelbrotQuadTreeNode data, Path output)
     throws SerializationException
