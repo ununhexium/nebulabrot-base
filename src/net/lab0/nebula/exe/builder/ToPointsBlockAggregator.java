@@ -15,6 +15,13 @@ implements JobBuilder<PointsBlock>
     private long               maximumIteration;
     private long               minimumIteration;
     
+    /**
+     * 
+     * @param aggregate
+     * @param viewPort
+     * @param minimumIteration
+     * @param maximumIteration
+     */
     public ToPointsBlockAggregator(RawMandelbrotData aggregate, RectangleInterface viewPort, long minimumIteration, long maximumIteration)
     {
         super();

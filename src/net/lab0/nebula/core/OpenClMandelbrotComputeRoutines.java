@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
@@ -31,7 +33,7 @@ import org.lwjgl.opencl.Util;
  */
 public class OpenClMandelbrotComputeRoutines
 {
-    private static final String mandelbrotPointComputeProgramPath = "./cl/mandelbrotOptim2.cl";
+    private static final String mandelbrotPointComputeProgramPath = "/cl/mandelbrotOptim2.cl";
     
     // OpenCL variables
     private CLContext           context;
@@ -211,35 +213,24 @@ public class OpenClMandelbrotComputeRoutines
      */
     public String loadText(String name)
     {
-        try
-        {
-            String resultString = null;
-            // Get the file containing the OpenCL kernel source code
-            File clSourceFile = new File(OpenClMandelbrotComputeRoutines.class.getClassLoader().getResource(name)
-            .toURI());
-            
-            try (
-                // Create a buffered file reader for the source file
-                BufferedReader br = new BufferedReader(new FileReader(clSourceFile));)
-            {
-                // Read the file's source code line by line and store it in a string builder
-                String line = null;
-                StringBuilder result = new StringBuilder();
-                while ((line = br.readLine()) != null)
-                {
-                    result.append(line);
-                    result.append("\n");
-                }
-                // Convert the string builder into a string containing the source code to return
-                resultString = result.toString();
-            }
-            
-            // Return the string read from the OpenCL kernel source code file
-            return resultString;
-        }
-        catch (URISyntaxException | IOException e)
-        {
-            throw new RuntimeException("Error while reading the CL source file " + name, e);
-        }
+        // To be improved
+        /*
+         * 
+         * try { String resultString = null; // Get the file containing the OpenCL kernel source code
+         * System.out.println(OpenClMandelbrotComputeRoutines.class.getClassLoader().getResource(name).toURI());
+         * InputStream stream = OpenClMandelbrotComputeRoutines.class.getClassLoader().getResourceAsStream(name);
+         * 
+         * try ( // Create a buffered file reader for the source file BufferedReader br = new BufferedReader(new
+         * InputStreamReader(stream));) { // Read the file's source code line by line and store it in a string builder
+         * String line = null; StringBuilder result = new StringBuilder(); while ((line = br.readLine()) != null) {
+         * result.append(line); result.append("\n"); } // Convert the string builder into a string containing the source
+         * code to return resultString = result.toString(); }
+         * 
+         * // Return the string read from the OpenCL kernel source code file return resultString; } catch
+         * (URISyntaxException | IOException e) { throw new RuntimeException("Error while reading the CL source file " +
+         * name, e); }
+         */
+        String program = "kernel void mandelbrot(global const double* a, global const double* b, global int* result, int const size, long const maxIter){ const int itemId = get_global_id(0); if(itemId < size) { long i = 0; double real = a[itemId]; double real1 = real; double real2; double imag = b[itemId]; double imag1 = imag; double imag2; double realSqr = real * real; double imagSqr = imag * imag; while ((i < maxIter) && ((realSqr + imagSqr) < 4)) { real2 = real1 * real1 - imag1 * imag1 + real; imag2 = 2 * real1 * imag1 + imag; realSqr = real2 * real2; imagSqr = imag2 * imag2; real1 = realSqr - imagSqr + real; imag1 = 2 * real2 * imag2 + imag; i+=2; } result[itemId] = i; }}";
+        return program;
     }
 }

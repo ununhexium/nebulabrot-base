@@ -6,17 +6,27 @@ import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.IntBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -73,11 +83,11 @@ public class RawMandelbrotData
      * 
      * @param inputDirectoryPath
      *            Reads its data from the files in the <code>inputDirectoryPath</code> folder
-     * @throws ValidityException 
-     * @throws ParsingException 
-     * @throws IOException 
-     * @throws NoSuchAlgorithmException 
-     * @throws InvalidBinaryFileException 
+     * @throws ValidityException
+     * @throws ParsingException
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidBinaryFileException
      */
     public RawMandelbrotData(Path inputDirectoryPath)
     throws ValidityException, ParsingException, IOException, NoSuchAlgorithmException, InvalidBinaryFileException
@@ -519,5 +529,66 @@ public class RawMandelbrotData
     public long getPointsCount()
     {
         return pointsCount;
+    }
+    
+    // Sums the arrays into 1 big data file
+    public static RawMandelbrotData concat(List<Path> partsList)
+    throws ValidityException, ParsingException, IOException
+    {
+        if (partsList.size() < 2)
+        {
+            throw new IllegalArgumentException("The supplied list must contain at least 2 elements to make sense");
+        }
+        
+        int xRes = -1;
+        int yRes = -1;
+        // check meta information
+        for (Path p : partsList)
+        {
+            Builder parser = new Builder();
+            Document doc = parser.build(new File(p.toFile(), "index.xml"));
+            Element indexRoot = doc.getRootElement();
+            
+            Element serializedFileNode = indexRoot.getFirstChildElement("serializedFile");
+            int pixelWidth = Integer.parseInt(serializedFileNode.getAttributeValue("pixelWidth"));
+            int pixelHeight = Integer.parseInt(serializedFileNode.getAttributeValue("pixelHeight"));
+            
+            if (xRes == -1)
+            {
+                xRes = pixelWidth;
+            }
+            if (yRes == -1)
+            {
+                yRes = pixelHeight;
+            }
+            if (xRes != pixelWidth || yRes != pixelHeight)
+            {
+                throw new IllegalArgumentException("Inconsistent data list: expected size (" + xRes + "," + yRes
+                + ") but got (" + pixelWidth + "," + pixelHeight + ")");
+            }
+        }
+        
+        List<DataInputStream> streams = new ArrayList<>();
+        for (Path p : partsList)
+        {
+            streams.add(new DataInputStream(new FileInputStream(p.resolve("rawData.dat").toFile())));
+        }
+        
+        RawMandelbrotData outputData = new RawMandelbrotData(yRes, yRes, 0);
+        
+        for (int i = 0; i < xRes; ++i)
+        {
+            for (int j = 0; j < yRes; ++j)
+            {
+                long total = 0;
+                for (int k = 0; k < streams.size(); ++k)
+                {
+                    total += streams.get(k).readInt();
+                }
+                outputData.data[i][j] = (int) Math.min(Integer.MAX_VALUE, total);
+            }
+        }
+        
+        return outputData;
     }
 }

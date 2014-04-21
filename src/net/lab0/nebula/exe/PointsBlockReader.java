@@ -23,10 +23,21 @@ import net.lab0.tools.exec.PriorityExecutor;
 public class PointsBlockReader
 extends Generator<DataInputStream, PointsBlock>
 {
-    private int                blockSize;
+    private int blockSize;
     
-    public PointsBlockReader(PriorityExecutor executor, JobBuilder<PointsBlock> jobBuilder,
-    Path inputPath, int blockSize)
+    /**
+     * Reads points from a file
+     * 
+     * @param executor
+     * @param jobBuilder
+     * @param inputPath
+     *            Where to read from
+     * @param blockSize
+     *            The size of the output blocks
+     * @throws FileNotFoundException
+     */
+    public PointsBlockReader(PriorityExecutor executor, JobBuilder<PointsBlock> jobBuilder, Path inputPath,
+    int blockSize)
     throws FileNotFoundException
     {
         super(executor, jobBuilder, buildDataInputStream(inputPath));

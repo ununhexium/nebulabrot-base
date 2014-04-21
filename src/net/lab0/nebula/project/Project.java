@@ -1,8 +1,10 @@
 package net.lab0.nebula.project;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -10,14 +12,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import net.lab0.nebula.color.PowerGrayScaleColorModel;
+import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
+import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.data.StatusQuadTreeNode;
@@ -27,7 +35,9 @@ import net.lab0.nebula.exception.NonEmptyFolderException;
 import net.lab0.nebula.exception.ProjectException;
 import net.lab0.nebula.exception.SerializationException;
 import net.lab0.nebula.exe.MandelbrotQuadTreeNodeReader;
+import net.lab0.nebula.exe.PointsBlockReader;
 import net.lab0.nebula.exe.builder.BuilderFactory;
+import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
 import net.lab0.nebula.listener.GeneralListener;
 import net.lab0.nebula.listener.QuadTreeManagerListener;
 import net.lab0.nebula.mgr.WriterManager;
@@ -35,6 +45,9 @@ import net.lab0.tools.FileUtils;
 import net.lab0.tools.HumanReadable;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+import net.lab0.tools.geom.Point;
+import net.lab0.tools.geom.Rectangle;
+import net.lab0.tools.geom.RectangleInterface;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
@@ -210,7 +223,8 @@ public class Project
      * 
      * @param input
      *            The index file of the quad tree to import
-     * @param maxDepth The maximum depth to use when loading the quadtree
+     * @param maxDepth
+     *            The maximum depth to use when loading the quadtree
      * @param managerListener
      *            Optional. The listener to attach when reading the file.
      * @param generalListener
@@ -593,5 +607,61 @@ public class Project
         }
         
         return filesByDepth;
+    }
+    
+    public void computeNebula(int pointsId, RectangleInterface viewPort, int xRes, int yRes)
+    throws IOException, InterruptedException, ValidityException, ParsingException
+    {
+        Path pointsBlocksBase = FileSystems.getDefault().getPath(getProjectFolder(), "point", "" + pointsId);
+        Path imageOutputPath = FileSystems.getDefault().getPath(getProjectFolder(), "image");
+        Path nebulaPartsMainOutputFolder = FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
+        int nextAvailable = FileUtils.getNextAvailablePath(nebulaPartsMainOutputFolder, "");
+        Path nebulaPartsOutputFolder = nebulaPartsMainOutputFolder.resolve("" + nextAvailable);
+        
+        // quickly check that the files listed are only those we want to use
+        Pattern format = Pattern.compile("c_[0-9]+.data");
+        
+        int outputIndex = -1;
+        List<Path> partsList = new ArrayList<>();
+        for (File sourceFile : pointsBlocksBase.toFile().listFiles())
+        {
+            outputIndex++;
+            Matcher matcher = format.matcher(sourceFile.getName());
+            if (!matcher.matches())
+            {
+                continue;
+            }
+            
+            // rendering
+            PriorityExecutor priorityExecutor = new PriorityExecutor(Runtime.getRuntime().availableProcessors() - 1);
+            RawMandelbrotData aggregate = new RawMandelbrotData(xRes, yRes, 0);
+            ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
+            PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, toAggregator,
+            sourceFile.toPath(), 1024 * 1024);
+            priorityExecutor.execute(pointsBlockReader);
+            priorityExecutor.waitForFinish();
+            
+            System.out.println("Write data");
+            Path dataPath = nebulaPartsOutputFolder.resolve("" + outputIndex);
+            partsList.add(dataPath);
+            aggregate.save(dataPath);
+            
+            /*
+             * Graphic rendering
+             */
+            System.out.println("Writing image");
+            Path imagePath = imageOutputPath.resolve("i_" + outputIndex + ".png");
+            BufferedImage image = aggregate.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
+            ImageIO.write(image, "png", imagePath.toFile());
+            System.out.println("The image is available at " + imageOutputPath);
+        }
+        
+        RawMandelbrotData concat = RawMandelbrotData.concat(partsList);
+        concat.save(nebulaPartsOutputFolder.resolve("final.png"));
+        
+        BufferedImage image = concat.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
+        ImageIO.write(image, "png", imageOutputPath.resolve("final.png").toFile());
+        
+        System.out.println("Finished");
     }
 }
