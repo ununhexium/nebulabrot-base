@@ -60,11 +60,12 @@ extends Thread
      * @param computeBlockSize
      *            the size of a computation block
      */
-    public AbstractQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute, SynchronizedCounter computedNodes,
-    int computeBlockSize)
+    public AbstractQuadTreeComputeThread(QuadTreeManager quadTreeManager, SynchronizedCounter maxNodesToCompute,
+    SynchronizedCounter computedNodes, int computeBlockSize)
     {
         super();
-        this.setName(this.getClass().getSimpleName() + "-" + AbstractQuadTreeComputeThread.getNextQuadTreeComputeThreadId());
+        this.setName(this.getClass().getSimpleName() + "-"
+        + AbstractQuadTreeComputeThread.getNextQuadTreeComputeThreadId());
         this.quadTreeManager = quadTreeManager;
         this.maxNodesToCompute = maxNodesToCompute;
         this.computedNodes = computedNodes;
@@ -97,7 +98,8 @@ extends Thread
     /**
      * 
      * @param time
-     *            Fires an <code>nodesGroupComputeTime</code> event to all the registered {@link QuadTreeComputeListener}.
+     *            Fires an <code>nodesGroupComputeTime</code> event to all the registered
+     *            {@link QuadTreeComputeListener}.
      */
     protected void fireNodesGroupComputeTime(long time)
     {
@@ -120,13 +122,17 @@ extends Thread
         }
     }
     
+    /**
+     * @return Increments and returns the counter
+     */
     protected synchronized static int getNextQuadTreeComputeThreadId()
     {
         return ++counter;
     }
     
     /**
-     * The computation in made inside this method. Subclasses willing to implement a computation method have to overload it.
+     * The computation in made inside this method. Subclasses willing to implement a computation method have to overload
+     * it.
      */
     @Override
     public abstract void run();

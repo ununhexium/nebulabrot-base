@@ -532,7 +532,7 @@ public class RawMandelbrotData
     }
     
     // Sums the arrays into 1 big data file
-    public static RawMandelbrotData concat(List<Path> partsList)
+    public static RawMandelbrotData sum(List<Path> partsList)
     throws ValidityException, ParsingException, IOException
     {
         if (partsList.size() < 2)
@@ -575,17 +575,33 @@ public class RawMandelbrotData
         }
         
         RawMandelbrotData outputData = new RawMandelbrotData(yRes, yRes, 0);
-        
+        int step = Math.max(1, xRes / 100);
+        int counter = 0;
+        long[] total = new long[yRes];
+        byte[] buffer = new byte[yRes * 4];
         for (int i = 0; i < xRes; ++i)
         {
             for (int j = 0; j < yRes; ++j)
             {
-                long total = 0;
-                for (int k = 0; k < streams.size(); ++k)
+                total[j] = 0;
+            }
+            for (int k = 0; k < streams.size(); ++k)
+            {
+                streams.get(k).read(buffer);
+                IntBuffer intBuffer = ByteBuffer.wrap(buffer).asIntBuffer();
+                for (int j = 0; j < yRes; ++j)
                 {
-                    total += streams.get(k).readInt();
+                    total[j] += intBuffer.get();
                 }
-                outputData.data[i][j] = (int) Math.min(Integer.MAX_VALUE, total);
+            }
+            for (int j = 0; j < yRes; ++j)
+            {
+                outputData.data[i][j] = (int) Math.min(Integer.MAX_VALUE, total[j]);
+            }
+            counter++;
+            if (counter % step == 0)
+            {
+                System.out.println("" + (counter / step) + "%");
             }
         }
         

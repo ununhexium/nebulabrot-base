@@ -1028,6 +1028,10 @@ public class QuadTreeManager
         return maxDepth;
     }
     
+    /**
+     * @param maxDepth
+     *            The maxDepth value to give to this manager
+     */
     public void setMaxDepth(int maxDepth)
     {
         this.maxDepth = maxDepth;

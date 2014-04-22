@@ -5,14 +5,16 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.tools.exec.Generator;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
+
+import org.tukaani.xz.XZInputStream;
 
 /**
  * A job that reads points from a file and output them as blocks
@@ -34,23 +36,38 @@ extends Generator<DataInputStream, PointsBlock>
      *            Where to read from
      * @param blockSize
      *            The size of the output blocks
-     * @throws FileNotFoundException
+     * @throws IOException 
      */
     public PointsBlockReader(PriorityExecutor executor, JobBuilder<PointsBlock> jobBuilder, Path inputPath,
-    int blockSize)
-    throws FileNotFoundException
+    int blockSize, boolean compressed)
+    throws IOException
     {
-        super(executor, jobBuilder, buildDataInputStream(inputPath));
+        super(executor, jobBuilder, buildDataInputStream(inputPath, compressed));
         this.blockSize = blockSize;
     }
     
-    private static DataInputStream buildDataInputStream(Path inputPath)
-    throws FileNotFoundException
+    public PointsBlockReader(PriorityExecutor executor, JobBuilder<PointsBlock> jobBuilder, Path inputPath,
+    int blockSize)
+    throws IOException
+    {
+        this(executor, jobBuilder, inputPath, blockSize, false);
+    }
+    
+    private static DataInputStream buildDataInputStream(Path inputPath, boolean compressed)
+    throws IOException
     {
         File file = inputPath.toFile();
         FileInputStream fileInputStream = new FileInputStream(file);
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
-        return new DataInputStream(bufferedInputStream);
+        InputStream inputStream = null;
+        if (compressed)
+        {
+            inputStream = new XZInputStream(fileInputStream);
+        }
+        else
+        {
+            inputStream = new BufferedInputStream(fileInputStream);
+        }
+        return new DataInputStream(inputStream);
     }
     
     @Override

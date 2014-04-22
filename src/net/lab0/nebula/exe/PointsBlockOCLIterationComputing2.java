@@ -6,6 +6,7 @@ import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.mgr.OpenCLManager;
 import net.lab0.nebula.project.PointsComputingParameters;
+import net.lab0.tools.HumanReadable;
 import net.lab0.tools.exec.CascadingJob;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.SimpleJob;
@@ -43,6 +44,8 @@ extends SimpleJob<CoordinatesBlock, PointsBlock>
         int sliceSize = points * points;
         double[] x = new double[sliceSize];
         double[] y = new double[sliceSize];
+        System.out.println(Thread.currentThread().getName() + " slice: "
+        + HumanReadable.humanReadableNumber(sliceSize, true, ""));
         
         fillArrays(block, step, points, x, y);
         
@@ -91,8 +94,7 @@ extends SimpleJob<CoordinatesBlock, PointsBlock>
         return returnedPointsCount;
     }
     
-    private void fillArrays(CoordinatesBlock block, double step, int pointsOnSides, double[] x,
-    double[] y)
+    private void fillArrays(CoordinatesBlock block, double step, int pointsOnSides, double[] x, double[] y)
     {
         for (int k = 0; k < pointsOnSides; ++k)
         {

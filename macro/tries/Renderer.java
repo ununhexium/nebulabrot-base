@@ -10,6 +10,7 @@ import net.lab0.nebula.color.PowerGrayScaleColorModel;
 import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.exe.PointsBlockReader;
 import net.lab0.nebula.exe.builder.ToPointsBlockAggregator;
+import net.lab0.nebula.project.Project;
 import net.lab0.tools.exec.PriorityExecutor;
 import net.lab0.tools.geom.Point;
 import net.lab0.tools.geom.Rectangle;

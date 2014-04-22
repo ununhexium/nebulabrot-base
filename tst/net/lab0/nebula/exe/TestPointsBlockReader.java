@@ -1,6 +1,7 @@
 package net.lab0.nebula.exe;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ public class TestPointsBlockReader
     
     @Test
     public void testReader()
-    throws FileNotFoundException
+    throws IOException
     {
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
         PointsBlockReader pointsBlockReader = new PointsBlockReader(executor, new Dumper(), path, 250);

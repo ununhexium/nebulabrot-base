@@ -486,6 +486,7 @@ public class Project
         };
         
         int chunkId = 0;
+        List<LzmaCompressorThread> compressors = new ArrayList<>();
         for (int depth = 0; depth <= maxDepth; ++depth)
         {
             List<Path> filesToUse = fileAtDepth.get(depth);
@@ -493,20 +494,30 @@ public class Project
             {
                 double step = parameters.getStep(depth);
                 Path pointBlocksOutput = pointsBaseOutputFolder.resolve("c_" + chunkId + ".data");
+                Path compressedPointBlocksOutput = pointsBaseOutputFolder.resolve("c_" + chunkId + ".data.xz");
                 System.out.println("outputing results to " + pointBlocksOutput);
                 
-                compute(parameters, filter, p, step, pointBlocksOutput);
+                LzmaCompressorThread c = compute(parameters, filter, p, step, pointBlocksOutput,
+                compressedPointBlocksOutput);
+                compressors.add(c);
                 
                 chunkId++;
             }
+        }
+        
+        for (LzmaCompressorThread c : compressors)
+        {
+            System.out.println("Waiting " + c.getName());
+            c.join();
         }
         
         getProjetInformation().pointsInformation.pointsComputingParameters.add(new PointInformation(nextIndex,
         parameters));
     }
     
-    private void compute(final PointsComputingParameters parameters, Predicate<MandelbrotQuadTreeNode> filter,
-    Path input, double step, final Path output)
+    private LzmaCompressorThread compute(final PointsComputingParameters parameters,
+    Predicate<MandelbrotQuadTreeNode> filter, Path input, double step, final Path output,
+    Path compressedPointBlocksOutput)
     throws FileNotFoundException, InterruptedException
     {
         PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
@@ -533,6 +544,18 @@ public class Project
             }
         });
         executor.waitForFinish();
+        
+        // release this path as we are sure that we won't write on this file again
+        WriterManager.getInstance().release(output);
+        
+        // make sure to release the memory consumed by the call to native libs
+        System.gc();
+        
+        // in background: compress the file we just created
+        LzmaCompressorThread compressorThread = new LzmaCompressorThread(output, compressedPointBlocksOutput, true);
+        compressorThread.start();
+        
+        return compressorThread;
     }
     
     /**
@@ -609,7 +632,8 @@ public class Project
         return filesByDepth;
     }
     
-    public void computeNebula(int pointsId, RectangleInterface viewPort, int xRes, int yRes)
+    public void computeNebula(int pointsId, RectangleInterface viewPort, int xRes, int yRes, long minIter,
+    long maxIter, String imageName)
     throws IOException, InterruptedException, ValidityException, ParsingException
     {
         Path pointsBlocksBase = FileSystems.getDefault().getPath(getProjectFolder(), "point", "" + pointsId);
@@ -619,7 +643,7 @@ public class Project
         Path nebulaPartsOutputFolder = nebulaPartsMainOutputFolder.resolve("" + nextAvailable);
         
         // quickly check that the files listed are only those we want to use
-        Pattern format = Pattern.compile("c_[0-9]+.data");
+        Pattern format = Pattern.compile("c_[0-9]+\\.data(.xz)?");
         
         int outputIndex = -1;
         List<Path> partsList = new ArrayList<>();
@@ -627,21 +651,31 @@ public class Project
         {
             outputIndex++;
             Matcher matcher = format.matcher(sourceFile.getName());
+            boolean compressed;
             if (!matcher.matches())
             {
                 continue;
             }
             
+            if (sourceFile.getName().endsWith("xz"))
+            {
+                compressed = true;
+            }
+            else
+            {
+                compressed = false;
+            }
+            
             // rendering
             PriorityExecutor priorityExecutor = new PriorityExecutor(Runtime.getRuntime().availableProcessors() - 1);
             RawMandelbrotData aggregate = new RawMandelbrotData(xRes, yRes, 0);
-            ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, -1, 1024);
+            ToPointsBlockAggregator toAggregator = new ToPointsBlockAggregator(aggregate, viewPort, minIter, maxIter);
             PointsBlockReader pointsBlockReader = new PointsBlockReader(priorityExecutor, toAggregator,
-            sourceFile.toPath(), 1024 * 1024);
+            sourceFile.toPath(), 1024 * 1024, compressed);
             priorityExecutor.execute(pointsBlockReader);
             priorityExecutor.waitForFinish();
             
-            System.out.println("Write data");
+            System.out.println("Write data " + outputIndex);
             Path dataPath = nebulaPartsOutputFolder.resolve("" + outputIndex);
             partsList.add(dataPath);
             aggregate.save(dataPath);
@@ -649,18 +683,18 @@ public class Project
             /*
              * Graphic rendering
              */
-            System.out.println("Writing image");
-            Path imagePath = imageOutputPath.resolve("i_" + outputIndex + ".png");
-            BufferedImage image = aggregate.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
-            ImageIO.write(image, "png", imagePath.toFile());
-            System.out.println("The image is available at " + imageOutputPath);
+            // System.out.println("Writing image");
+            // Path imagePath = imageOutputPath.resolve("i_" + outputIndex + ".png");
+            // BufferedImage image = aggregate.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
+            // ImageIO.write(image, "png", imagePath.toFile());
+            // System.out.println("The image is available at " + imageOutputPath);
         }
         
-        RawMandelbrotData concat = RawMandelbrotData.concat(partsList);
+        RawMandelbrotData concat = RawMandelbrotData.sum(partsList);
         concat.save(nebulaPartsOutputFolder.resolve("final.png"));
         
         BufferedImage image = concat.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
-        ImageIO.write(image, "png", imageOutputPath.resolve("final.png").toFile());
+        ImageIO.write(image, "png", imageOutputPath.resolve(imageName + ".png").toFile());
         
         System.out.println("Finished");
     }
