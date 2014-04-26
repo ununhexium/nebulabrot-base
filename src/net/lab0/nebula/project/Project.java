@@ -8,8 +8,11 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -22,12 +25,11 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import net.lab0.nebula.color.PowerGrayScaleColorModel;
-import net.lab0.nebula.core.NebulabrotRenderer;
 import net.lab0.nebula.data.CoordinatesBlock;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode;
-import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.MandelbrotQuadTreeNode.NodePath;
 import net.lab0.nebula.data.PointsBlock;
+import net.lab0.nebula.data.RawMandelbrotData;
 import net.lab0.nebula.data.StatusQuadTreeNode;
 import net.lab0.nebula.enums.Status;
 import net.lab0.nebula.exception.InvalidBinaryFileException;
@@ -45,14 +47,14 @@ import net.lab0.tools.FileUtils;
 import net.lab0.tools.HumanReadable;
 import net.lab0.tools.exec.JobBuilder;
 import net.lab0.tools.exec.PriorityExecutor;
-import net.lab0.tools.geom.Point;
-import net.lab0.tools.geom.Rectangle;
 import net.lab0.tools.geom.RectangleInterface;
 import nu.xom.ParsingException;
 import nu.xom.ValidityException;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.io.PatternFilenameFilter;
 
 /**
@@ -437,9 +439,10 @@ public class Project
     }
     
     /**
-     * Computes the points using a quad tree.
+     * Computes the points to render using a quad tree.
      * 
      * @param parameters
+     *            {@link PointsComputingParameters}
      * @throws FileNotFoundException
      * @throws ProjectException
      *             If the specified tree id is invalid.
@@ -461,6 +464,7 @@ public class Project
         QuadTreeInformation tree = getProjetInformation().quadTreesInformation.getById(treeId);
         int maxDepth = Math.min(tree.maxDepth, parameters.getMaxDepth());
         
+        // keep useful nodes only
         Predicate<MandelbrotQuadTreeNode> filter = new Predicate<MandelbrotQuadTreeNode>()
         {
             @Override
@@ -485,6 +489,7 @@ public class Project
             }
         };
         
+        // process the input files one by one and compress the result
         int chunkId = 0;
         List<LzmaCompressorThread> compressors = new ArrayList<>();
         for (int depth = 0; depth <= maxDepth; ++depth)
@@ -507,20 +512,46 @@ public class Project
         
         for (LzmaCompressorThread c : compressors)
         {
-            System.out.println("Waiting " + c.getName());
-            c.join();
+            if (c.isAlive())
+            {
+                System.out.println("Waiting " + c.getName());
+                c.join();
+            }
         }
         
         getProjetInformation().pointsInformation.pointsComputingParameters.add(new PointInformation(nextIndex,
         parameters));
     }
     
+    /**
+     * Computes the points for each of the quad tree nodes of the given file and start the compression of the output.
+     * 
+     * @param parameters
+     * @param filter
+     * @param input
+     * @param step
+     * @param output
+     * @param compressedPointBlocksOutput
+     * @return The {@link LzmaCompressorThread} that is compressing the ouput in order to be able to wait for it to
+     *         finish its work before finishing the program
+     * @throws FileNotFoundException
+     * @throws InterruptedException
+     */
     private LzmaCompressorThread compute(final PointsComputingParameters parameters,
     Predicate<MandelbrotQuadTreeNode> filter, Path input, double step, final Path output,
     Path compressedPointBlocksOutput)
     throws FileNotFoundException, InterruptedException
     {
-        PriorityExecutor executor = new PriorityExecutor(Runtime.getRuntime().availableProcessors());
+        int threads = Runtime.getRuntime().availableProcessors();
+        if (parameters.getRoutine() == ComputingRoutine.CPU)
+        {
+            threads = Runtime.getRuntime().availableProcessors();
+        }
+        else if (parameters.getRoutine() == ComputingRoutine.OCL)
+        {
+            threads = Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
+        }
+        PriorityExecutor executor = new PriorityExecutor(threads);
         
         JobBuilder<PointsBlock> toFile = //
         BuilderFactory.toPointsBlocksFile(output, 64, Long.MAX_VALUE);
@@ -559,6 +590,7 @@ public class Project
     }
     
     /**
+     * Checks that the given parameters are valid for computing
      * 
      * @param parameters
      * @throws ProjectException
@@ -593,6 +625,8 @@ public class Project
     }
     
     /**
+     * Browses the file system and lists the files to use by depth
+     * 
      * @return The list of files that will be used for each depth.
      */
     private Map<Integer, List<Path>> createFilesListByDepth(PointsComputingParameters parameters)
@@ -632,12 +666,31 @@ public class Project
         return filesByDepth;
     }
     
-    public void computeNebula(int pointsId, RectangleInterface viewPort, int xRes, int yRes, long minIter,
+    /**
+     * Computes a nebula from a given set of files and returns several {@link RawMandelbrotData} files.
+     * 
+     * @param pointsId
+     *            The points to use
+     * @param viewPort
+     *            The viewport of the rendering
+     * @param xRes
+     *            The resolution in X
+     * @param yRes
+     *            The resolution in Y
+     * @param minIter
+     * @param maxIter
+     * @param imageName
+     * @return A list of path containing the generated {@link RawMandelbrotData} files.
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws ValidityException
+     * @throws ParsingException
+     */
+    public List<Path> computeNebula(int pointsId, RectangleInterface viewPort, int xRes, int yRes, long minIter,
     long maxIter, String imageName)
     throws IOException, InterruptedException, ValidityException, ParsingException
     {
         Path pointsBlocksBase = FileSystems.getDefault().getPath(getProjectFolder(), "point", "" + pointsId);
-        Path imageOutputPath = FileSystems.getDefault().getPath(getProjectFolder(), "image");
         Path nebulaPartsMainOutputFolder = FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
         int nextAvailable = FileUtils.getNextAvailablePath(nebulaPartsMainOutputFolder, "");
         Path nebulaPartsOutputFolder = nebulaPartsMainOutputFolder.resolve("" + nextAvailable);
@@ -647,7 +700,8 @@ public class Project
         
         int outputIndex = -1;
         List<Path> partsList = new ArrayList<>();
-        for (File sourceFile : pointsBlocksBase.toFile().listFiles())
+        File[] filesList = pointsBlocksBase.toFile().listFiles();
+        for (File sourceFile : filesList)
         {
             outputIndex++;
             Matcher matcher = format.matcher(sourceFile.getName());
@@ -675,7 +729,7 @@ public class Project
             priorityExecutor.execute(pointsBlockReader);
             priorityExecutor.waitForFinish();
             
-            System.out.println("Write data " + outputIndex);
+            System.out.println("Write data " + outputIndex + "/" + filesList.length);
             Path dataPath = nebulaPartsOutputFolder.resolve("" + outputIndex);
             partsList.add(dataPath);
             aggregate.save(dataPath);
@@ -689,13 +743,138 @@ public class Project
             // ImageIO.write(image, "png", imagePath.toFile());
             // System.out.println("The image is available at " + imageOutputPath);
         }
+        System.out.println("Finished");
+        
+        return partsList;
+    }
+    
+    /**
+     * Sums a list of nebula renderings
+     * 
+     * @param id
+     *            The id of the set of nebula to sum
+     * @throws ValidityException
+     * @throws ParsingException
+     * @throws IOException
+     */
+    public void sumNebulas(Integer id)
+    throws ValidityException, ParsingException, IOException
+    {
+        List<Path> partsList = new ArrayList<>();
+        Path base = FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
+        
+        for (File p : base.resolve("" + id).toFile().listFiles())
+        {
+            partsList.add(p.toPath());
+        }
         
         RawMandelbrotData concat = RawMandelbrotData.sum(partsList);
-        concat.save(nebulaPartsOutputFolder.resolve("final.png"));
+        concat.save(base.resolve("" + id).resolve("final"));
+    }
+    
+    /**
+     * Does a graphical rendering of a given nebula
+     * 
+     * @param id
+     * @param subid
+     * @param name
+     *            The name of the output image file. If <code>null</code>, will be the concatenation of the id and the
+     *            sub id.
+     * @throws IOException
+     * @throws ValidityException
+     * @throws NoSuchAlgorithmException
+     * @throws ParsingException
+     * @throws InvalidBinaryFileException
+     */
+    public void renderNebula(int id, String subid, String name)
+    throws IOException, ValidityException, NoSuchAlgorithmException, ParsingException, InvalidBinaryFileException
+    {
+        if (name == null)
+        {
+            name = "" + id + "_" + subid + ".png";
+        }
+        Path imageOutputPath = FileSystems.getDefault().getPath(getProjectFolder(), "image", "nebula", "" + id);
+        if (!imageOutputPath.toFile().exists())
+        {
+            imageOutputPath.toFile().mkdirs();
+        }
+        Path nebulaPath = FileSystems.getDefault().getPath(this.getProjectFolder(), "nebula", "" + id, subid);
+        RawMandelbrotData data = new RawMandelbrotData(nebulaPath);
+        BufferedImage image = data.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
+        ImageIO.write(image, "png", imageOutputPath.resolve(name).toFile());
+    }
+    
+    /**
+     * Concatenates the points of the points set <code>id</code> to make sets of points as close as possible to the
+     * <code>size</code>.
+     * 
+     * @param id
+     * @param size
+     *            The size in Bytes
+     */
+    public void concatenatePoints(int id, long size)
+    {
+        Path pointsPath = FileSystems.getDefault().getPath(this.getProjectFolder(), "point", "" + id);
         
-        BufferedImage image = concat.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
-        ImageIO.write(image, "png", imageOutputPath.resolve(imageName + ".png").toFile());
+        // the groups of points that will be concatenated together
+        List<List<File>> groups = new ArrayList<List<File>>();
         
-        System.out.println("Finished");
+        // the link between the files' sizes and the group
+        Multimap<Long, File> map = ArrayListMultimap.create();
+        System.out.println(pointsPath);
+        for (File f : pointsPath.toFile().listFiles())
+        {
+            long l = f.length();
+            if (l < size)
+            {
+                map.put(f.length(), f);
+            }
+            /*
+             * else: we don't create a group of 1 file: useless
+             */
+        }
+        
+        List<Long> sizes = new ArrayList<Long>(map.keys());
+        Collections.sort(sizes);
+        
+        // as long as there is something to group
+        while (sizes.size() != 0)
+        {
+            Iterator<Long> it = sizes.iterator();
+            List<File> group = new ArrayList<>();
+            long currentTotal = 0;
+            // we will browse all the sizes available
+            while (it.hasNext())
+            {
+                long l = it.next();
+                // adding the corresponding files to the current group if it doesn't get bigger than the max size
+                if (l + currentTotal <= size)
+                {
+                    Collection<File> c = map.get(l);
+                    File f = c.iterator().next();
+                    // deleting the used element
+                    map.remove(l, f);
+                    group.add(f);
+                    // remembering the new total size
+                    currentTotal += l;
+                }
+            }
+            
+            // and finally saving the created group to the list of files to group
+            groups.add(group);
+            group = new ArrayList<>();
+        }
+        
+        for (List<File> list : groups)
+        {
+            long total = 0;
+            System.out.print("[");
+            for (File file : list)
+            {
+                System.out.print(file.getName() + ", ");
+                total += file.length();
+            }
+            System.out.println("] " + HumanReadable.humanReadableSizeInBytes(total));
+        }
     }
 }

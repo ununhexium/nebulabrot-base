@@ -63,7 +63,7 @@ public class Example03
             }
         });
         priorityExecutor.execute(generator);
-        priorityExecutor.wait();
+        priorityExecutor.waitForFinish();
         System.out.println("The file is available at " + outputPath.toUri());
         
         // Example 03

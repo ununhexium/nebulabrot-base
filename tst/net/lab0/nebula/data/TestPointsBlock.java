@@ -28,9 +28,9 @@ public class TestPointsBlock
         
         PointsBlock p = new PointsBlock(size, real, imag);
         Assert.assertEquals(size, p.size);
-        Assert.assertEquals(imag, p.imag);
+        Assert.assertArrayEquals(imag, p.imag, 0D);
         Assert.assertNotNull(p.iter);
-        Assert.assertEquals(real, p.real);
+        Assert.assertArrayEquals(real, p.real, 0D);
         Assert.assertEquals(size, p.imag.length);
         Assert.assertEquals(size, p.iter.length);
         Assert.assertEquals(size, p.real.length);

@@ -575,34 +575,38 @@ public class RawMandelbrotData
         }
         
         RawMandelbrotData outputData = new RawMandelbrotData(yRes, yRes, 0);
-        int step = Math.max(1, xRes / 100);
         int counter = 0;
-        long[] total = new long[yRes];
-        byte[] buffer = new byte[yRes * 4];
-        for (int i = 0; i < xRes; ++i)
+        int bufferSize = 1024 * 1024;
+        byte[] buffer = new byte[bufferSize];
+        
+        for (DataInputStream stream : streams)
         {
-            for (int j = 0; j < yRes; ++j)
+            int x = 0;
+            int y = 0;
+            while (true)
             {
-                total[j] = 0;
-            }
-            for (int k = 0; k < streams.size(); ++k)
-            {
-                streams.get(k).read(buffer);
-                IntBuffer intBuffer = ByteBuffer.wrap(buffer).asIntBuffer();
-                for (int j = 0; j < yRes; ++j)
+                int read = stream.read(buffer);
+                
+                if (read == -1)
                 {
-                    total[j] += intBuffer.get();
+                    break;
+                }
+                IntBuffer intBuffer = ByteBuffer.wrap(buffer).asIntBuffer();
+                for (int i = 0; i < read / 4; ++i)
+                {
+                    outputData.data[x][y] = (int) Math.min(Integer.MAX_VALUE,
+                    ((long) intBuffer.get() + (long) outputData.data[x][y]));
+                    
+                    y++;
+                    if (y == yRes)
+                    {
+                        y = 0;
+                        x++;
+                    }
                 }
             }
-            for (int j = 0; j < yRes; ++j)
-            {
-                outputData.data[i][j] = (int) Math.min(Integer.MAX_VALUE, total[j]);
-            }
             counter++;
-            if (counter % step == 0)
-            {
-                System.out.println("" + (counter / step) + "%");
-            }
+            System.out.println("" + counter + "/" + streams.size());
         }
         
         return outputData;

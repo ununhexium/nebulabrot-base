@@ -42,7 +42,7 @@ extends Thread
             }
             catch (IOException e)
             {
-                new RuntimeException("Crap :(", e);
+                throw new RuntimeException("Crap :(", e);
             }
         }
         
