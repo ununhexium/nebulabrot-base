@@ -1,8 +1,14 @@
 package net.lab0.nebula.project;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -10,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,6 +62,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.PatternFilenameFilter;
 
 /**
@@ -325,6 +333,52 @@ public class Project
     private Path getPointsFolderPath(int pointSetId)
     {
         return getPointsFolderPath().resolve("" + pointSetId);
+    }
+    
+    /**
+     * Finds and creates the next points set path
+     * 
+     * @return The next available path to store points
+     */
+    private Path getNextPointsFolderPath()
+    {
+        Path pointsPath = getPointsFolderPath();
+        int i = FileUtils.getNextAvailablePath(pointsPath, "");
+        Path next = getPointsFolderPath(i);
+        next.toFile().mkdirs();
+        return next;
+    }
+    
+    /**
+     * 
+     * @return The path to the folder containing the nebula data sets
+     */
+    private Path getNebulaFolderPath()
+    {
+        return FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
+    }
+    
+    /**
+     * 
+     * @return The path to the folder containing the nebula data sets identified by nebulaSetId
+     */
+    private Path getNebulaFolderPath(int nebulaSetId)
+    {
+        return FileSystems.getDefault().getPath(getProjectFolder(), "nebula").resolve("" + nebulaSetId);
+    }
+    
+    /**
+     * Finds and creates the next nebula set path
+     * 
+     * @return The next available path to a folder containing nebula data
+     */
+    private Path getNextNebulaFolderPath()
+    {
+        Path nebulaPath = getNebulaFolderPath();
+        int i = FileUtils.getNextAvailablePath(nebulaPath, "");
+        Path next = nebulaPath.resolve("" + i);
+        next.toFile().mkdirs();
+        return next;
     }
     
     /**
@@ -690,10 +744,8 @@ public class Project
     long maxIter, String imageName)
     throws IOException, InterruptedException, ValidityException, ParsingException
     {
-        Path pointsBlocksBase = FileSystems.getDefault().getPath(getProjectFolder(), "point", "" + pointsId);
-        Path nebulaPartsMainOutputFolder = FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
-        int nextAvailable = FileUtils.getNextAvailablePath(nebulaPartsMainOutputFolder, "");
-        Path nebulaPartsOutputFolder = nebulaPartsMainOutputFolder.resolve("" + nextAvailable);
+        Path pointsBlocksBase = getPointsFolderPath(pointsId);
+        Path nebulaPartsOutputFolder = getNextNebulaFolderPath();
         
         // quickly check that the files listed are only those we want to use
         Pattern format = Pattern.compile("c_[0-9]+\\.data(.xz)?");
@@ -761,7 +813,7 @@ public class Project
     throws ValidityException, ParsingException, IOException
     {
         List<Path> partsList = new ArrayList<>();
-        Path base = FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
+        Path base = getNebulaFolderPath();
         
         for (File p : base.resolve("" + id).toFile().listFiles())
         {
@@ -798,10 +850,27 @@ public class Project
         {
             imageOutputPath.toFile().mkdirs();
         }
-        Path nebulaPath = FileSystems.getDefault().getPath(this.getProjectFolder(), "nebula", "" + id, subid);
+        Path nebulaPath = getNebulaFolderPath(id).resolve(subid);
         RawMandelbrotData data = new RawMandelbrotData(nebulaPath);
         BufferedImage image = data.computeBufferedImage(new PowerGrayScaleColorModel(0.5), 0);
         ImageIO.write(image, "png", imageOutputPath.resolve(name).toFile());
+    }
+    
+    public void renderNebulaGmaps(int id, String subid, String name, int size)
+    throws ValidityException, NoSuchAlgorithmException, ParsingException, IOException, InvalidBinaryFileException
+    {
+        if (name == null)
+        {
+            name = "" + id + "_" + subid + ".png";
+        }
+        Path imageOutputPath = FileSystems.getDefault().getPath(getProjectFolder(), "image", "gmaps", name);
+        if (!imageOutputPath.toFile().exists())
+        {
+            imageOutputPath.toFile().mkdirs();
+        }
+        Path nebulaPath = getNebulaFolderPath(id).resolve(subid);
+        RawMandelbrotData data = new RawMandelbrotData(nebulaPath);
+        data.saveAsTiles(new PowerGrayScaleColorModel(0.5), imageOutputPath.toFile(), size);
     }
     
     /**
@@ -811,17 +880,20 @@ public class Project
      * @param id
      * @param size
      *            The size in Bytes
+     * @return The path to the new points set where the data has been aggregated
+     * @throws IOException
      */
-    public void concatenatePoints(int id, long size)
+    public Path concatenatePoints(int id, long size)
+    throws IOException
     {
-        Path pointsPath = FileSystems.getDefault().getPath(this.getProjectFolder(), "point", "" + id);
+        Path pointsPath = getPointsFolderPath(id);
         
         // the groups of points that will be concatenated together
         List<List<File>> groups = new ArrayList<List<File>>();
         
         // the link between the files' sizes and the group
         Multimap<Long, File> map = ArrayListMultimap.create();
-        System.out.println(pointsPath);
+        
         for (File f : pointsPath.toFile().listFiles())
         {
             long l = f.length();
@@ -829,13 +901,24 @@ public class Project
             {
                 map.put(f.length(), f);
             }
-            /*
-             * else: we don't create a group of 1 file: useless
-             */
+            else
+            {
+                List<File> single = new ArrayList<>(1);
+                single.add(f);
+                groups.add(single);
+            }
         }
         
         List<Long> sizes = new ArrayList<Long>(map.keys());
-        Collections.sort(sizes);
+        Collections.sort(sizes, new Comparator<Long>()
+        {
+            
+            @Override
+            public int compare(Long o1, Long o2)
+            {
+                return -Long.compare(o1, o2);
+            }
+        });
         
         // as long as there is something to group
         while (sizes.size() != 0)
@@ -854,6 +937,7 @@ public class Project
                     File f = c.iterator().next();
                     // deleting the used element
                     map.remove(l, f);
+                    it.remove();
                     group.add(f);
                     // remembering the new total size
                     currentTotal += l;
@@ -865,16 +949,26 @@ public class Project
             group = new ArrayList<>();
         }
         
-        for (List<File> list : groups)
+        Path outputRoot = getNextPointsFolderPath();
+        int outIndex = 0;
+        for (List<File> l : groups)
         {
-            long total = 0;
-            System.out.print("[");
-            for (File file : list)
+            outIndex++;
+            File outputFile = outputRoot.resolve("c_" + outIndex + ".data.xz").toFile();
+            try (
+                FileOutputStream os = new FileOutputStream(outputFile))
             {
-                System.out.print(file.getName() + ", ");
-                total += file.length();
+                for (File f : l)
+                {
+                    try (
+                        FileInputStream is = new FileInputStream(f))
+                    {
+                        ByteStreams.copy(is, os);
+                    }
+                }
             }
-            System.out.println("] " + HumanReadable.humanReadableSizeInBytes(total));
         }
+        
+        return outputRoot;
     }
 }
