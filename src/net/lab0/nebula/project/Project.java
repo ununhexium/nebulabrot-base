@@ -84,6 +84,11 @@ public class Project
     private boolean           newProject;
     
     /**
+     * The module is charge of the computation of statistics.
+     */
+    private StatisticsModule  statisticsModule;
+    
+    /**
      * The parameters of this project
      */
     private ProjetInformation projetInformation = new ProjetInformation();
@@ -296,7 +301,7 @@ public class Project
     /**
      * @return The path to the folder containing the quad trees.
      */
-    private Path getQuadTreeFolderPath()
+    public Path getQuadTreeFolderPath()
     {
         return projectFolder.resolve("quadtree");
     }
@@ -304,7 +309,7 @@ public class Project
     /**
      * @return The path to the folder containing the quad tree with the given id.
      */
-    private Path getQuadTreeFolderPath(int treeId)
+    public Path getQuadTreeFolderPath(int treeId)
     {
         return getQuadTreeFolderPath().resolve("" + treeId);
     }
@@ -313,7 +318,7 @@ public class Project
      * @return The path to the folder containing the chunks of the given <code>chunckSize</code> size of the quad tree
      *         with the given id.
      */
-    private Path getQuadTreeFolderSplitPath(int treeId, int blockSize)
+    public Path getQuadTreeFolderSplitPath(int treeId, int blockSize)
     {
         return getQuadTreeFolderPath(treeId).resolve("s_" + blockSize);
     }
@@ -321,7 +326,7 @@ public class Project
     /**
      * @return The path to the folder that contains all the point data
      */
-    private Path getPointsFolderPath()
+    public Path getPointsFolderPath()
     {
         return projectFolder.resolve("point");
     }
@@ -330,7 +335,7 @@ public class Project
      * @param pointSetId
      * @return The path to the folder containing the points' set with the given id.
      */
-    private Path getPointsFolderPath(int pointSetId)
+    public Path getPointsFolderPath(int pointSetId)
     {
         return getPointsFolderPath().resolve("" + pointSetId);
     }
@@ -340,7 +345,7 @@ public class Project
      * 
      * @return The next available path to store points
      */
-    private Path getNextPointsFolderPath()
+    public Path getNextPointsFolderPath()
     {
         Path pointsPath = getPointsFolderPath();
         int i = FileUtils.getNextAvailablePath(pointsPath, "");
@@ -353,7 +358,7 @@ public class Project
      * 
      * @return The path to the folder containing the nebula data sets
      */
-    private Path getNebulaFolderPath()
+    public Path getNebulaFolderPath()
     {
         return FileSystems.getDefault().getPath(getProjectFolder(), "nebula");
     }
@@ -362,7 +367,7 @@ public class Project
      * 
      * @return The path to the folder containing the nebula data sets identified by nebulaSetId
      */
-    private Path getNebulaFolderPath(int nebulaSetId)
+    public Path getNebulaFolderPath(int nebulaSetId)
     {
         return FileSystems.getDefault().getPath(getProjectFolder(), "nebula").resolve("" + nebulaSetId);
     }
@@ -372,7 +377,7 @@ public class Project
      * 
      * @return The next available path to a folder containing nebula data
      */
-    private Path getNextNebulaFolderPath()
+    public Path getNextNebulaFolderPath()
     {
         Path nebulaPath = getNebulaFolderPath();
         int i = FileUtils.getNextAvailablePath(nebulaPath, "");
@@ -733,7 +738,6 @@ public class Project
      *            The resolution in Y
      * @param minIter
      * @param maxIter
-     * @param imageName
      * @return A list of path containing the generated {@link RawMandelbrotData} files.
      * @throws IOException
      * @throws InterruptedException
@@ -741,7 +745,7 @@ public class Project
      * @throws ParsingException
      */
     public List<Path> computeNebula(int pointsId, RectangleInterface viewPort, int xRes, int yRes, long minIter,
-    long maxIter, String imageName)
+    long maxIter)
     throws IOException, InterruptedException, ValidityException, ParsingException
     {
         Path pointsBlocksBase = getPointsFolderPath(pointsId);
@@ -970,5 +974,18 @@ public class Project
         }
         
         return outputRoot;
+    }
+    
+    /**
+     * Get the module that is in charge of statistics computation inside this project.
+     */
+    public synchronized StatisticsModule getStatisticsModule()
+    {
+        if (statisticsModule == null)
+        {
+            statisticsModule = new StatisticsModule(this);
+        }
+        
+        return statisticsModule;
     }
 }

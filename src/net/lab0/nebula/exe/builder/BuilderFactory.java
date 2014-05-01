@@ -8,6 +8,7 @@ import net.lab0.nebula.data.PointsBlock;
 import net.lab0.nebula.exe.ComputeInOutForQuadTreeNode;
 import net.lab0.nebula.exe.CoordinatesToPointsBlockConverter;
 import net.lab0.nebula.exe.MandelbrotQTNChunkWriter;
+import net.lab0.nebula.exe.MandelbrotQTNStats;
 import net.lab0.nebula.exe.MandelbrotQuadTreeNodeSplitter;
 import net.lab0.nebula.exe.PointsBlockOCLIterationComputing;
 import net.lab0.nebula.exe.PointsBlockOCLIterationComputing2;
@@ -23,7 +24,7 @@ import net.lab0.tools.exec.JobBuilderFactory;
 import com.google.common.base.Predicate;
 
 public class BuilderFactory
-extends JobBuilderFactory //that's just to have all the methods in 1 class
+extends JobBuilderFactory // that's just to have all the methods in 1 class
 {
     public static synchronized JobBuilder<MandelbrotQuadTreeNode[]> arrayToFile(final Path outputPath)
     {
@@ -174,6 +175,24 @@ extends JobBuilderFactory //that's just to have all the methods in 1 class
             {
                 return new MandelbrotQTNChunkWriter(parent, output, baseOutputPath, baseFileName);
             }
+        };
+    }
+    
+    /**
+     * Redirects <code>MandelbrotQuadTreeNode[]</code> to a {@link MandelbrotQTNStats}
+     */
+    public static synchronized JobBuilder<MandelbrotQuadTreeNode[]> toMandelbrotQTNStats(
+    final MandelbrotQTNStats.Aggregate aggregate)
+    {
+        return new JobBuilder<MandelbrotQuadTreeNode[]>()
+        {
+            @Override
+            public CascadingJob<MandelbrotQuadTreeNode[], ?> buildJob(CascadingJob<?, MandelbrotQuadTreeNode[]> parent,
+            MandelbrotQuadTreeNode[] output)
+            {
+                return new MandelbrotQTNStats(parent, output, aggregate);
+            }
+            
         };
     }
 }
