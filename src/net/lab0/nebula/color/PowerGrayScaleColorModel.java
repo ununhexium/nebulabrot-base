@@ -60,7 +60,7 @@ implements ColorationModel
         
         PointValues v = values[0];
         // warning : do not change this 1.0d or this will become an int divison and it will always be 0
-        float rgb = (float) (255f * Math.pow((v.value - v.minIter) / (v.maxIter - v.minIter + 1.0d), power));
+        float rgb = 255f - (float) (255f * Math.pow((v.value - v.minIter) / (v.maxIter - v.minIter + 1.0d), power));
         vector[0] = vector[1] = vector[2] = rgb;
     }
     
