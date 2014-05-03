@@ -7,9 +7,21 @@ import net.lab0.nebula.data.MandelbrotQuadTreeNode;
 import net.lab0.nebula.enums.Status;
 import net.lab0.tools.exec.CascadingJob;
 
+/**
+ * Aggregates statistics about {@link MandelbrotQuadTreeNode}s
+ * 
+ * @author 116@lab0.net
+ * 
+ */
 public class MandelbrotQTNStats
 extends CascadingJob<MandelbrotQuadTreeNode[], Void>
 {
+    /**
+     * The aggregated data
+     * 
+     * @author 116@lab0.net
+     * 
+     */
     public static class Aggregate
     {
         private Map<Status, Long> counts = new HashMap<Status, Long>();
